@@ -1,0 +1,328 @@
+/* Custom Stream Chat Theme - Modern & Premium */
+
+:root {
+  --str-chat__primary-color: 24 24 27; /* Zinc 950 */
+  --str-chat__active-primary-color: 39 39 42; /* Zinc 800 */
+  --str-chat__surface-color: 255 255 255;
+  --str-chat__secondary-surface-color: 244 244 245; /* Zinc 100 */
+  --str-chat__primary-surface-color: 255 255 255;
+  --str-chat__primary-surface-color-low-emphasis: 228 228 231; /* Zinc 200 */
+  --str-chat__border-radius-circle: 50%;
+  --str-chat__border-radius: 16px;
+}
+
+.dark {
+  --str-chat__primary-color: 250 250 250; /* Zinc 50 */
+  --str-chat__active-primary-color: 228 228 231; /* Zinc 200 */
+  --str-chat__surface-color: 24 24 27; /* Zinc 950 */
+  --str-chat__secondary-surface-color: 39 39 42; /* Zinc 800 */
+  --str-chat__primary-surface-color: 9 9 11; /* Zinc 950 */
+  --str-chat__primary-surface-color-low-emphasis: 39 39 42; /* Zinc 800 */
+}
+
+/* Base Overrides */
+.str-chat {
+  background: transparent !important;
+  font-family: inherit !important;
+}
+
+/* Chat List & Sidebar */
+.str-chat__list {
+  background: transparent !important;
+}
+
+.str-chat__channel-list-messenger {
+  background: transparent !important;
+}
+
+/* Channel Preview */
+.str-chat__channel-preview-messenger {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Message List Padding for Popups */
+
+
+/* ... existing styles ... */
+
+/* SMART POSITIONING: Open menu UPWARDS for the last few messages to prevent clipping */
+/* SMART POSITIONING: Open menu UPWARDS for the last few messages to prevent clipping */
+.str-chat__li:nth-last-child(-n+3) .str-chat__message-actions-box,
+.str-chat__li:nth-last-child(-n+3) .str-chat__reaction-selector {
+    top: auto !important;
+    bottom: 100% !important;
+    margin-top: 0 !important;
+    margin-bottom: 4px !important;
+    transform-origin: bottom right;
+}
+
+
+
+.str-chat__ul {
+  background-color: transparent !important;
+  padding-top: 10px;
+}
+
+/* ... */
+
+.str-chat__message-inner {
+    position: relative !important; /* Vital Anchor for User's Absolute Actions */
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important; 
+}
+
+/* Date Separators */
+.str-chat__date-separator {
+    background-color: transparent !important;
+    padding: 16px 0 !important;
+}
+
+.str-chat__date-separator-line {
+    background-color: rgba(var(--border), 0.3) !important;
+    height: 1px !important;
+}
+
+.str-chat__date-separator-date {
+    background-color: transparent !important;
+    color: hsl(var(--muted-foreground)) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Message Bubbles */
+.str-chat__li {
+    margin-bottom: 2px !important;
+}
+
+.str-chat__message-simple__content {
+  border-radius: 18px !important;
+  padding: 10px 16px !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
+  max-width: 85% !important;
+  font-size: 14.5px !important;
+  line-height: 1.5 !important;
+}
+
+/* Received Messages */
+.str-chat__message-simple__content {
+  background-color: hsl(var(--card)) !important;
+  border-color: hsl(var(--border) / 0.4) !important;
+  color: hsl(var(--foreground)) !important;
+  border-bottom-left-radius: 4px !important;
+}
+
+/* Sent Messages */
+.str-chat__message-simple--me .str-chat__message-simple__content {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  border-bottom-left-radius: 18px !important; /* Reset */
+  border-bottom-right-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+.str-chat__message-text {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Input Area - Floating Pill Style */
+.str-chat__message-input {
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+.str-chat__input-flat {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.str-chat__input-flat-wrapper {
+  background-color: hsl(var(--muted) / 0.5) !important;
+  border: 1px solid hsl(var(--border) / 0.5) !important;
+  border-radius: 24px !important;
+  padding: 4px 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.str-chat__input-flat-wrapper:focus-within {
+     border-color: hsl(var(--ring) / 0.5) !important;
+     background-color: hsl(var(--background)) !important;
+     box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2) !important;
+}
+
+.str-chat__textarea {
+    background: transparent !important;
+}
+
+.str-chat__textarea textarea {
+    background: transparent !important;
+    color: hsl(var(--foreground)) !important;
+    font-size: 14.5px !important;
+    padding: 12px !important;
+}
+
+.str-chat__textarea textarea::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Input Icons/Buttons */
+.str-chat__input-flat .str-chat__file-input-container {
+    margin-right: -4px !important;
+}
+
+.str-chat__input-flat svg {
+    fill: hsl(var(--muted-foreground)) !important;
+    transition: fill 0.2s ease !important;
+}
+
+.str-chat__input-flat svg:hover {
+    fill: hsl(var(--primary)) !important;
+}
+
+.str-chat__send-button {
+    margin-left: 4px !important;
+}
+
+/* Hide default headers */
+.str-chat__header-livestream {
+  display: none !important;
+}
+
+/* Reaction Lists */
+.str-chat__reaction-list {
+    background-color: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 20px !important;
+    padding: 4px 8px !important;
+}
+
+.str-chat__reaction-list ul li button {
+    background: transparent !important;
+}
+
+/* Thread Styling */
+.str-chat__thread {
+    background-color: hsl(var(--background)) !important;
+    border-left: 1px solid hsl(var(--border)) !important;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.02) !important;
+    z-index: 50 !important;
+}
+
+.str-chat__thread-header {
+    background-color: hsl(var(--background)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
+    height: 72px !important; /* Match main header */
+}
+
+/* Scrollbar */
+.str-chat__list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.str-chat__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.str-chat__list::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 20px;
+}
+
+/* FIX: Message Actions Positioning */
+.str-chat__message-simple__actions {
+    position: absolute !important;
+    top: -24px !important;
+    right: 0 !important;
+    z-index: 10 !important;
+    display: none; /* Hide by default, show on hover */
+}
+
+/* Toggle visibility on hover of the message content */
+.str-chat__message-simple--me:hover .str-chat__message-simple__actions,
+.str-chat__message-simple--other:hover .str-chat__message-simple__actions {
+    display: flex !important;
+}
+
+/* Left-aligned messages (received) */
+.str-chat__message-simple--other .str-chat__message-simple__actions {
+    left: 0 !important;
+    right: auto !important;
+}
+
+/* Options Menu (Dropdown) */
+.str-chat__message-actions-box {
+    position: absolute !important;
+    /* Default vertical is handled by smart positioning or global default */
+    background-color: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    z-index: 100 !important;
+    margin-top: 4px !important;
+    width: 200px !important;
+}
+
+/* ALIGNMENT LOGIC: Open Towards Center */
+
+/* My Message (Sent) -> Anchor Right (Grows Left) */
+.str-chat__message-simple--me .str-chat__message-actions-box,
+.str-chat__message-simple--me .str-chat__reaction-selector {
+    left: auto !important;
+    right: 0 !important;
+}
+
+/* Other Message (Received) -> Anchor Left (Grows Right) */
+.str-chat__message-simple--other .str-chat__message-actions-box,
+.str-chat__message-simple--other .str-chat__reaction-selector {
+    right: auto !important;
+    left: 0 !important;
+}
+
+/* Ensure reactions menu is also positioned well */
+.str-chat__reaction-selector {
+    background-color: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 24px !important;
+    padding: 4px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    margin-bottom: 8px !important;
+    /* Default position handled by alignment rules */
+    position: absolute !important;
+}
+
+/* Sidebar Active State - Premium Highlight */
+.str-chat__channel-preview-messenger {
+    border: 1px solid transparent !important;
+    margin-bottom: 4px !important;
+    border-radius: 12px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.str-chat__channel-preview-messenger:hover {
+    background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+/* Increased specificity and opacity for visibility */
+.str-chat__channel-preview-messenger.str-chat__channel-preview-messenger--active {
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.25) 0%, hsl(var(--primary) / 0.05) 100%) !important;
+    border: 1px solid hsl(var(--primary) / 0.3) !important;
+    border-left: 4px solid hsl(var(--primary)) !important;
+    box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.25) !important;
+}
+
+.str-chat__channel-preview-messenger--active .str-chat__channel-preview-messenger--name {
+    color: hsl(var(--primary)) !important;
+    font-weight: 600 !important;
+}
+
+.str-chat__channel-preview-messenger--active .str-chat__channel-preview-messenger--last-message {
+    color: hsl(var(--primary) / 0.8) !important;
+}

@@ -1,0 +1,413 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ANIMATIONS */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-shine {
+    animation: shine 2s linear infinite;
+}
+
+@keyframes shine {
+    from { transform: translateX(-100%) skewX(-12deg); }
+    to { transform: translateX(200%) skewX(-12deg); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+    will-change: transform, opacity;
+}
+
+.delay-100 {
+    animation-delay: 100ms;
+}
+
+/* UTILITIES */
+.mask-fade-bottom {
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+/* LIGHT MODE: "Professional Slate" - Clean, Trustworthy, Sophisticated */
+:root {
+  --background: oklch(0.99 0 0); /* Pure White */
+  --foreground: oklch(0.13 0.03 260); /* Deep Slate */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0.03 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0.03 260);
+  --primary: oklch(0.45 0.15 260); /* Fintech Blue - Confident */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0.01 260); /* Cool Gray Surface */
+  --secondary-foreground: oklch(0.25 0.05 260);
+  --muted: oklch(0.96 0.01 260);
+  --muted-foreground: oklch(0.45 0.04 260);
+  --accent: oklch(0.94 0.03 260); /* Subtle Blue Tint */
+  --accent-foreground: oklch(0.25 0.05 260);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.92 0.02 260);
+  --input: oklch(0.92 0.02 260);
+  --ring: oklch(0.45 0.15 260);
+  
+  /* Charts - Professional & Distinct */
+  --chart-1: oklch(0.45 0.15 260); /* Primary Blue */
+  --chart-2: oklch(0.55 0.15 200); /* Teal */
+  --chart-3: oklch(0.6 0.15 150); /* Green */
+  --chart-4: oklch(0.6 0.15 80);  /* Orange */
+  --chart-5: oklch(0.55 0.15 30);  /* Red */
+
+  /* Premium Sidebar - Light Mode */
+  --sidebar: oklch(0.99 0 0);
+  --sidebar-foreground: oklch(0.13 0.03 260);
+  --sidebar-primary: oklch(0.45 0.15 260);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.96 0.01 260);
+  --sidebar-accent-foreground: oklch(0.13 0.03 260);
+  --sidebar-border: oklch(0.95 0.01 260);
+  --sidebar-ring: oklch(0.45 0.15 260);
+  
+  /* FONTS */
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  /* SHADOWS & RADIUS */
+  --radius: 0.5rem;
+  --shadow-color: 260 20% 10%; /* Cool shadow color */
+  --shadow-2xs: 0 1px 2px 0 rgb(var(--shadow-color) / 0.05);
+  --shadow-xs: 0 1px 2px 0 rgb(var(--shadow-color) / 0.05);
+  --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color) / 0.05);
+  --shadow: 0 4px 6px -1px rgb(var(--shadow-color) / 0.1),
+    0 2px 4px -2px rgb(var(--shadow-color) / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color) / 0.1),
+    0 2px 4px -2px rgb(var(--shadow-color) / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color) / 0.1),
+    0 4px 6px -4px rgb(var(--shadow-color) / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(var(--shadow-color) / 0.1),
+    0 8px 10px -6px rgb(var(--shadow-color) / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(var(--shadow-color) / 0.25);
+}
+
+.dark {
+  /* DARK MODE: "Obsidian Void" - Deep, Rich, Eye-Comfort for Traders */
+  
+  --background: oklch(0.12 0.03 260); /* Deepest Blue-Black */
+  --foreground: oklch(0.98 0 0);
+
+  /* Card: Elevated Surface */
+  --card: oklch(0.17 0.03 260);
+  --card-foreground: oklch(0.98 0 0);
+
+  --popover: oklch(0.17 0.03 260);
+  --popover-foreground: oklch(0.98 0 0);
+
+  /* Primary: Electric Indigo - High Visibility */
+  --primary: oklch(0.6 0.18 270);
+  --primary-foreground: oklch(0.1 0.05 260);
+
+  /* Secondary: Subtle Depth */
+  --secondary: oklch(0.25 0.04 260);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  /* Muted: Low Contrast */
+  --muted: oklch(0.25 0.04 260);
+  --muted-foreground: oklch(0.7 0.03 260);
+
+  /* Accent: Interactive Hover */
+  --accent: oklch(0.25 0.05 260);
+  --accent-foreground: oklch(0.98 0 0);
+
+  /* Destructive */
+  --destructive: oklch(0.6 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  /* Border: Subtle Separation */
+  --border: oklch(0.25 0.04 260);
+  --input: oklch(0.25 0.04 260);
+  --ring: oklch(0.6 0.18 270);
+
+  /* Chart Colors - Neon/Vibrant for Dark Mode */
+  --chart-1: oklch(0.6 0.18 270); /* Match Primary */
+  --chart-2: oklch(0.65 0.18 200);
+  --chart-3: oklch(0.7 0.18 150);
+  --chart-4: oklch(0.7 0.18 80);
+  --chart-5: oklch(0.65 0.18 30);
+
+  /* Sidebar */
+  /* Premium Sidebar - Dark Mode */
+  --sidebar: oklch(0.10 0.02 260); /* Deep, almost black blue */
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.6 0.18 270);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.16 0.03 260);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.16 0.03 260);
+  --sidebar-ring: oklch(0.6 0.18 270);
+
+  /* Fonts & Radius maintained */
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --radius: 0.5rem;
+
+  /* Shadows - Glow Effect for Dark Mode */
+  --shadow-color: 270 50% 50%; /* Indigo Glow */
+  --shadow-2xs: 0 0 0 1px rgb(var(--shadow-color) / 0.1);
+  --shadow-xs: 0 1px 2px 0 rgb(var(--shadow-color) / 0.1);
+  --shadow-sm: 0 1px 3px 0 rgb(var(--shadow-color) / 0.1);
+  --shadow: 0 4px 6px -1px rgb(var(--shadow-color) / 0.15),
+    0 2px 4px -2px rgb(var(--shadow-color) / 0.15);
+  --shadow-md: 0 6px 12px -2px rgb(var(--shadow-color) / 0.2);
+  --shadow-lg: 0 10px 20px -3px rgb(var(--shadow-color) / 0.25);
+  --shadow-xl: 0 20px 30px -5px rgb(var(--shadow-color) / 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgb(var(--shadow-color) / 0.4);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* STREAM CHAT OVERRIDES */
+
+/* Message List Container */
+
+
+/* Allow Virtual List to maintain its logic */
+.str-chat__virtual-list {
+    /* No overrides needed */
+}
+
+/* Ensure Main Panel clips correctly for scroll and LAYOUT */
+.str-chat__main-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+}
+
+/* Message Bubbles */
+.str-chat__message-simple {
+    padding-bottom: 8px;
+}
+
+.str-chat__message-inner {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.str-chat__message-text-inner {
+    border-radius: 18px !important;
+    padding: 10px 16px !important;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* My Messages (Sent) */
+.str-chat__message-simple--me .str-chat__message-text-inner {
+    background-color: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+    border-bottom-right-radius: 4px !important;
+}
+
+/* Their Messages (Received) */
+.str-chat__message-simple--other .str-chat__message-text-inner {
+    background-color: var(--muted) !important;
+    color: var(--foreground) !important;
+    border-bottom-left-radius: 4px !important;
+}
+
+/* Message Input Area */
+.str-chat__input-flat {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 16px !important;
+}
+
+.str-chat__input-flat-wrapper {
+    background-color: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 9999px !important; /* Pill shape */
+    padding: 4px 16px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    align-items: center;
+}
+
+.str-chat__textarea textarea {
+    background: transparent !important;
+    color: var(--foreground) !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+}
+
+.str-chat__textarea textarea::placeholder {
+    color: var(--muted-foreground) !important;
+}
+
+/* Hide default send button background */
+.str-chat__send-button {
+    background: transparent !important;
+    color: var(--primary) !important;
+}
+
+.str-chat__send-button:hover {
+    background: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+    border-radius: 50%;
+}
+
+/* Date Separators */
+.str-chat__date-separator-line {
+    background-color: var(--border) !important;
+}
+
+.str-chat__date-separator-date {
+    background-color: var(--background) !important;
+    color: var(--muted-foreground) !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Avatars in Message List */
+.str-chat__avatar-image {
+    border-radius: 50% !important;
+}
+
+/* Reactions */
+.str-chat__reaction-list {
+    background-color: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 4px 8px !important;
+}
+
+
+/* LIVESTREAM CHAT SPECIFIC OVERRIDES (Glassmorphism) */
+.livestream-chat-theme .str-chat__message-simple--me .str-chat__message-text-inner {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(10px);
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.livestream-chat-theme .str-chat__message-simple--other .str-chat__message-text-inner {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px);
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.livestream-chat-theme .str-chat__input-flat-wrapper {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+}
+
+.livestream-chat-theme .str-chat__textarea textarea {
+    color: white !important;
+}
+
+.livestream-chat-theme .str-chat__textarea textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.livestream-chat-theme .str-chat__send-button {
+    color: white !important;
+}
+
+.livestream-chat-theme .str-chat__send-button:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* FIX: Z-Index for Message Actions / Popups */
+.str-chat__message-actions-box,
+.str-chat__reaction-selector,
+.str-chat__message-actions-list,
+.str-chat__list.str-chat__list--options,
+.str-chat__tooltip {
+    z-index: 9999 !important;
+}
+
+/* Ensure React Portal root is high if used */
+#root-portal, .str-chat__portal {
+    z-index: 9999 !important;
+}

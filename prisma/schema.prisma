@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                    String         @id
+  name                  String
+  email                 String         @unique
+  emailVerified         Boolean        @default(false)
+  image                 String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  username              String?        @unique
+  banExpires            DateTime?
+  banReason             String?
+  banned                Boolean?       @default(false)
+  displayUsername       String?
+  bio                   String?
+  isSebiVerified        Boolean        @default(false)
+  isVerified            Boolean        @default(false)
+  location              String?
+  website               String?
+  role                  Role           @default(USER)
+  isSubscriptionEnabled Boolean        @default(false)
+  subscriptionPrice     Int            @default(0)
+  subscriptionChannelId String?
+  expertise             String[]       @default([])
+  articles              Article[]
+  comments              Comment[]
+  courses               Course[]
+  enrollment            Enrollment[]
+  likes                 Like[]
+  posts                 Post[]
+  reviews               Review[]
+  savedPosts            SavedPost[]
+  subscribedTo          Subscription[] @relation("subscribedTo")
+  subscribers           Subscription[] @relation("subscriber")
+  accounts              Account[]
+  following             Follow[]       @relation("follower")
+  followedBy            Follow[]       @relation("following")
+  sessions              Session[]
+  notificationsReceived Notification[] @relation("notificationsReceived")
+  notificationsSent     Notification[] @relation("notificationsSent")
+  notifications         Notification[]
+
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  impersonatedBy String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Post {
+  id             String         @id @default(cuid())
+  content        String?
+  visibility     PostVisibility @default(PUBLIC)
+  authorId       String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  originalPostId String?
+  comments       Comment[]
+  likes          Like[]
+  media          Media[]
+  author         User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  Post           Post?          @relation("PostToPost", fields: [originalPostId], references: [id])
+  other_Post     Post[]         @relation("PostToPost")
+  savedBy        SavedPost[]
+
+  @@index([authorId])
+  @@index([originalPostId])
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  url       String
+  type      MediaType
+  width     Int?
+  height    Int?
+  order     Int       @default(0)
+  postId    String?
+  createdAt DateTime  @default(now())
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String
+  userId    String
+  postId    String
+  parentId  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follow")
+}
+
+model Course {
+  id               String       @id @default(uuid())
+  title            String
+  description      String
+  fileKey          String
+  price            Int
+  duration         Int
+  level            CourseLevel  @default(Beginner)
+  category         String
+  smallDescription String
+  slug             String       @unique
+  status           CourseStatus @default(Draft)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  userId           String
+  chapter          Chapter[]
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment       Enrollment[]
+  reviews          Review[]
+}
+
+model Chapter {
+  id        String   @id @default(uuid())
+  title     String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id           String   @id @default(uuid())
+  title        String
+  position     Int
+  description  String?
+  thumbnailKey String?
+  videoKey     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  chapterId    String
+  chapter      Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+model Enrollment {
+  id        String           @id @default(uuid())
+  amount    Int
+  status    EnrollmentStatus @default(Pending)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  userId    String
+  courseId  String
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model Article {
+  id           String        @id @default(uuid())
+  title        String
+  slug         String        @unique
+  content      String
+  thumbnailKey String?
+  category     String
+  status       ArticleStatus @default(DRAFT)
+  authorId     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  courseId  String
+  parentId  String?
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id])
+  replies   Review[] @relation("ReviewReplies")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model Subscription {
+  id             String             @id @default(uuid())
+  status         SubscriptionStatus @default(PENDING)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  subscriberId   String
+  subscribedToId String
+  subscribedTo   User               @relation("subscribedTo", fields: [subscribedToId], references: [id], onDelete: Cascade)
+  subscriber     User               @relation("subscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, subscribedToId])
+  @@index([subscriberId])
+  @@index([subscribedToId])
+}
+
+enum Role {
+  ADMIN
+  CREATOR
+  USER
+}
+
+enum PostVisibility {
+  PUBLIC
+  FOLLOWERS
+  PRIVATE
+  SUBSCRIBER
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum CourseLevel {
+  Beginner
+  Intermediate
+  Advanced
+}
+
+enum CourseStatus {
+  Draft
+  Published
+  Achieved
+}
+
+enum EnrollmentStatus {
+  Pending
+  Active
+  Cancelled
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+}
+
+enum NotificationType {
+  LIKE
+  FOLLOW
+  COMMENT
+  REPLY
+  SYSTEM
+  MENTION
+  REPOST
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  actorId     String?
+  type        NotificationType
+  entityId    String? // ID of the post, comment, etc.
+  message     String? // Optional custom message
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  recipient User    @relation("notificationsReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User?   @relation("notificationsSent", fields: [actorId], references: [id], onDelete: Cascade)
+  user      User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  @@index([recipientId])
+  @@index([actorId])
+  @@index([createdAt])
+}

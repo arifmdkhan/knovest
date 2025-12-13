@@ -1,0 +1,15 @@
+import { creatorGetLesson } from "@/app/data/creator/creator-get-lesson";
+import { LessonForm } from "./_components/lesson-form";
+
+
+type Params = Promise<{ courseId: string; chapterId: string; lessonId: string }>
+
+export default async function LessonIdPage({ params }: { params: Params }) {
+    const { courseId, chapterId, lessonId } = await params;
+
+    const lesson = await creatorGetLesson(lessonId);
+
+    return (
+        <LessonForm data={lesson} chapterId={chapterId} courseId={courseId} />
+    )
+}
