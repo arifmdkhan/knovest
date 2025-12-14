@@ -18,11 +18,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Shield, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, LogOut, Trash2 } from "lucide-react";
+import { MoreHorizontal, Shield, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, LogOut, Trash2, RefreshCw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Role } from "@/generated/prisma/client";
 import { banUser, unbanUser, updateUserRole, revokeUserSessions, removeUser, updateUserVerification } from "@/server/actions/admin";
+import { restoreStreamUsers } from "@/server/actions/stream";
 import { toast } from "sonner";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -153,6 +154,17 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
             router.refresh();
         } else {
             toast.error("Failed to update verification");
+        }
+    };
+
+    const handleRestoreStreamUser = async (userId: string) => {
+        setIsLoading(userId);
+        const res = await restoreStreamUsers([userId]);
+        setIsLoading(null);
+        if (res.success) {
+            toast.success("Stream user restored successfully");
+        } else {
+            toast.error("Failed to restore stream user");
         }
     };
 
@@ -287,6 +299,9 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => handleRevokeSessions(user.id)}>
                                                     <LogOut className="mr-2 h-4 w-4" /> Revoke Sessions
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleRestoreStreamUser(user.id)}>
+                                                    <RefreshCw className="mr-2 h-4 w-4" /> Restore Stream User
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleDeleteUser(user.id)} className="text-destructive focus:text-destructive">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete User

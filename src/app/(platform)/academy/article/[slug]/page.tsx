@@ -12,6 +12,7 @@ import { notFound } from "next/navigation";
 
 import { calculateReadTime } from "@/lib/utils";
 import { constructUrl } from "@/lib/construct-url";
+import { buttonVariants } from "@/components/ui/button";
 
 interface ArticleDetailPageProps {
     params: Promise<{
@@ -31,16 +32,16 @@ export default async function ArticleDetailPage({ params }: ArticleDetailPagePro
     const readTime = calculateReadTime(article.content);
 
     return (
-        <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
+        <div className="min-h-screen bg-background text-foreground p-2 md:p-4 relative overflow-hidden">
             {/* Background Ambient Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-pink-500/10 rounded-full blur-[120px] animate-pulse" />
             </div>
 
             <div className="relative z-10 max-w-4xl mx-auto space-y-8">
-                <Link
+             <Link
                     href="/academy/article"
-                    className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
+                    className={buttonVariants({ variant: 'outline' })}
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back to Articles
                 </Link>

@@ -2,6 +2,7 @@ import { getPublishedArticles } from "@/app/data/article/get-published-articles"
 import { ArticleCard } from "./_components/article-card";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 
 export default async function ArticleListPage() {
     const articles = await getPublishedArticles();
@@ -14,7 +15,9 @@ export default async function ArticleListPage() {
             </div>
 
             <div className="relative z-10 max-w-7xl mx-auto space-y-8">
-                <Link href="/academy" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                    href="/academy"
+                    className={buttonVariants({ variant: 'outline' })}>
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back to Academy
                 </Link>
 

@@ -4,7 +4,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { CheckIcon, ChevronDown, Clock, BarChart, BookOpen, PlayCircle, Star, Share2, Globe, MessageSquare } from 'lucide-react';
+import { CheckIcon, ChevronDown, Clock, BarChart, BookOpen, PlayCircle, Star, Share2, Globe, MessageSquare, ArrowLeft } from 'lucide-react';
 import Image from 'next/image'
 import { checkIfCourseBought } from '@/app/data/user/user-is-enrolled';
 import Link from 'next/link';
@@ -43,10 +43,18 @@ export default async function SlugPage({ params }: { params: Params }) {
                     className="object-cover opacity-10 blur-3xl scale-110"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
+                <div className="absolute inset-0 bg-linear-to-b from-background/80 via-background/50 to-background" />
             </div>
 
-            <div className="container mx-auto px-4 py-12 lg:py-16 relative z-10 max-w-7xl">
+            <div className="container mx-auto px-4 py-4 lg:py-6 relative z-10 max-w-7xl">
+                <div className="mb-8">
+                    <Link
+                        href="/academy/course"
+                        className={buttonVariants({ variant: 'outline' })}
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Courses
+                    </Link>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     {/* Hero Info (Left Top) */}
                     <div className="lg:col-span-2 space-y-6 order-1">

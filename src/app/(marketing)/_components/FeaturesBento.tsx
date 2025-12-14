@@ -158,8 +158,8 @@ export function FeatureBento() {
 
                 <div className="mt-auto flex items-center justify-between">
                   <div>
-                    <div className="text-lg font-bold">₹4,999</div>
-                    <div className="text-xs text-muted-foreground line-through">₹12,999</div>
+                    <div className="text-lg font-bold">₹2,999</div>
+                 
                   </div>
                   <Button size="sm" className="rounded-full px-4 shadow-lg shadow-primary/20" aria-label="Buy Technical Analysis Masterclass">
                     Buy Now

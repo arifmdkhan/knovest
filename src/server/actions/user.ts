@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { ApiResponse } from "@/lib/types";
 import { getServerSession } from "@/lib/get-sessions";
 import { createNotification } from "@/server/actions/notifications";
+import { syncStreamUser } from "@/server/actions/stream";
 
 const updateProfileSchema = z.object({
   name: z.string().min(2),
@@ -51,6 +52,13 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>): 
       console.warn("Failed to update auth session cache:", e);
       // Don't fail the whole request if just the session cache update fails
     }
+
+    // SC: Sync to Stream
+    await syncStreamUser(session.user.id, {
+      name: parsed.data.name,
+      // username: parsed.data.username is not available here, so we don't update it to avoid overwriting with undefined or wrong data.
+      image: parsed.data.image
+    });
 
     revalidatePath(`/profile/${session.user.username}`);
     return { status: "success", message: "Profile updated" };

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { UsersTable } from "./_components/users-table";
 import { getAdminUsers } from "@/app/data/admin/get-users";
 import { UsersTableSkeleton } from "./_components/users-table-skeleton";
+import { SyncStreamUsersButton } from "./_components/sync-stream-users-button";
 
 interface UsersPageProps {
     searchParams: Promise<{
@@ -24,6 +25,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                     <h1 className="text-3xl font-bold tracking-tight">Users</h1>
                     <p className="text-muted-foreground mt-2">Manage users, roles, and permissions.</p>
                 </div>
+                <SyncStreamUsersButton />
             </div>
 
             <Suspense fallback={<UsersTableSkeleton />}>

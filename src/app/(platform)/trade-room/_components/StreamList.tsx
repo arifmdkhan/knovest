@@ -305,7 +305,9 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                 <div className="flex items-center justify-between pt-1">
                                     <UserAvatarWithInfo
                                         name={call.state.createdBy?.name || "Unknown"}
-                                        username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username}
+                                        // Try standard location, custom location, and fallback to just the ID if needed (though UI handles that)
+                                        // Also, for 'name' fallback, we might not have a better option without fetching.
+                                        username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username || "user"}
                                         image={call.state.createdBy?.image || null}
                                         avatarClassName="h-8 w-8 ring-2 ring-white dark:ring-zinc-800"
                                     />

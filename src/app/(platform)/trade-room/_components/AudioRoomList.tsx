@@ -276,7 +276,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                                 <div className="flex items-center justify-between pt-1">
                                     <UserAvatarWithInfo
                                         name={call.state.createdBy?.name || "Unknown"}
-                                        username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username}
+                                        username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username || "user"}
                                         image={call.state.createdBy?.image || null}
                                         avatarClassName="h-8 w-8"
                                     />

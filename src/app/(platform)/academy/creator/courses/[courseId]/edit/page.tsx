@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import EditCourseForm from './_components/edit-course-form'
 import CourseStructure from './_components/course-structure'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button'
 
 type Params = Promise<{ courseId: string }>
 export default async function EditCourseRoute({ params }: { params: Params }) {
@@ -12,6 +15,14 @@ export default async function EditCourseRoute({ params }: { params: Params }) {
 
     return (
         <div>
+            <div className="mb-8">
+                <Link
+                    href="/academy/creator"
+                    className={buttonVariants({ variant: 'outline' })}
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                </Link>
+            </div>
             <div className="mb-8 pb-5 border-b border-gray-500">
                 <h1 className="text-3xl font-bold">
                     ✏️ Edit Course:{' '}

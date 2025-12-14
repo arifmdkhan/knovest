@@ -19,7 +19,7 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 
     // Calculate progress (mock logic for now, can be replaced with real data)
     const totalLessons = course.chapter.reduce((acc, chapter) => acc + chapter.lessons.length, 0);
-    const completedLessons = 5; // Placeholder
+    const completedLessons = 0; // Placeholder
     const progress = (completedLessons / totalLessons) * 100;
 
     return (

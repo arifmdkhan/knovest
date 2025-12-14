@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, Timer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,19 +19,57 @@ export function OTPForm() {
 
   const [otp, setOtp] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [attempts, setAttempts] = useState(0);
-  const [isLocked, setIsLocked] = useState(false);
+  // Lazy initialization for attempts
+  const [attempts, setAttempts] = useState(() => {
+    if (typeof window === 'undefined' || !email) return 0;
+    const stored = localStorage.getItem(`otp_attempts_${email}`);
+    return stored ? parseInt(stored) : 0;
+  });
 
+  // Lazy initialization for locked state
+  const [isLocked, setIsLocked] = useState(() => {
+    if (typeof window === 'undefined' || !email) return false;
+    const stored = localStorage.getItem(`otp_attempts_${email}`);
+    return stored ? parseInt(stored) >= 3 : false;
+  });
+
+  // Lazy initialization for timer
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (typeof window === 'undefined' || !email) return 30; // Default to 30s so button starts disabled
+    const lastResend = localStorage.getItem(`otp_last_resend_${email}`);
+
+    if (lastResend) {
+      const lastTime = parseInt(lastResend);
+      const diffInSeconds = Math.floor((Date.now() - lastTime) / 1000);
+      if (diffInSeconds < 30) return 30 - diffInSeconds;
+    }
+
+    // If no timer exists, we want to START one (Strict Mode logic)
+    // We can't write to localStorage in render, so we return 30 
+    // and rely on a simpler effect to sync the timestamp if missing.
+    return 30;
+  });
+
+  // Effect to ensure start timestamp exists if we have timeLeft > 0
   useEffect(() => {
-    if (email) {
-      const storedAttempts = localStorage.getItem(`otp_attempts_${email}`);
-      if (storedAttempts) {
-        const count = parseInt(storedAttempts);
-        setAttempts(count);
-        if (count >= 3) setIsLocked(true);
+    if (email && timeLeft > 0) {
+      const lastResend = localStorage.getItem(`otp_last_resend_${email}`);
+      if (!lastResend) {
+        localStorage.setItem(`otp_last_resend_${email}`, Date.now().toString());
       }
     }
-  }, [email]);
+  }, [email, timeLeft]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [timeLeft]);
 
   const verifyOtp = () => {
     if (!email) return;
@@ -54,6 +92,10 @@ export function OTPForm() {
               });
               sessionStorage.removeItem("pending_reg");
             }
+            // Clear OTP tracking on success
+            localStorage.removeItem(`otp_attempts_${email}`);
+            localStorage.removeItem(`otp_last_resend_${email}`);
+
             toast.success("Welcome!");
             router.push("/home");
           },
@@ -66,7 +108,7 @@ export function OTPForm() {
   };
 
   const handleResend = () => {
-    if (!email || isLocked) return;
+    if (!email || isLocked || timeLeft > 0) return;
 
     startTransition(async () => {
       await authClient.emailOtp.sendVerificationOtp({
@@ -76,11 +118,17 @@ export function OTPForm() {
           onSuccess: () => {
             const newCount = attempts + 1;
             setAttempts(newCount);
+
+            // Persist State
             localStorage.setItem(`otp_attempts_${email}`, newCount.toString());
+            localStorage.setItem(`otp_last_resend_${email}`, Date.now().toString());
+
+            // Start Timer
+            setTimeLeft(30);
 
             if (newCount >= 3) {
               setIsLocked(true);
-              toast.error("Max attempts reached. Try again later.");
+              toast.error("Max attempts reached. Please try again later.");
             } else {
               toast.success(`Code resent. ${3 - newCount} attempts left.`);
             }
@@ -112,16 +160,35 @@ export function OTPForm() {
           {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify"}
         </Button>
 
-        <div className="text-center">
+        <div className="text-center w-full">
           {isLocked ? (
-            <span className="text-xs text-destructive flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> Max attempts reached
-            </span>
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4" /> Max resend attempts reached
+            </div>
           ) : (
-            <Button variant="link" size="sm" onClick={handleResend} disabled={isPending}>
-              <RefreshCw className={`w-3 h-3 mr-2 ${isPending ? "animate-spin" : ""}`} />
-              Resend Code
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResend}
+              disabled={isPending || timeLeft > 0}
+              className="w-full text-muted-foreground hover:text-foreground"
+            >
+              {timeLeft > 0 ? (
+                <span className="flex items-center gap-2">
+                  <Timer className="w-3 h-3" /> Resend available in {timeLeft}s
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <RefreshCw className={`w-3 h-3 ${isPending ? "animate-spin" : ""}`} />
+                  Resend Code
+                </span>
+              )}
             </Button>
+          )}
+          {!isLocked && (
+            <p className="text-[10px] text-muted-foreground mt-2">
+              {3 - attempts} resend attempts remaining
+            </p>
           )}
         </div>
       </CardContent>

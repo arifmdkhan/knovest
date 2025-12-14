@@ -7,11 +7,16 @@ import {
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, MessageCircle, UserPlus, Check } from "lucide-react";
+import { CalendarDays, MessageCircle, UserPlus, Check, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getUserProfile } from "@/server/actions/user";
+import { getUserProfile, toggleFollow } from "@/server/actions/user";
+import { createDM } from "@/server/actions/stream";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
+import { Badge } from "@/components/ui/badge";
 
 interface UserHoverCardProps {
     username: string;
@@ -39,19 +44,79 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
+    // New state for interactivity
+    const { data: session } = authClient.useSession();
+    const router = useRouter();
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+    const [isMessaging, setIsMessaging] = useState(false);
+
     useEffect(() => {
         if (isOpen && !data && !isLoading) {
             setIsLoading(true);
             getUserProfile(username)
                 .then((profile) => {
                     if (profile) {
-                        // @ts-ignore - casting the response to match our interface for now
-                        setData(profile as UserProfileData);
+                        const profileData = profile as UserProfileData;
+                        setData(profileData);
+                        setIsFollowing(profileData.isFollowing);
+                        setFollowersCount(profileData.followersCount);
                     }
                 })
                 .finally(() => setIsLoading(false));
         }
     }, [isOpen, username, data, isLoading]);
+
+    const handleFollow = async () => {
+        if (!session) {
+            toast.error("Please login to follow users");
+            return;
+        }
+        if (isActionLoading || !data) return;
+
+        const prevFollowing = isFollowing;
+        const prevCount = followersCount;
+
+        setIsFollowing(!isFollowing);
+        setFollowersCount(prev => isFollowing ? prev - 1 : prev + 1);
+        setIsActionLoading(true);
+
+        try {
+            const res = await toggleFollow(data.id);
+            if (res.status === "error") throw new Error(res.message);
+
+            if (res.data) {
+                setIsFollowing(res.data.isFollowing);
+                setFollowersCount(res.data.followersCount);
+            }
+            toast.success(res.message);
+        } catch (error: any) {
+            setIsFollowing(prevFollowing);
+            setFollowersCount(prevCount);
+            toast.error(error.message || "Failed to follow");
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleMessage = async () => {
+        if (!session) {
+            toast.error("Please login to message users");
+            return;
+        }
+        if (!data) return;
+
+        setIsMessaging(true);
+        try {
+            const channelId = await createDM(data.id);
+            router.push(`/chat/${channelId}`);
+        } catch (error) {
+            toast.error("Failed to start chat");
+        } finally {
+            setIsMessaging(false);
+        }
+    };
 
     const joinDate = data?.createdAt ? new Date(data.createdAt).toLocaleDateString("en-US", {
         month: "long",
@@ -84,16 +149,44 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
                                     <AvatarFallback>{data.name?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant={data.isFollowing ? "outline" : "default"} className={cn("h-8 rounded-full px-4 font-medium transition-all text-xs", data.isFollowing ? "text-muted-foreground w-24" : "w-20")}>
-                                        {data.isFollowing ? "Following" : "Follow"}
-                                    </Button>
-                                    <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full">
-                                        <MessageCircle className="h-4 w-4" />
-                                    </Button>
+                                    {session?.user?.id !== data.id && (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                onClick={handleFollow}
+                                                disabled={isActionLoading}
+                                                variant={isFollowing ? "outline" : "default"}
+                                                className={cn("h-8 rounded-full px-4 font-medium transition-all text-xs",
+                                                    isFollowing ? "text-muted-foreground w-24" : "w-20"
+                                                )}
+                                            >
+                                                {isFollowing ? "Following" : "Follow"}
+                                            </Button>
+                                            <Button
+                                                size="icon"
+                                                variant="secondary"
+                                                className="h-8 w-8 rounded-full"
+                                                onClick={handleMessage}
+                                                disabled={isMessaging}
+                                            >
+                                                <MessageCircle className="h-4 w-4" />
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                             <div className="pt-2">
-                                <h4 className="text-sm font-semibold">{data.name}</h4>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <h4 className="text-sm font-semibold">{data.name}</h4>
+                                    {(data.isVerified || data.isSebiVerified) && (
+                                        <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                    )}
+                                    {data.isSebiVerified && (
+                                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1 h-5 px-1.5 text-[10px]">
+                                            <ShieldCheck className="w-3 h-3" /> SEBI RA
+                                        </Badge>
+                                    )}
+                                </div>
                                 <p className="text-xs text-muted-foreground">@{data.username}</p>
                             </div>
 
@@ -108,7 +201,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
                                     <span className="font-semibold text-foreground">{data.followingCount}</span> Following
                                 </div>
                                 <div className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
-                                    <span className="font-semibold text-foreground">{data.followersCount}</span> Followers
+                                    <span className="font-semibold text-foreground">{followersCount}</span> Followers
                                 </div>
                             </div>
 

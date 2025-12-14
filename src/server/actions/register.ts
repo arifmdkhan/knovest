@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 
 import { ApiResponse } from "@/lib/types";
 import { getServerSession } from "@/lib/get-sessions";
+import { syncStreamUser } from "@/server/actions/stream";
 
 
 // --- Action: Check Username Availability ---
@@ -49,6 +50,12 @@ export async function updateProfileAfterLogin(data: { name: string, username: st
         username: data.username.toLowerCase(),
         displayUsername: data.username
       }
+    });
+
+    // Sync to Stream
+    await syncStreamUser(session.user.id, {
+      name: data.name,
+      username: data.username
     });
 
     return { status: "success", message: "Profile updated" };

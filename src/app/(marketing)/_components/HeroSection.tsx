@@ -82,18 +82,6 @@ export function HeroSection() {
         <div className="relative w-full max-w-6xl mt-24 perspective-[2000px]">
 
 
-          <motion.div style={{ y: y1 }} className="absolute -bottom-8 -left-8 z-20 hidden md:block">
-            <div className="bg-card/80 backdrop-blur-sm border border-border/50 p-4 rounded-2xl shadow-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <div className="text-sm font-bold">2.4k Online</div>
-                <div className="text-xs text-muted-foreground">Active Traders</div>
-              </div>
-            </div>
-          </motion.div>
-
           <motion.div
             initial={{ opacity: 0, rotateX: 20, y: 100 }}
             animate={{ opacity: 1, rotateX: 0, y: 0 }}

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Check, Search, X } from "lucide-react";
 import { useChatContext } from "stream-chat-react";
 import { useDebounce } from "@/hooks/use-debounce";
+import { searchUsers } from "@/server/actions/user";
 import { Button } from "@/components/ui/button";
 import {
     Command,
@@ -70,28 +71,18 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
             return;
         }
 
-        const searchUsers = async () => {
+        const performSearch = async () => {
             setLoading(true);
             try {
-                if (!client) return;
-                const response = await client.queryUsers(
-                    {
-                        $or: [
-                            { name: { $autocomplete: debouncedQuery } },
-                            { username: { $autocomplete: debouncedQuery } },
-                            { id: { $autocomplete: debouncedQuery } }
-                        ],
-                        id: { $ne: client.userID! } as any // Exclude self
-                    },
-                    { name: 1, last_active: -1 },
-                    { limit: 10 }
-                );
+                // Use server action for reliable user search (Postgres)
+                // This ensures we get username, verification badges, etc. correctly
+                const results = await searchUsers(debouncedQuery);
 
-                setUsers(response.users.map(u => ({
+                setUsers(results.map(u => ({
                     id: u.id,
                     name: u.name,
-                    image: u.image,
-                    username: (u as any).username || (u as any).custom?.username
+                    image: u.image || undefined,
+                    username: u.username || undefined
                 })));
             } catch (error) {
                 console.error("Failed to search users", error);
@@ -100,8 +91,8 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
             }
         };
 
-        searchUsers();
-    }, [debouncedQuery, client]);
+        performSearch();
+    }, [debouncedQuery]); // Removed client dependency as we don't use it for search anymore
 
     const handleSelect = (user: UserResult) => {
         if (selectedUserIds.includes(user.id)) return;
