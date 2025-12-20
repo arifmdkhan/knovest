@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import "server-only";
 
 
-export async function getAllCourses(authorId?: string, category?: string) {
+export async function getAllCourses(authorId?: string, category?: string, userId?: string) {
   //   await new Promise((resolve) => setTimeout(resolve, 5000));
   const data = await prisma.course.findMany({
     where: {
@@ -38,6 +38,16 @@ export async function getAllCourses(authorId?: string, category?: string) {
           rating: true,
         },
       },
+      enrollment: userId ? {
+        where: {
+          userId: userId,
+          status: 'Active'
+        },
+        select: {
+          id: true,
+          status: true
+        }
+      } : false,
     },
   });
   return data;

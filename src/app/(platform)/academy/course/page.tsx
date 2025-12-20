@@ -4,20 +4,17 @@ import { PublicCourseCard, PublicCourseCardSkeleton } from './_components/Public
 import { CategoryFilter } from './_components/category-filter'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
 
 
 export default async function PublicCourseRoute({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
     const { category } = await searchParams
     return (
         <div className='container mx-auto px-4 py-12 max-w-7xl'>
-            <Link
-                href="/academy"
-                className={buttonVariants({ variant: 'outline' })}>
+            <Link href="/academy" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-8">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back to Academy
             </Link>
             <div className='flex flex-col space-y-4 mb-12 text-center'>
-                <h1 className='text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                <h1 className='text-4xl md:text-5xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
                     Explore Courses
                 </h1>
                 <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
@@ -35,8 +32,11 @@ export default async function PublicCourseRoute({ searchParams }: { searchParams
 }
 
 
+import { getServerSession } from "@/lib/get-sessions";
+
 async function RenderCourses({ category }: { category?: string }) {
-    const courses = await getAllCourses(undefined, category)
+    const session = await getServerSession();
+    const courses = await getAllCourses(undefined, category, session?.user?.id)
 
     if (courses.length === 0) {
         return (

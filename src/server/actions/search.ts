@@ -62,6 +62,12 @@ export async function searchGlobal(query: string) {
                             rating: true,
                         },
                     },
+                    enrollment: currentUserId ? {
+                        where: {
+                            userId: currentUserId,
+                            status: "Active",
+                        },
+                    } : false,
                 },
             }),
 

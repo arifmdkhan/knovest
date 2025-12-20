@@ -12,7 +12,7 @@ import Link from "next/link";
 import { SafeImage } from "@/components/ui/safe-image";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { ShareDialog } from "@/components/share-dialog";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface PublicCourseCardProps {
     data: PublicCourseType
@@ -20,13 +20,6 @@ interface PublicCourseCardProps {
 
 export function PublicCourseCard({ data }: PublicCourseCardProps) {
     const [isShareOpen, setIsShareOpen] = useState(false);
-    const [baseUrl, setBaseUrl] = useState("");
-
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            setBaseUrl(window.location.origin);
-        }
-    }, []);
 
     const thumbnailUrl = constructUrl(data.fileKey)
 
@@ -36,7 +29,9 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
             ? data.reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews
             : 0;
 
-    const shareUrl = `${baseUrl}/academy/course/${data.slug}`;
+    const shareUrl = typeof window !== "undefined"
+        ? `${window.location.origin}/academy/course/${data.slug}`
+        : "";
 
     return (
         <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:border-primary/20 flex flex-col h-full p-0">
@@ -55,6 +50,11 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                     <Badge variant="secondary" className="shadow-sm backdrop-blur-md bg-background/80 border-none">
                         {data.category}
                     </Badge>
+                    {data.enrollment && data.enrollment.length > 0 && data.enrollment[0].status === 'Active' && (
+                        <Badge className="shadow-sm backdrop-blur-md bg-primary text-primary-foreground border-none">
+                            Enrolled
+                        </Badge>
+                    )}
                 </div>
             </div>
 
@@ -147,12 +147,14 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                 </div>
             </CardFooter>
 
-            <ShareDialog
-                isOpen={isShareOpen}
-                onOpenChange={setIsShareOpen}
-                url={shareUrl}
-                title={`Check out this course: ${data.title}`}
-            />
+            {isShareOpen && (
+                <ShareDialog
+                    isOpen={isShareOpen}
+                    onOpenChange={setIsShareOpen}
+                    url={shareUrl}
+                    title={`Check out this course: ${data.title}`}
+                />
+            )}
         </Card>
     )
 }
