@@ -15,7 +15,6 @@ export const getProfileByUsername = cache(async (username: string) => {
                     followedBy: true, // This counts the 'followedBy' relation (Followers)
                     following: true,  // This counts the 'following' relation (Following)
                     posts: true,
-                    subscribedTo: true,
                 }
             },
             // Check if current user is following this profile
@@ -28,6 +27,15 @@ export const getProfileByUsername = cache(async (username: string) => {
     });
 
     if (!user) return null;
+
+    // Fetch active subscribers count separately
+    const subscribersCount = await prisma.subscription.count({
+        where: {
+            subscribedToId: user.id,
+            status: "ACTIVE"
+        }
+    });
+
     console.log(`[getProfileByUsername] Fetching ${username}, Image: ${user.image}`);
 
     return {
@@ -36,7 +44,7 @@ export const getProfileByUsername = cache(async (username: string) => {
         followersCount: user._count.followedBy, // Map 'followedBy' count to followersCount
         followingCount: user._count.following,  // Map 'following' count to followingCount
         postsCount: user._count.posts,
-        subscribersCount: user._count.subscribedTo,
+        subscribersCount: subscribersCount,
         // Remove internal relation arrays to keep the return object clean
         followedBy: undefined,
         _count: undefined,

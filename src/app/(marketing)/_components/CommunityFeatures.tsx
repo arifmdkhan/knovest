@@ -55,7 +55,7 @@ export function CommunityFeatures() {
                                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
                                         <div className="flex gap-3">
                                             <div>
-                                                <UserAvatarWithInfo image={'AK'} name="Arif Md Khan" username="amk" isVerified={true} />
+                                                 <UserAvatarWithInfo image={'./profile2.jpeg'} name="Kunal Verma" username="vermakunal" isVerified={true} isSebiVerified={true} />
 
                                             </div>
                                             <p className="text-sm text-muted-foreground">• 2m ago</p>
@@ -149,7 +149,7 @@ export function CommunityFeatures() {
                                         </div>
                                         <div className="flex-1 overflow-y-auto">
                                             {[
-                                                { name: "Subscription Group", msg: "AK: Watch 26,200...", time: "2m", active: true, avatar: "SG", color: "bg-primary" },
+                                                { name: "Subscription Group", msg: "KV: Watch 26,200...", time: "2m", active: true, avatar: "SG", color: "bg-primary" },
                                                 { name: "Crypto Whales", msg: "BTC pumping! 🚀", time: "5m", active: false, avatar: "CW", color: "bg-orange-500" },
                                                 { name: "Arif Md Khan", msg: "Hey", time: "1h", active: false, avatar: "AK", color: "bg-blue-500" },
                                                 { name: "Support", msg: "Ticket #1234 resolved", time: "2h", active: false, avatar: "SP", color: "bg-green-500" },
@@ -207,7 +207,7 @@ export function CommunityFeatures() {
                                         <div className="flex-1 p-3 space-y-3 overflow-hidden bg-linear-to-b from-background to-muted/10 relative">
                                             <div className="flex gap-2">
                                                 <Avatar className="w-6 h-6 mt-1">
-                                                    <AvatarFallback className="bg-primary/10 text-primary text-[9px]">AK</AvatarFallback>
+                                                    <AvatarFallback className="bg-primary/10 text-primary text-[9px]">KV</AvatarFallback>
                                                 </Avatar>
                                                 <div className="bg-muted/50 p-2 rounded-xl rounded-tl-none text-xs max-w-[85%]">
                                                     <p>Watch 26,200 levels.</p>

@@ -127,7 +127,7 @@ export function HeroSection() {
                 <div className="text-left overflow-hidden">
                   <div className="text-base font-bold truncate">Nifty 50 Live Scalping Session</div>
                   <div className="text-xs text-muted-foreground truncate flex items-center gap-2">
-                    <UserAvatarWithInfo image={'TM'} name="Trade Mania" username="trade_mania" isVerified={true} isSebiVerified={true} />
+                    <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" isVerified={true} isSebiVerified={true} />
 
                   </div>
                 </div>
@@ -141,7 +141,7 @@ export function HeroSection() {
                 <Badge variant="outline" className="text-[10px] h-5">PRO</Badge>
               </div>
               <div className="flex-1 p-4 space-y-4 overflow-hidden relative">
-                <div className="absolute inset-x-0 top-12 h-12 bg-gradient-to-b from-card/80 to-transparent z-10 pointer-events-none" />
+                <div className="absolute inset-x-0 top-12 h-12 bg-linear-to-b from-card/80 to-transparent z-10 pointer-events-none" />
 
                 {/* Mock Chat Messages */}
                 <div className="space-y-3 opacity-60">

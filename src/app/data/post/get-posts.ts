@@ -102,9 +102,10 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
             }
         } else if (type === 'SUBSCRIBED') {
             if (userId && subscribedToIds.length > 0) {
-                // Posts from subscribed users (All visibilities)
+                // Posts from subscribed users ONLY with SUBSCRIBER visibility
                 orConditions.push({
-                    authorId: { in: subscribedToIds }
+                    authorId: { in: subscribedToIds },
+                    visibility: 'SUBSCRIBER'
                 });
             } else {
                 orConditions.push({ id: 'NO_MATCH' });

@@ -21,7 +21,7 @@ export default async function PublicCourseRoute({ searchParams }: { searchParams
                     Explore Courses
                 </h1>
                 <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
-                    Discover our wide range of expert-led courses designed to help you master new skills and advance your career.
+                    Discover a curated selection of courses led by verified experts, built to help you develop real trading and investment skills.
                 </p>
             </div>
 

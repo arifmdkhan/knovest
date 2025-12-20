@@ -65,11 +65,11 @@ export function FeatureBento() {
                     <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src="/avatars/01.png" />
-                        <AvatarFallback>TM</AvatarFallback>
+                        <AvatarFallback>KV</AvatarFallback>
                       </Avatar>
                     </div>
                     <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-[8px] text-white font-medium flex items-center gap-1">
-                      <Mic className="w-2 h-2" /> Trade Mania
+                      <Mic className="w-2 h-2" /> Kunal Verma
                     </div>
                   </div>
 
@@ -153,7 +153,7 @@ export function FeatureBento() {
 
                 <div className="flex items-center gap-2 mb-6">
 
-                  <UserAvatarWithInfo image={'AK'} name="Arif Md Khan" username="amk" isVerified={true} />
+                   <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" isVerified={true} isSebiVerified={true} />
                 </div>
 
                 <div className="mt-auto flex items-center justify-between">

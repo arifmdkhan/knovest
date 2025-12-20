@@ -22,24 +22,7 @@ import { EditProfileDialog } from "./EditProfileDialog";
 import { SubscribeButton } from "./SubscribeButton";
 import { UserListDialog } from "./UserListDialog";
 
-interface ProfileData {
-  id: string;
-  name: string;
-  username: string | null;
-  image: string | null;
-  bio: string | null;
-  location: string | null;
-  website: string | null;
-  createdAt: Date;
-  isVerified: boolean;
-  isSebiVerified: boolean;
-  followersCount: number;
-  followingCount: number;
-  isFollowing: boolean;
-  isSubscriptionEnabled: boolean;
-  subscriptionPrice: number;
-  subscribersCount?: number;
-}
+import { ProfileData } from "@/lib/types";
 
 interface ProfileHeaderProps {
   profile: ProfileData;
@@ -203,9 +186,9 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           )}
 
           {/* Expertise Badges */}
-          {(profile as any).expertise && (profile as any).expertise.length > 0 && (
+          {profile.expertise && profile.expertise.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
-              {(profile as any).expertise.map((badge: string) => (
+              {profile.expertise.map((badge: string) => (
                 <Badge key={badge} variant="secondary" className="px-2.5 py-0.5 text-xs font-medium">
                   {badge}
                 </Badge>
@@ -261,7 +244,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                 disabled={!isCurrentUser}
               >
                 <span className="font-bold text-foreground">
-                  {(profile as any).subscribersCount || 0}
+                  {profile.subscribersCount || 0}
                 </span>{" "}
                 <span className="text-muted-foreground">Subscribers</span>
               </button>

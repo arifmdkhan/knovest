@@ -42,8 +42,10 @@ export async function cancelSubscription(subscriptionId: string) {
             }
         }
 
+        if (updatedSubscription.subscribedTo.username) {
+            revalidatePath(`/profile/${updatedSubscription.subscribedTo.username}`);
+        }
         revalidatePath("/settings");
-        revalidatePath("/(platform)/profile/[username]", "page");
 
         return { status: "success", message: "Subscription cancelled successfully" };
 

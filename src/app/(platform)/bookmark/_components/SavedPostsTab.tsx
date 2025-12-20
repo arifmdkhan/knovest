@@ -14,7 +14,7 @@ const fetchBookmarks = async ({ pageParam }: { pageParam?: string }) => {
     const params = new URLSearchParams();
     if (pageParam) params.append("cursor", pageParam);
 
-    const res = await fetch(`/api/posts/bookmarks?${params.toString()}`);
+    const res = await fetch(`/api/posts/bookmarks?${params.toString()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch bookmarks");
     return res.json();
 };

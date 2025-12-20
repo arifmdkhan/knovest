@@ -127,9 +127,23 @@ export async function toggleFollow(targetUserId: string): Promise<ApiResponse<{ 
       where: { followingId: targetUserId }
     });
 
-    // Revalidate the profile page to update the UI server-side as well
-    // NOTE: In a real app, you might want to fetch the username to revalidate specific path
-    // revalidatePath(`/profile/[username]`); 
+    // Revalidate the profile pages to update the UI server-side as well
+    // We need to revalidate both the target user's profile (to show new follower count)
+    // AND the current user's profile (to show updated following count)
+
+    // We don't have the usernames handy here easily without fetching, but we can try to fetch them 
+    // or just rely on client-side optimistic updates + eventual consistency. 
+    // However, the user complains about it "not displaying numbers" correctly even after refresh/action.
+
+    // Better approach: Let's fetch the usernames to be precise, or use path wildcards if Next.js supported them well (it doesn't for this).
+    // Actually, we can fetch the usernames quickly.
+    const [currentUser, targetUser] = await Promise.all([
+      prisma.user.findUnique({ where: { id: currentUserId }, select: { username: true } }),
+      prisma.user.findUnique({ where: { id: targetUserId }, select: { username: true } })
+    ]);
+
+    if (currentUser?.username) revalidatePath(`/profile/${currentUser.username}`);
+    if (targetUser?.username) revalidatePath(`/profile/${targetUser.username}`);
 
     return {
       status: "success",
@@ -215,4 +229,48 @@ export async function getUserProfile(username: string) {
   if (!username) return null;
   const user = await getProfileByUsername(username);
   return user;
+}
+
+export async function updateAccountSettings(data: { name: string; username: string }) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user) {
+      return { status: "error", message: "Unauthorized" };
+    }
+
+    const headerStore = await headers();
+
+    // 1. Update via Better Auth (Server-side)
+    // This updates the main User table and handles unique username checks
+    try {
+      const res = await auth.api.updateUser({
+        body: {
+          name: data.name,
+          username: data.username,
+        },
+        headers: headerStore
+      });
+      // better-auth might return null or user object? Docs aren't specific here but if it throws, we catch it.
+    } catch (e: any) {
+      // Better Auth throws error messages we can display
+      console.error("Auth Update Error:", e);
+      return { status: "error", message: e.message || "Failed to update account" };
+    }
+
+    // 2. Sync to Stream
+    await syncStreamUser(session.user.id, {
+      name: data.name,
+      username: data.username,
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/profile");
+    revalidatePath(`/profile/${data.username}`); // Revalidate new profile path
+
+    return { status: "success", message: "Account updated successfully" };
+
+  } catch (error) {
+    console.error("Update Account Error:", error);
+    return { status: "error", message: "An unexpected error occurred" };
+  }
 }

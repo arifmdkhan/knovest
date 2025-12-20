@@ -17,7 +17,8 @@ import {
   Link as LinkIcon,
   Trash2,
   Flag,
-  Share2
+  Share2,
+  UserStar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +64,7 @@ const VisibilityIcon = ({ visibility }: { visibility: string }) => {
   switch (visibility) {
     case "FOLLOWERS": return <Users className="w-3 h-3 text-muted-foreground" />;
     case "PRIVATE": return <Lock className="w-3 h-3 text-muted-foreground" />;
-    case "SUBSCRIBER": return <Users className="w-3 h-3 text-purple-500" />;
+    case "SUBSCRIBER": return <UserStar className="w-3 h-3 text-purple-500" />;
     default: return <Globe className="w-3 h-3 text-muted-foreground" />;
   }
 };

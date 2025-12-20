@@ -117,19 +117,31 @@ export function AccountForm({ user }: AccountFormProps) {
 
         startTransition(async () => {
             try {
-                const { error } = await authClient.updateUser({
+                // Use our wrapper action to ensure Stream sync
+                const { updateAccountSettings } = await import("@/server/actions/user");
+                const res = await updateAccountSettings({
                     name: data.name,
                     username: data.username,
-                    // Note: better-auth might expect `username` purely. 
                 });
 
-                if (error) {
-                    toast.error(error.message || "Failed to update profile");
+                if (res.status === "error") {
+                    toast.error(res.message || "Failed to update profile");
                     return;
                 }
 
+                // Also update client-side session if possible, or force refresh
+                // authClient.updateUser might update local session state, but since we did it server side, 
+                // we might need to refresh session. 
+                // However, router.refresh() should pull fresh data.
+
+                // Optional: Call authClient.refreshSession() if available, or just reload.
+
                 toast.success("Profile updated successfully");
-                router.refresh();
+                router.refresh(); // Refresh server components
+
+                // If username changed, we might want to redirect? 
+                // For now, refresh is enough as the form is on /settings/account not /profile/[username]
+
             } catch (err) {
                 toast.error("An error occurred");
             }

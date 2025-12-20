@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { ApiResponse } from "@/lib/types";
 import { toggleSaveSchema, ToggleSaveSchemaType } from "@/lib/schema/post-schema";
 import { getServerSession } from "@/lib/get-sessions";
+import { revalidatePath } from "next/cache";
 
 export async function toggleSave(data: ToggleSaveSchemaType): Promise<ApiResponse<{ saved: boolean }>> {
     try {
@@ -47,6 +48,9 @@ export async function toggleSave(data: ToggleSaveSchemaType): Promise<ApiRespons
             });
             saved = true;
         }
+
+        revalidatePath("/bookmark");
+        revalidatePath("/home");
 
         return {
             status: "success",

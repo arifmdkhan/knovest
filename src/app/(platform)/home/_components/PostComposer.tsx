@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Lock, Users, Loader2, Send } from "lucide-react";
+import { Globe, Lock, Users, Loader2, Send, UserStar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ import {
 import { MediaUploader, UploadedMedia } from "@/components/handle-media/media-uploader";
 import { authClient } from "@/lib/auth-client";
 import { useCreatePost } from "@/hooks/use-post";
+import Link from "next/link";
 
 export function PostComposer() {
   const { data: session } = authClient.useSession();
@@ -119,14 +120,20 @@ export function PostComposer() {
   return (
     <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm relative z-10">
       <div className="flex gap-4">
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={session.user.image || ""} />
-          <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
-        </Avatar>
+        <Link href={`/profile/${session.user.username}`}>
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={session.user.image || ""} />
+            <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
+          </Avatar>
+
+        </Link>
+
 
         <div className="flex-1 space-y-4 relative">
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-sm">{session.user.name}</span>
+            <Link href={`/profile/${session.user.username}`}>
+              <span className="font-semibold text-sm">{session.user.name}</span>
+            </Link>
             <Select value={visibility} onValueChange={(v: any) => setVisibility(v)}>
               <SelectTrigger className="w-[130px] h-8 text-xs border-none bg-muted/50">
                 <SelectValue />
@@ -136,7 +143,7 @@ export function PostComposer() {
                 <SelectItem value="FOLLOWERS"><div className="flex items-center"><Users className="w-3 h-3 mr-2" /> Followers</div></SelectItem>
                 {/* @ts-ignore - isSubscriptionEnabled is added via auth config */}
                 {session.user.isSubscriptionEnabled && (
-                  <SelectItem value="SUBSCRIBER"><div className="flex items-center"><Users className="w-3 h-3 mr-2 text-purple-500" /> Subscribers</div></SelectItem>
+                  <SelectItem value="SUBSCRIBER"><div className="flex items-center"><UserStar className="w-3 h-3 mr-2 text-purple-500" /> Subscribers</div></SelectItem>
                 )}
                 <SelectItem value="PRIVATE"><div className="flex items-center"><Lock className="w-3 h-3 mr-2" /> Private</div></SelectItem>
               </SelectContent>
