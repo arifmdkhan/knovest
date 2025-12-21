@@ -9,14 +9,17 @@ export async function getIndividualCourse(slug: string) {
     },
     select: {
       id: true,
+      userId: true,
       title: true,
       description: true,
       fileKey: true,
       price: true,
+      offerPrice: true,
       duration: true,
       level: true,
       smallDescription: true,
       category: true,
+      slug: true,
       chapter: {
         select: {
           id: true,

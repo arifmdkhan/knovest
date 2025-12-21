@@ -2,25 +2,20 @@
 
 import { PublicCourseType } from "@/app/data/course/get-all-courses";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { constructUrl } from "@/lib/construct-url";
-import { ArrowRight, BarChart, Clock, Star, Share2, Bookmark } from "lucide-react";
+import { BarChart, Clock, Star, Bookmark } from "lucide-react";
 import Link from "next/link";
 import { SafeImage } from "@/components/ui/safe-image";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
-import { ShareDialog } from "@/components/share-dialog";
-import { useState } from "react";
 
 interface PublicCourseCardProps {
     data: PublicCourseType
 }
 
 export function PublicCourseCard({ data }: PublicCourseCardProps) {
-    const [isShareOpen, setIsShareOpen] = useState(false);
-
     const thumbnailUrl = constructUrl(data.fileKey)
 
     const totalReviews = data.reviews.length;
@@ -29,14 +24,12 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
             ? data.reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews
             : 0;
 
-    const shareUrl = typeof window !== "undefined"
-        ? `${window.location.origin}/academy/course/${data.slug}`
-        : "";
-
     return (
-        <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:border-primary/20 flex flex-col h-full p-0">
+        <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:border-primary/20 flex flex-col h-full p-0 relative">
+            <Link href={`/academy/course/${data.slug}`} className="absolute inset-0 z-0" />
+
             {/* Image Section */}
-            <div className="relative aspect-video overflow-hidden">
+            <div className="relative aspect-video overflow-hidden z-10 pointer-events-none">
                 <SafeImage
                     width={600}
                     height={400}
@@ -58,47 +51,66 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                 </div>
             </div>
 
-            <CardContent className="flex-1 p-4 space-y-3">
+            <CardContent className="flex-1 p-4 pt-0 pb-2 space-y-2 flex flex-col z-10 pointer-events-none">
                 {/* Title & Description */}
                 <div className="space-y-1.5">
-                    <Link href={`/academy/course/${data.slug}`} className="block">
-                        <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                            {data.title}
-                        </h3>
-                    </Link>
+                    <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                        {data.title}
+                    </h3>
                     <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                         {data.smallDescription}
                     </p>
                 </div>
 
-                {/* Meta Info */}
-                <div className="flex items-center gap-3 text-sm text-muted-foreground pt-1">
-                    <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md">
-                        <Clock className="size-3.5" />
-                        <span>{data.duration}h</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md">
-                        <BarChart className="size-3.5" />
-                        <span>{data.level}</span>
-                    </div>
-                    {totalReviews > 0 && (
-                        <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md">
-                            <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
-                            <span>{averageRating.toFixed(1)}</span>
-                            <span className="text-xs text-muted-foreground">({totalReviews})</span>
+                {/* Meta Info & Price */}
+                <div className="flex flex-col gap-3 mt-auto">
+                    <div className="flex items-center flex-wrap gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <Clock className="size-3.5" />
+                            <span>{data.duration}h</span>
                         </div>
-                    )}
-                    <div className="ml-auto font-bold text-foreground text-base">
-                        ₹{data.price}
+                        <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <BarChart className="size-3.5" />
+                            <span>{data.level}</span>
+                        </div>
+                        {totalReviews > 0 && (
+                            <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
+                                <span>{averageRating.toFixed(1)}</span>
+                                <span className="text-xs text-muted-foreground">({totalReviews})</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-border/50 pt-2">
+                        {data.offerPrice && data.offerPrice < data.price ? (
+                            <div className="flex flex-col w-full">
+                                <span className="text-[10px] uppercase font-bold text-green-600 dark:text-green-500 tracking-wider">
+                                    {Math.round(((data.price - data.offerPrice) / data.price) * 100)}% Discount
+                                </span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="font-bold text-xl text-primary">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.offerPrice)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground line-through">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.price)}
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="font-bold text-xl text-primary">
+                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.price)}
+                            </div>
+                        )}
                     </div>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-4 pt-0 mt-auto flex flex-col gap-3">
+            <CardFooter className="p-4 pt-0 mt-auto flex flex-col gap-2 z-10">
                 <div className="w-full h-px bg-border/50" />
 
                 <div className="flex items-center justify-between w-full gap-3">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 relative z-20">
                         <UserAvatarWithInfo
                             name={data.user.name}
                             username={data.user.username}
@@ -108,53 +120,22 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 relative z-20">
                         <Button
                             variant="ghost"
                             size="icon"
                             className="rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8"
                             onClick={(e) => {
                                 e.preventDefault();
-                                setIsShareOpen(true);
-                            }}
-                        >
-                            <Share2 className="size-4" />
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8"
-                            onClick={(e) => {
-                                e.preventDefault();
+                                e.stopPropagation();
                                 // TODO: Implement save functionality
                             }}
                         >
                             <Bookmark className="size-4" />
                         </Button>
-
-                        <Link
-                            href={`/academy/course/${data.slug}`}
-                            className={buttonVariants({
-                                variant: "ghost",
-                                size: "icon",
-                                className: "rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8"
-                            })}
-                        >
-                            <ArrowRight className="size-4" />
-                        </Link>
                     </div>
                 </div>
             </CardFooter>
-
-            {isShareOpen && (
-                <ShareDialog
-                    isOpen={isShareOpen}
-                    onOpenChange={setIsShareOpen}
-                    url={shareUrl}
-                    title={`Check out this course: ${data.title}`}
-                />
-            )}
         </Card>
     )
 }
@@ -176,10 +157,20 @@ export function PublicCourseCardSkeleton() {
                     <Skeleton className="h-4 w-2/3" />
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
-                    <Skeleton className="h-7 w-16 rounded-md" />
-                    <Skeleton className="h-7 w-20 rounded-md" />
-                    <Skeleton className="h-7 w-16 ml-auto rounded-md" />
+                <div className="flex items-center gap-2 pt-2 flex-wrap">
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                </div>
+
+                <div className="pt-3 mt-auto">
+                    <div className="border-t border-border/50 pt-3 flex flex-col gap-2">
+                        <Skeleton className="h-3 w-20 rounded-full" />
+                        <div className="flex items-baseline gap-2">
+                            <Skeleton className="h-7 w-24 rounded" />
+                            <Skeleton className="h-4 w-16 rounded" />
+                        </div>
+                    </div>
                 </div>
             </CardContent>
 

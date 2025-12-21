@@ -17,6 +17,7 @@ export async function creatorGetCourses() {
       smallDescription: true,
       duration: true,
       price: true,
+      offerPrice: true,
       level: true,
       status: true,
       fileKey: true,

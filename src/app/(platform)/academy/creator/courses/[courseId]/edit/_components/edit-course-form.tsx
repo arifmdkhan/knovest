@@ -44,6 +44,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
             status: data.status,
             slug: data.slug,
             smallDescription: data.smallDescription,
+            offerPrice: data.offerPrice ?? undefined,
         },
     })
 
@@ -253,7 +254,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
                                         name='duration'
@@ -275,6 +276,19 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                                 <FormLabel>Price (₹)</FormLabel>
                                                 <FormControl>
                                                     <Input type='number' {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name='offerPrice'
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Offer Price (Optional)</FormLabel>
+                                                <FormControl>
+                                                    <Input type='number' placeholder='e.g. 499' {...field} value={field.value ?? ''} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

@@ -21,9 +21,10 @@ interface ReviewListProps {
     reviews: ReviewWithUser[];
     currentUserId?: string;
     courseId: string;
+    courseOwnerId: string;
 }
 
-export function ReviewList({ reviews, currentUserId, courseId }: ReviewListProps) {
+export function ReviewList({ reviews, currentUserId, courseId, courseOwnerId }: ReviewListProps) {
     return (
         <div className="space-y-6">
             {reviews.map((review) => (
@@ -32,6 +33,7 @@ export function ReviewList({ reviews, currentUserId, courseId }: ReviewListProps
                     review={review}
                     currentUserId={currentUserId}
                     courseId={courseId}
+                    courseOwnerId={courseOwnerId}
                 />
             ))}
         </div>
@@ -42,10 +44,12 @@ function ReviewItem({
     review,
     currentUserId,
     courseId,
+    courseOwnerId,
 }: {
     review: ReviewWithUser;
     currentUserId?: string;
     courseId: string;
+    courseOwnerId: string;
 }) {
     const [isReplying, setIsReplying] = useState(false);
     const [isDeleting, startTransition] = useTransition();
@@ -108,17 +112,19 @@ function ReviewItem({
                 <p className="text-sm">{review.comment}</p>
             </div>
 
-            <div className="flex items-center gap-2">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground"
-                    onClick={() => setIsReplying(!isReplying)}
-                >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Reply
-                </Button>
-            </div>
+            {currentUserId === courseOwnerId && (
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
+                        onClick={() => setIsReplying(!isReplying)}
+                    >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Reply
+                    </Button>
+                </div>
+            )}
 
             {isReplying && (
                 <div className="pl-4 border-l-2 border-muted">

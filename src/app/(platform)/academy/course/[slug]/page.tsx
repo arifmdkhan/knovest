@@ -16,6 +16,7 @@ import { getCourseReviews } from '@/app/data/review/get-course-reviews';
 import { ReviewForm } from '../_components/review-form';
 import { ReviewList } from '../_components/review-list';
 import { requireUser } from '@/app/data/user/require-user';
+import { CourseActions } from './_components/course-actions';
 
 type Params = Promise<{ slug: string }>
 
@@ -43,14 +44,14 @@ export default async function SlugPage({ params }: { params: Params }) {
                     className="object-cover opacity-10 blur-3xl scale-110"
                     priority
                 />
-                <div className="absolute inset-0 bg-linear-to-b from-background/80 via-background/50 to-background" />
+                <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
             </div>
 
-            <div className="container mx-auto px-4 py-4 lg:py-6 relative z-10 max-w-7xl">
+            <div className="container mx-auto px-4 py-12 lg:py-16 relative z-10 max-w-7xl">
                 <div className="mb-8">
                     <Link
                         href="/academy/course"
-                        className={buttonVariants({ variant: 'outline' })}
+                        className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back to Courses
                     </Link>
@@ -94,6 +95,7 @@ export default async function SlugPage({ params }: { params: Params }) {
                                 <Clock className="size-4" />
                                 <span>Last updated {new Date().toLocaleDateString()}</span>
                             </div>
+                            <CourseActions title={course.title} slug={course.slug} />
                         </div>
                     </div>
 
@@ -116,11 +118,26 @@ export default async function SlugPage({ params }: { params: Params }) {
                                     </div>
                                 </div>
                                 <CardContent className="p-5 space-y-4 bg-card">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-3xl font-bold text-foreground">
-                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(course.price)}
-                                        </span>
-                                        {/* <span className="text-muted-foreground line-through text-sm">₹9,999</span> Placeholder original price */}
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-baseline gap-2 flex-wrap">
+                                            {course.offerPrice && course.offerPrice < course.price ? (
+                                                <>
+                                                    <span className="text-3xl font-bold text-foreground">
+                                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(course.offerPrice)}
+                                                    </span>
+                                                    <span className="text-muted-foreground line-through text-lg">
+                                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(course.price)}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full ml-1">
+                                                        {Math.round(((course.price - course.offerPrice) / course.price) * 100)}% OFF
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-3xl font-bold text-foreground">
+                                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(course.price)}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-3">
@@ -261,7 +278,7 @@ export default async function SlugPage({ params }: { params: Params }) {
                                 </Card>
                             )}
 
-                            <ReviewList reviews={reviews} currentUserId={user.id} courseId={course.id} />
+                            <ReviewList reviews={reviews} currentUserId={user.id} courseId={course.id} courseOwnerId={course.userId} />
                         </section>
                     </div>
                 </div>

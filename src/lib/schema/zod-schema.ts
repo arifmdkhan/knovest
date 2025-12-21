@@ -23,6 +23,10 @@ export const courseSchema = z.object({
   price: z.coerce
     .number({ message: "Price must be a valid number" })
     .min(0, { message: "Price must be at least 0" }),
+  offerPrice: z.coerce
+    .number({ message: "Offer Price must be a valid number" })
+    .min(0, { message: "Offer Price must be at least 0" })
+    .optional(),
   duration: z.coerce
     .number({ message: "Duration must be a valid number" })
     .min(1, { message: "Duration must be at least 1" })

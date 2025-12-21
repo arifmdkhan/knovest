@@ -20,6 +20,7 @@ export async function getAllCourses(authorId?: string, category?: string, userId
       smallDescription: true,
       duration: true,
       price: true,
+      offerPrice: true,
       level: true,
       fileKey: true,
       slug: true,

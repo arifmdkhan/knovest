@@ -25,6 +25,7 @@ export async function getRecentPublicCourse(currentUserId: string) {
             title: true,
             smallDescription: true,
             price: true,
+            offerPrice: true,
             level: true,
             duration: true,
             fileKey: true,

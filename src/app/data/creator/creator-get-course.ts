@@ -18,6 +18,7 @@ export async function creatorGetCourse(courseId: string) {
       fileKey: true,
       duration: true,
       price: true,
+      offerPrice: true,
       level: true,
       status: true,
       slug: true,

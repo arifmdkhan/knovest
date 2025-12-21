@@ -94,8 +94,26 @@ export default function CreatorCourseCard({ data }: CreatorCourseCardProps) {
                         <BarChart className='size-3.5' />
                         <span>{data.level}</span>
                     </div>
-                    <div className='ml-auto font-bold text-foreground text-base'>
-                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.price)}
+                    <div className='ml-auto flex flex-col items-end'>
+                        {data.offerPrice && data.offerPrice < data.price ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                                <span className="text-[10px] font-medium text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    {Math.round(((data.price - data.offerPrice) / data.price) * 100)}% OFF
+                                </span>
+                                <div className="flex items-baseline gap-1.5 flex-wrap justify-end">
+                                    <span className="text-xs text-muted-foreground line-through">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.price)}
+                                    </span>
+                                    <span className="font-bold text-foreground text-sm text-green-600 dark:text-green-400">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.offerPrice)}
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className='font-bold text-foreground text-base'>
+                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(data.price)}
+                            </div>
+                        )}
                     </div>
                 </div>
             </CardContent>
