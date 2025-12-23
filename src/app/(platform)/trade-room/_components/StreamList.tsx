@@ -9,6 +9,7 @@ import { Play, Trash2, Link, Edit, Globe, Lock, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { deleteStream } from "@/server/actions/stream";
 import { CreateStreamDialog } from "./CreateStreamDialog";
@@ -24,11 +25,11 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import { hasUserPaidForStream } from "@/server/actions/payment-check";
+
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { useTradeRoomContext } from "./TradeRoomContext";
 import { CustomCallData } from "@/types/stream";
-
-// ... imports
 
 interface StreamListProps {
     type: "live" | "upcoming" | "my-streams" | "all-video";
@@ -36,7 +37,6 @@ interface StreamListProps {
 }
 
 export function StreamCardSkeleton() {
-    // ... skeleton
     return (
         <Card className="overflow-hidden border-zinc-200/50 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 h-full flex flex-col">
             <div className="aspect-video bg-zinc-100 dark:bg-zinc-900/50 relative flex items-center justify-center">
@@ -65,10 +65,12 @@ export function StreamCardSkeleton() {
 
 export function StreamList({ type, initialData }: StreamListProps) {
     const client = useStreamVideoClient();
+    const router = useRouter();
     const { data: session } = authClient.useSession();
     const [calls, setCalls] = useState<Call[]>(initialData || []);
     const [isLoading, setIsLoading] = useState(!initialData);
     const [editingCall, setEditingCall] = useState<Call | null>(null);
+    const [paidStreamIds, setPaidStreamIds] = useState<Set<string>>(new Set());
 
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
@@ -118,46 +120,32 @@ export function StreamList({ type, initialData }: StreamListProps) {
                     sort = [{ field: 'created_at', direction: -1 }];
                 }
 
-                // If not 'my-streams', we previously filtered by permissions in the query.
-                // However, due to complexity with $and/$or, we now filter permissions client-side
-                // to prevent leaks and ensure robustness.
-
                 console.log("Fetching calls for type:", type);
 
-                // Fetch calls with basic type filters
                 const { calls: fetchedCalls } = await client.queryCalls({
                     filter_conditions,
                     sort,
-                    limit: 50, // Fetch more to allow for filtering
+                    limit: 50,
                 });
 
                 if (type === 'my-streams') {
                     setCalls(fetchedCalls);
                 } else {
-                    // Client-side filtering for permissions
                     const visibleCalls = fetchedCalls.filter(call => {
                         const custom = (call.state.custom || {}) as CustomCallData;
                         const creatorId = (call.state.createdBy as any)?.id;
                         const currentUserId = session?.user?.id;
                         const streamUserId = chatClient?.userID;
 
-                        // 1. Creator always has access
                         if (creatorId && (creatorId === currentUserId || creatorId === streamUserId)) return true;
-
-                        // 2. 'Everyone' permission (or undefined which defaults to public)
                         if (!custom.permissionType || custom.permissionType === 'everyone') return true;
 
-                        // 3. 'Group' permission
                         if (custom.permissionType === 'group') {
-                            // Check if user is in allowed groups
                             if (custom.allowedGroups && custom.allowedGroups.length > 0) {
                                 if (myGroupIds.some(groupId => custom.allowedGroups?.includes(groupId))) {
                                     return true;
                                 }
                             }
-
-                            // Check if user is in allowedUserIds
-                            // We check against both auth ID and stream ID to be safe against mismatches
                             if (custom.allowedUserIds && Array.isArray(custom.allowedUserIds)) {
                                 const isAllowed = custom.allowedUserIds.some((id: any) => {
                                     const strId = String(id).trim();
@@ -168,7 +156,10 @@ export function StreamList({ type, initialData }: StreamListProps) {
                             }
                         }
 
-                        // If we are here, it's a private stream we don't have access to
+                        if (custom.isPaid) {
+                            return true;
+                        }
+
                         return false;
                     });
 
@@ -184,6 +175,34 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
         fetchCalls();
     }, [client, chatClient, type, session?.user?.id, myGroupIds, isLoadingGroups]);
+
+    useEffect(() => {
+        if (!session?.user?.id || calls.length === 0) return;
+
+        const checkPayments = async () => {
+            const paidStreams = calls.filter(c => (c.state.custom as CustomCallData)?.isPaid);
+            if (paidStreams.length === 0) return;
+
+            const newPaidSet = new Set(paidStreamIds);
+            let changed = false;
+
+            await Promise.all(paidStreams.map(async (call) => {
+                if (!newPaidSet.has(call.id)) {
+                    const hasPaid = await hasUserPaidForStream(call.id, session.user.id);
+                    if (hasPaid) {
+                        newPaidSet.add(call.id);
+                        changed = true;
+                    }
+                }
+            }));
+
+            if (changed) {
+                setPaidStreamIds(newPaidSet);
+            }
+        };
+
+        checkPayments();
+    }, [calls, session?.user?.id]);
 
     const handleDelete = async (call: Call) => {
         try {
@@ -235,22 +254,59 @@ export function StreamList({ type, initialData }: StreamListProps) {
                     const isCreator = call.state.createdBy?.id === chatClient?.userID;
                     const customData = (call.state.custom || {}) as CustomCallData;
 
+                    const isPaidStream = !!customData.isPaid;
+                    const price = customData.price ? Number(customData.price) : 0;
+
+                    const hasAccess = (() => {
+                        const creatorId = (call.state.createdBy as any)?.id;
+                        const userId = session?.user?.id;
+                        const streamUserId = chatClient?.userID;
+
+                        if (creatorId && (creatorId === userId || creatorId === streamUserId)) return true;
+                        if ((!customData.permissionType || customData.permissionType === 'everyone') && !isPaidStream) return true;
+
+                        if (customData.permissionType === 'group') {
+                            if (customData.allowedGroups && customData.allowedGroups.length > 0) {
+                                if (myGroupIds.some(groupId => customData.allowedGroups?.includes(groupId))) return true;
+                            }
+                            if (customData.allowedUserIds && Array.isArray(customData.allowedUserIds)) {
+                                const isAllowed = customData.allowedUserIds.some((id: any) => {
+                                    const strId = String(id).trim();
+                                    return (userId && strId === String(userId).trim()) ||
+                                        (streamUserId && strId === String(streamUserId).trim());
+                                });
+                                if (isAllowed) return true;
+                            }
+                        }
+
+                        if (isPaidStream && paidStreamIds.has(call.id)) return true;
+
+                        return false;
+                    })();
+
+                    const startTime = call.state.startsAt ? new Date(call.state.startsAt).getTime() :
+                        (call.state.startedAt ? new Date(call.state.startedAt).getTime() :
+                            (call.state.createdAt ? new Date(call.state.createdAt).getTime() : Date.now()));
+
+                    const timeDiff = Date.now() - startTime;
+                    const isWindowOpen = isPaidStream && (timeDiff <= 15 * 60 * 1000 || timeDiff < 0);
+
                     return (
                         <Card key={call.id} className="group overflow-hidden border-zinc-200/80 bg-white hover:bg-zinc-50 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-violet-500/30 dark:hover:bg-zinc-900 dark:hover:shadow-2xl dark:hover:shadow-violet-900/20 transition-all duration-300 p-0 gap-0 h-full flex flex-col">
-                            {/* Thumbnail Section */}
                             <div className="aspect-video bg-zinc-100 dark:bg-zinc-950 relative flex items-center justify-center overflow-hidden">
-                                {/* Gradient Background / Placeholder */}
                                 <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 group-hover:scale-110 transition-transform duration-700 ease-out" />
-
-                                {/* Placeholder Icon */}
                                 <Play className="h-12 w-12 text-zinc-300 dark:text-zinc-800 group-hover:text-violet-500/50 transition-colors duration-300 relative z-0" />
 
-                                {/* Overlays */}
                                 <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 items-end">
                                     <div className="bg-black/60 text-white text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-md shadow-sm border border-white/10">
                                         <Users className="h-3 w-3" />
                                         {call.state.participantCount}
                                     </div>
+                                    {isPaidStream && (
+                                        <div className="bg-amber-500/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-md shadow-sm border border-white/10 uppercase">
+                                            ₹{price}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="absolute top-3 left-3 z-10">
@@ -266,10 +322,14 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                                 <span className="opacity-90">Public</span>
                                             </>
                                         )}
+                                        {isPaidStream && !hasAccess && (
+                                            <div className="ml-1 pl-1 border-l border-white/20 flex items-center gap-1">
+                                                <Lock className="h-3 w-3 text-amber-300" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
-                                {/* Status Badge (Bottom Left of Thumbnail) */}
                                 <div className="absolute bottom-3 left-3 z-10">
                                     {!call.state.endedAt && !call.state.backstage ? (
                                         <div className="flex items-center gap-1.5 bg-red-600/90 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md shadow-xl animate-pulse">
@@ -287,7 +347,6 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                 </div>
                             </div>
 
-                            {/* Content Section */}
                             <CardHeader className="p-4 space-y-3 flex-1">
                                 <div className="space-y-1">
                                     <CardTitle className="text-base font-semibold leading-tight line-clamp-1 group-hover:text-violet-500 transition-colors">
@@ -305,8 +364,6 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                 <div className="flex items-center justify-between pt-1">
                                     <UserAvatarWithInfo
                                         name={call.state.createdBy?.name || "Unknown"}
-                                        // Try standard location, custom location, and fallback to just the ID if needed (though UI handles that)
-                                        // Also, for 'name' fallback, we might not have a better option without fetching.
                                         username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username || "user"}
                                         image={call.state.createdBy?.image || null}
                                         avatarClassName="h-8 w-8 ring-2 ring-white dark:ring-zinc-800"
@@ -316,11 +373,24 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
                             <CardFooter className="p-4 pt-0 gap-2">
                                 <Button
-                                    className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-500/20 border-0 h-9 text-sm font-medium transition-all active:scale-95"
-                                    onClick={() => window.open(`/trade-room/${call.id}`, '_blank')}
+                                    className={`flex-1 text-white shadow-md border-0 h-9 text-sm font-medium transition-all active:scale-95 ${hasAccess ? "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-violet-500/20" :
+                                        (isWindowOpen ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/20" : "bg-zinc-400 cursor-not-allowed")
+                                        }`}
+                                    disabled={!hasAccess && !isWindowOpen}
+                                    onClick={() => {
+                                        if (hasAccess) {
+                                            window.open(`/trade-room/${call.id}`, '_blank');
+                                        } else if (isWindowOpen) {
+                                            if (customData.isPaid) {
+                                                router.push(`/trade-room/payment/${call.id}`);
+                                            }
+                                        }
+                                    }}
                                 >
                                     <Play className="h-3.5 w-3.5 mr-2 fill-current" />
-                                    Join Stream
+                                    {hasAccess ? "Join Stream" : (
+                                        isWindowOpen ? `Pay ₹${price} to Join` : "Access Closed"
+                                    )}
                                 </Button>
 
                                 <div className="flex gap-1">
@@ -367,7 +437,8 @@ export function StreamList({ type, initialData }: StreamListProps) {
                 onOpenChange={(open) => !open && setEditingCall(null)}
                 editCall={editingCall || undefined}
             />
+
+
         </>
     );
 }
-

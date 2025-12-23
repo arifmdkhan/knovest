@@ -47,6 +47,7 @@ model User {
   notificationsReceived Notification[] @relation("notificationsReceived")
   notificationsSent     Notification[] @relation("notificationsSent")
   notifications         Notification[]
+  streamAccesses        StreamAccess[]
 
   @@map("user")
 }
@@ -368,4 +369,17 @@ model Notification {
   @@index([recipientId])
   @@index([actorId])
   @@index([createdAt])
+}
+
+model StreamAccess {
+  id        String   @id @default(cuid())
+  userId    String
+  streamId  String // Stream.io Call ID
+  amount    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, streamId])
+  @@index([userId])
+  @@index([streamId])
 }

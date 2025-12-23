@@ -4,7 +4,7 @@ import { useStreamVideoClient, Call, ParticipantView } from "@stream-io/video-re
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StreamUser } from "@/types/stream";
+
 
 interface AudioParticipantProps {
     participant: any; // Using any for now as Stream Participant type is complex to import directly sometimes, but should be SfuParticipant

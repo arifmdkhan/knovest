@@ -11,7 +11,8 @@ import {
 } from "@stream-io/video-react-sdk";
 import React, { useEffect, useState } from "react";
 import { useChatContext, Channel, MessageList, MessageInput, Window, Thread } from "stream-chat-react";
-import { Loader2, MessageSquare, X, Link, Users, Share2 } from "lucide-react";
+import { ManageAccessDialog } from "./ManageAccessDialog";
+import { Loader2, MessageSquare, X, Link, Users, Share2, Shield, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
@@ -27,133 +28,11 @@ interface LivestreamPlayerProps {
 export const LivestreamPlayer = React.memo(function LivestreamPlayer({ call }: LivestreamPlayerProps) {
     const { data: session } = authClient.useSession();
     const { client: chatClient } = useChatContext();
-    const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-    const router = useRouter();
+    // Permission Check - REMOVED: Managed by parent Page component
+    // If we are here, we have access.
 
-    const checkCustomData = (data: Record<string, unknown> | undefined): CustomCallData => {
-        return (data || {}) as CustomCallData;
-    };
+    // We can keep customData for title/desc but not for permission validation.
 
-    const customData = checkCustomData(call.state.custom);
-
-    // Permission Check
-    useEffect(() => {
-        const checkPermission = async () => {
-            if (!session?.user?.id || !chatClient) return;
-
-            // Ensure allowedUserIds is an array
-            let allowedUserIds: any = customData.allowedUserIds;
-            if (typeof allowedUserIds === 'string') {
-                try {
-                    allowedUserIds = JSON.parse(allowedUserIds);
-                } catch (e) {
-                    console.error("Failed to parse allowedUserIds", allowedUserIds);
-                    allowedUserIds = [];
-                }
-            }
-
-            if (!Array.isArray(allowedUserIds)) {
-                allowedUserIds = [];
-            }
-
-            const sessionUserId = session.user.id;
-            const streamUserId = chatClient.userID;
-
-            console.log("Permission Debug - User Match Check:", {
-                allowedUsers: allowedUserIds,
-                sessionUserId,
-                streamUserId
-            });
-
-            // Creator always has access
-            if ((call.state.createdBy as any)?.id === sessionUserId || (call.state.createdBy as any)?.id === streamUserId) {
-                console.log("Permission Granted: Creator");
-                setHasPermission(true);
-                return;
-            }
-
-            // Everyone has access
-            if (!customData.permissionType || customData.permissionType === 'everyone') {
-                console.log("Permission Granted: Everyone");
-                setHasPermission(true);
-                return;
-            }
-
-            // Check specific users (Robust String Comparison)
-            const isAllowedUser = allowedUserIds.some((id: any) => {
-                const strId = String(id).trim();
-                const matchSession = String(sessionUserId).trim() === strId;
-                const matchStream = streamUserId ? String(streamUserId).trim() === strId : false;
-
-                if (matchSession || matchStream) {
-                    console.log(`Match Found! ID: ${strId} matches ${matchSession ? 'Session' : 'Stream'} User`);
-                    return true;
-                }
-                return false;
-            });
-
-            if (isAllowedUser) {
-                console.log("Permission Granted: Specific User");
-                setHasPermission(true);
-                return;
-            } else {
-                console.log("Specific User Check Failed - No Match found for:", { sessionUserId, streamUserId });
-            }
-
-            // Check groups
-            if (customData.allowedGroups && customData.allowedGroups.length > 0) {
-                try {
-                    const filters = {
-                        type: 'messaging',
-                        id: { $in: customData.allowedGroups },
-                        members: { $in: [sessionUserId] } // Use session ID for group membership
-                    };
-                    const channels = await chatClient.queryChannels(filters, {}, { limit: 1 });
-                    if (channels.length > 0) {
-                        console.log("Permission Granted: Group");
-                        setHasPermission(true);
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Failed to check group permissions", error);
-                }
-            }
-
-            console.log("Permission Denied - No match found");
-            setHasPermission(false);
-        };
-
-        checkPermission();
-    }, [call.state.createdBy, customData, session?.user?.id, chatClient]);
-
-    if (hasPermission === false) {
-        return (
-            <div className="flex h-full w-full items-center justify-center bg-zinc-950 text-white flex-col gap-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-red-900/10 pointer-events-none"></div>
-                <div className="bg-zinc-900/90 backdrop-blur-xl rounded-2xl p-8 ring-1 ring-white/10 shadow-2xl max-w-md text-center space-y-4">
-                    <div className="mx-auto bg-red-500/10 p-4 rounded-full w-fit">
-                        <Users className="h-8 w-8 text-red-500" />
-                    </div>
-                    <h3 className="text-2xl font-bold tracking-tight text-white">Access Denied</h3>
-                    <p className="text-zinc-400">You don&apos;t have permission to access this stream. Please contact the creator of the stream.</p>
-                    <Button
-                        onClick={() => router.push('/trade-room')}
-                        className="w-full bg-white text-black hover:bg-zinc-200 mt-2"
-                    >
-                        Return to Trade Room
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
-    if (hasPermission === null) {
-        return (
-            <div className="flex h-full w-full items-center justify-center bg-zinc-950 text-white">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-            </div>
-        );
-    }
 
     return (
         <StreamCall call={call}>
@@ -171,6 +50,7 @@ function LivestreamContent({ call }: { call: Call }) {
     const { backstage } = useCallState();
     const participants = useParticipants();
     const [isBackstage, setIsBackstage] = useState(backstage);
+    const [showManageAccess, setShowManageAccess] = useState(false);
 
     const checkCustomData = (data: Record<string, unknown> | undefined): CustomCallData => {
         return (data || {}) as CustomCallData;
@@ -370,9 +250,23 @@ function LivestreamContent({ call }: { call: Call }) {
                                             navigator.clipboard.writeText(window.location.href);
                                             toast.success("Stream link copied");
                                         }}
+                                        title="Copy Link" // Tooltip
                                     >
                                         <Share2 className="h-4.5 w-4.5" />
                                     </Button>
+
+                                    {isCreator && (
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            className="rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-none shrink-0 h-10 w-10 transition-colors"
+                                            onClick={() => setShowManageAccess(true)}
+                                            title="Manage Access"
+                                        >
+                                            <Shield className="h-4.5 w-4.5" />
+                                        </Button>
+                                    )}
+
                                     <Button
                                         variant={showChat ? "default" : "secondary"}
                                         size="icon"
@@ -434,6 +328,12 @@ function LivestreamContent({ call }: { call: Call }) {
                     </div>
                 </div>
             </div>
+
+            <ManageAccessDialog
+                open={showManageAccess}
+                onOpenChange={setShowManageAccess}
+                call={call}
+            />
         </StreamTheme>
     );
 }

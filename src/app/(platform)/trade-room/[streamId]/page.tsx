@@ -11,6 +11,7 @@ import { useTradeRoomContext } from "../_components/TradeRoomContext";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { CustomCallData } from "@/types/stream";
+import { hasUserPaidForStream } from "@/server/actions/payment-check";
 
 interface StreamPageProps {
     params: Promise<{ streamId: string }>;
@@ -42,7 +43,7 @@ function StreamConnectionWrapper({ call }: { call: Call }) {
                     if (isMounted) setIsJoined(true); // Treat as joined for UI purposes
                 } else {
                     console.error("Failed to join call", error);
-                    toast.error("Failed to join stream");
+                    toast.error(`Connection failed: ${error.message || "Unknown error"}`);
                 }
             }
         };
@@ -72,7 +73,6 @@ export default function StreamPage({ params }: StreamPageProps) {
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
     const router = useRouter();
 
-    // We hold the stable call object here. Once set, it doesn't change unless streamId changes.
     const [call, setCall] = useState<Call | null>(null);
     const [isChecking, setIsChecking] = useState(true);
 
@@ -82,13 +82,14 @@ export default function StreamPage({ params }: StreamPageProps) {
         let isMounted = true;
 
         const verifyPermission = async () => {
-            // If we already have a call object, we reuse it to check permissions
-            // This prevents creating new "client.call()" instances which might look like new connections
-            // logic: If call state is null, we create new. If not null, we verify existing.
+            // Optimization: If we already have a call object for this stream, we don't need to verify again.
+            // This prevents race conditions where re-renders trigger redundant checks that might fail or redirect.
+            if (call && call.id === streamId) {
+                if (isChecking) setIsChecking(false);
+                return;
+            }
 
-            // Note: client.call() is lightweight, but we want to avoid replacing the 'call' state if it's already set.
-
-            const callObj = call || client.call("livestream", streamId);
+            const callObj = client.call("livestream", streamId);
 
             try {
                 // Refresh state to get latest custom data/permissions
@@ -104,39 +105,88 @@ export default function StreamPage({ params }: StreamPageProps) {
                 // 1. Creator always has access
                 const isCreator = (creatorId === currentUserId) || (creatorId === streamUserId);
 
-                if (!isCreator) {
-                    // 2. Check Permissions
-                    if (customData?.permissionType === "group") {
-                        let hasPermission = false;
+                if (isCreator) {
+                    if (isMounted && !call) setCall(callObj);
+                    return;
+                }
 
-                        // Check Groups
-                        if (customData.allowedGroups && customData.allowedGroups.length > 0) {
-                            if (customData.allowedGroups.some(groupId => myGroupIds.includes(groupId))) {
-                                hasPermission = true;
+                // 2. Regular Permissions (Group/User/Member) - CHECK FIRST
+                let hasSpecificPermission = false;
+
+                // NEW: Check if user is already a member (e.g. paid and added by backend)
+                const isMember = callObj.state.members.some(m => m.user_id === currentUserId);
+                if (isMember) {
+                    hasSpecificPermission = true;
+                }
+
+                if (!hasSpecificPermission && customData?.permissionType === "group") {
+                    // Check Groups
+                    if (customData.allowedGroups && Array.isArray(customData.allowedGroups)) {
+                        if (customData.allowedGroups.some(groupId => myGroupIds.includes(groupId))) {
+                            hasSpecificPermission = true;
+                        }
+                    }
+
+                    // Check Users Logic - Unified safe parsing
+                    if (!hasSpecificPermission && customData.allowedUserIds) {
+                        let allowedIds: string[] = [];
+
+                        // Handle potential formats
+                        if (Array.isArray(customData.allowedUserIds)) {
+                            // Map to strings to be safe
+                            allowedIds = customData.allowedUserIds.map((id: any) => String(id));
+                        } else if (typeof customData.allowedUserIds === 'string') {
+                            try {
+                                const parsed = JSON.parse(customData.allowedUserIds);
+                                if (Array.isArray(parsed)) {
+                                    allowedIds = parsed.map((id: any) => String(id));
+                                }
+                            } catch (e) {
+                                // Maybe comma separated?
+                                allowedIds = [customData.allowedUserIds];
                             }
                         }
 
-                        // Check Users
-                        if (!hasPermission && customData.allowedUserIds) {
-                            let allowedIds: any[] = [];
-                            if (Array.isArray(customData.allowedUserIds)) {
-                                allowedIds = customData.allowedUserIds;
-                            } else if (typeof customData.allowedUserIds === 'string') {
-                                try { allowedIds = JSON.parse(customData.allowedUserIds); } catch (e) { }
-                            }
-
-                            if (Array.isArray(allowedIds)) {
-                                hasPermission = allowedIds.some((id: any) => {
-                                    const strId = String(id).trim();
-                                    return (currentUserId && strId === String(currentUserId).trim()) ||
-                                        (streamUserId && strId === String(streamUserId).trim());
-                                });
-                            }
+                        if (allowedIds.length > 0) {
+                            hasSpecificPermission = allowedIds.some(id => {
+                                const strId = id.trim();
+                                return (currentUserId && strId === String(currentUserId).trim()) ||
+                                    (streamUserId && strId === String(streamUserId).trim());
+                            });
                         }
+                    }
+                } else if (!hasSpecificPermission && (!customData.permissionType || customData.permissionType === 'everyone')) {
+                    if (!customData.isPaid) hasSpecificPermission = true;
+                }
 
-                        if (!hasPermission) {
+                if (hasSpecificPermission) {
+                    if (isMounted && !call) setCall(callObj);
+                    return;
+                }
+
+                // 3. Paid Stream Logic - CHECK LAST (if no specific permission)
+                if (customData.isPaid) {
+                    const hasPaid = await hasUserPaidForStream(streamId, currentUserId);
+
+                    if (hasPaid) {
+                        if (isMounted && !call) setCall(callObj);
+                        return;
+                    } else {
+                        // Check 15 min window
+                        const startTime = callObj.state.startsAt ? new Date(callObj.state.startsAt).getTime() :
+                            (callObj.state.startedAt ? new Date(callObj.state.startedAt).getTime() :
+                                (callObj.state.createdAt ? new Date(callObj.state.createdAt).getTime() : Date.now()));
+                        const timeDiff = Date.now() - startTime;
+                        const isWindowOpen = (timeDiff <= 15 * 60 * 1000 || timeDiff < 0);
+
+                        if (isWindowOpen) {
                             if (isMounted) {
-                                toast.error("You do not have permission to join this stream.");
+                                router.push(`/trade-room/payment/${streamId}`);
+                            }
+                            return;
+                        } else {
+                            if (isMounted) {
+                                toast.error("Paid access for this stream is currently closed.");
                                 router.push('/trade-room');
                             }
                             return;
@@ -144,17 +194,21 @@ export default function StreamPage({ params }: StreamPageProps) {
                     }
                 }
 
-                // Permission Verified.
+                // 4. Access Denied (neither specific permission nor paid)
+                if (isMounted) {
+                    // Only show toast if we are sure we are denied
+                    toast.error("Permission verification failed.");
+                    router.push('/trade-room');
+                }
+                return;
 
-                // Only set call if it wasn't set before. 
-                // This ensures 'call' reference stability for the child component.
                 if (isMounted && !call) {
                     setCall(callObj);
                 }
 
             } catch (error) {
                 console.error("Failed to load stream or verify permissions", error);
-                if (isMounted && !call) { // Only redirect if we haven't successfully loaded it before
+                if (isMounted && !call) {
                     toast.error("Stream not found or failed to load");
                     router.push('/trade-room');
                 }
@@ -175,7 +229,7 @@ export default function StreamPage({ params }: StreamPageProps) {
     if (!call) {
         return (
             <div className="flex h-full items-center justify-center flex-col gap-4">
-                <p className="text-muted-foreground">Stream not found or failed to load.</p>
+                <p className="text-muted-foreground">Stream not found, failed to load, or access denied.</p>
                 <Button onClick={() => router.push('/trade-room')}>Go Back</Button>
             </div>
         );

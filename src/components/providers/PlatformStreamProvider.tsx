@@ -34,11 +34,14 @@ export default function PlatformStreamProvider({ children, user, streamToken }: 
             image: user.image || undefined,
         };
 
-        const client = new StreamVideoClient({ apiKey, user: streamUser, token: streamToken });
+        const client = StreamVideoClient.getOrCreateInstance({ apiKey, user: streamUser, token: streamToken });
         setVideoClient(client);
 
         return () => {
-            client.disconnectUser();
+            // Do NOT disconnect the user on unmount when using getOrCreateInstance,
+            // as this singleton is shared and might be used by other components or re-renders.
+            // client.disconnectUser(); 
+            setVideoClient(null);
         };
     }, [user.id, user.name, user.image, streamToken]);
 
@@ -80,7 +83,14 @@ export default function PlatformStreamProvider({ children, user, streamToken }: 
 
     const streamTheme = theme === "dark" ? "str-chat__theme-dark" : "str-chat__theme-light";
 
-    if (!videoClient || !chatClient) return <>{children}</>; // Or loading state
+    if (!videoClient || !chatClient) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                {/* Ensure Loader is imported or use simple text/spinner */}
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+        );
+    }
 
     return (
         <StreamVideo client={videoClient}>
