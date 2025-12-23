@@ -21,8 +21,8 @@ export default function ChatSidebarList({ sessionUserId }: ChatSidebarListProps)
             type: 'messaging',
             members: { $in: [sessionUserId] },
             $or: [
-                { created_by_id: sessionUserId },
                 { last_message_at: { $gt: '1970-01-01T00:00:00Z' } },
+                { name: { $exists: true } },
                 { demo: 'app' }
             ]
         } as any;

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "stream-chat-react";
 import { useRouter } from "next/navigation";
 import { getDmChannelId } from "@/lib/chat-utils";
+import { useDebounce } from "use-debounce";
 
 type SearchedUser = Awaited<ReturnType<typeof searchUsers>>[0];
 
@@ -19,7 +20,7 @@ export function CustomChannelSearch() {
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const debouncedQuery = useDebounce(query, 300);
+    const [debouncedQuery] = useDebounce(query, 300);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -118,18 +119,4 @@ export function CustomChannelSearch() {
             )}
         </div>
     );
-}
-
-// Minimal hook for simple usage since I don't want to mess with file deps if use-debounce isn't there
-function useDebounce<T>(value: T, delay: number): T {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-    return debouncedValue;
 }
