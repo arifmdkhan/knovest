@@ -34,18 +34,18 @@ export function AcademyCard({
             borderHover: "hover:border-accent/50",
             shadowHover: "hover:shadow-[0_0_30px_-5px_var(--color-accent)]",
             bgBlur: "bg-accent/5 dark:bg-accent/10 group-hover:bg-accent/10 dark:group-hover:bg-accent/20",
-            iconBg: "bg-cyan-500/10", // Keeping consistent with original or use accent? Original used cyan bg for accent card too basically or similiar
-            iconColor: "text-cyan-600 dark:text-cyan-500", // Original used cyan even for Browse courses
+            iconBg: "bg-cyan-500/10", 
+            iconColor: "text-cyan-600 dark:text-cyan-500", 
             titleHover: "group-hover:text-accent-foreground dark:group-hover:text-accent",
             actionText: "text-accent-foreground dark:text-accent"
         },
         default: {
             borderHover: "hover:border-foreground/30 dark:hover:border-white/30",
             shadowHover: "hover:shadow-[0_0_30px_-5px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)]",
-            bgBlur: "bg-foreground/5 dark:bg-white/5 group-hover:bg-foreground/10 dark:group-hover:bg-white/10", // Making up a subtle blur for default
+            bgBlur: "bg-foreground/5 dark:bg-white/5 group-hover:bg-foreground/10 dark:group-hover:bg-white/10", 
             iconBg: "bg-foreground/5 dark:bg-white/5",
             iconColor: "text-foreground dark:text-white",
-            titleHover: "", // No specific color shift or keep white
+            titleHover: "", 
             actionText: "text-foreground dark:text-white"
         }
     };

@@ -94,29 +94,16 @@ export default function TradeRoomDashboard({ initialActiveStreams, initialAudioR
                                 </CardHeader>
                                 <CardContent className="space-y-8">
                                     <div>
-                                        <h3 className="text-sm font-semibold mb-4 text-violet-600 dark:text-violet-400 flex items-center gap-2"><Mic className="w-4 h-4" /> Your Audio Rooms</h3>
-                                        <AudioRoomList type="my-rooms" />
-                                    </div>
-                                    <div>
                                         <h3 className="text-sm font-semibold mb-4 text-red-600 dark:text-red-400 flex items-center gap-2"><Video className="w-4 h-4" /> Your Video Streams</h3>
                                         <StreamList type="my-streams" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold mb-4 text-violet-600 dark:text-violet-400 flex items-center gap-2"><Mic className="w-4 h-4" /> Your Audio Rooms</h3>
+                                        <AudioRoomList type="my-rooms" />
                                     </div>
                                 </CardContent>
                             </Card>
                         )}
-
-                        <Card className="col-span-full bg-linear-to-r from-violet-50 to-white border-violet-100 dark:from-violet-950/10 dark:to-zinc-900 dark:border-violet-900/30 backdrop-blur-sm">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Headphones className="h-5 w-5 text-violet-500 animate-pulse" />
-                                    Live Audio Rooms
-                                </CardTitle>
-                                <CardDescription>Join active audio discussions.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <AudioRoomList type="live" initialData={initialAudioRooms} />
-                            </CardContent>
-                        </Card>
 
                         <Card className="col-span-full bg-linear-to-r from-zinc-100 to-white border-zinc-200 dark:from-zinc-900 dark:to-zinc-800 dark:border-zinc-700 backdrop-blur-sm">
                             <CardHeader>
@@ -128,6 +115,19 @@ export default function TradeRoomDashboard({ initialActiveStreams, initialAudioR
                             </CardHeader>
                             <CardContent>
                                 <StreamList type="live" initialData={initialActiveStreams} />
+                            </CardContent>
+                        </Card>
+
+                        <Card className="col-span-full bg-linear-to-r from-violet-50 to-white border-violet-100 dark:from-violet-950/10 dark:to-zinc-900 dark:border-violet-900/30 backdrop-blur-sm">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Headphones className="h-5 w-5 text-violet-500 animate-pulse" />
+                                    Live Audio Rooms
+                                </CardTitle>
+                                <CardDescription>Join active audio discussions.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <AudioRoomList type="live" initialData={initialAudioRooms} />
                             </CardContent>
                         </Card>
                     </TabsContent>

@@ -1,6 +1,4 @@
-"use client";
 
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SavedPostsTab } from "./SavedPostsTab";
 import { SavedCoursesTab } from "./SavedCoursesTab";

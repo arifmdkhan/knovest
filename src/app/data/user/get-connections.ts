@@ -3,6 +3,15 @@ import { getServerSession } from "@/lib/get-sessions";
 
 export type ConnectionType = 'FOLLOWERS' | 'FOLLOWING' | 'SUBSCRIBERS';
 
+export interface ConnectionUser {
+    id: string;
+    name: string;
+    username: string | null;
+    image: string | null;
+    isVerified: boolean;
+    isSebiVerified: boolean;
+}
+
 export async function getUserConnections(userId: string, type: ConnectionType, cursor?: string, limit = 10) {
     const session = await getServerSession();
     const currentUserId = session?.user?.id;
@@ -12,7 +21,7 @@ export async function getUserConnections(userId: string, type: ConnectionType, c
         throw new Error("Unauthorized: You can only view your own connections.");
     }
 
-    let items: any[] = [];
+    let items: ConnectionUser[] = [];
     let nextCursor: string | undefined = undefined;
 
     if (type === 'FOLLOWERS') {

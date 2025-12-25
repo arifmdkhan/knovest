@@ -3,6 +3,7 @@ import { requireUser } from "@/app/data/user/require-user";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
+import { ActiveSessions } from "../_components/ActiveSessions";
 
 export default async function AccountSettingsPage() {
     const sessionUser = await requireUser();
@@ -22,6 +23,8 @@ export default async function AccountSettingsPage() {
             </div>
             <Separator />
             <AccountForm user={user} />
+            <Separator />
+            <ActiveSessions />
         </div>
     );
 }

@@ -8,17 +8,18 @@ import { useInView } from "react-intersection-observer";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { FeedPost } from "@/types/post";
 
+import { getFeedPostsAction } from "@/server/actions/post/get-feed-posts-action";
+
 // Fetcher function updated to accept authorId
 const fetchUserPosts = async ({ pageParam, queryKey }: any) => {
   const [_, __, authorId] = queryKey; // Extract authorId from queryKey: ["posts", "user", authorId]
-  const params = new URLSearchParams();
-  if (pageParam) params.append("cursor", pageParam);
-  params.append("limit", "10");
-  if (authorId) params.append("authorId", authorId); // CRITICAL: Filter by author
 
-  const res = await fetch(`/api/posts?${params.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch posts");
-  return res.json();
+  const res = await getFeedPostsAction(
+    pageParam as string | undefined,
+    10,
+    authorId
+  );
+  return res;
 };
 
 export function ProfileFeed({ authorId }: { authorId: string }) {

@@ -51,12 +51,24 @@ export async function getRecentPublicCourse(currentUserId: string) {
                 },
                 take: 1
             },
+            savedBy: {
+                where: {
+                    userId: currentUserId,
+                },
+                select: { id: true }
+            },
         },
     });
 
     if (data.length === 0) return null;
     const randomIndex = Math.floor(Math.random() * data.length);
-    return data[randomIndex];
+    const course = data[randomIndex];
+
+    return {
+        ...course,
+        isSaved: course.savedBy.length > 0,
+        savedBy: undefined
+    };
 }
 
 export type RecentCourseType = Awaited<ReturnType<typeof getRecentPublicCourse>>;

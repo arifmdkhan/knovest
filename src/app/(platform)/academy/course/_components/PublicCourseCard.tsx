@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PublicCourseType } from "@/app/data/course/get-all-courses";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,19 +11,45 @@ import { BarChart, Clock, Star, Bookmark } from "lucide-react";
 import Link from "next/link";
 import { SafeImage } from "@/components/ui/safe-image";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
+import { useToggleSaveCourse } from "@/hooks/use-course";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface PublicCourseCardProps {
-    data: PublicCourseType
+    data: PublicCourseType & { isSaved?: boolean } // Adding isSaved explicitly to TS check if not inferred
 }
 
 export function PublicCourseCard({ data }: PublicCourseCardProps) {
     const thumbnailUrl = constructUrl(data.fileKey)
+    const { data: session } = authClient.useSession();
+    const { mutate: toggleSave, isPending: isSaving } = useToggleSaveCourse();
+    const [isSaved, setIsSaved] = useState(!!data.isSaved);
 
     const totalReviews = data.reviews.length;
     const averageRating =
         totalReviews > 0
             ? data.reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews
             : 0;
+
+    const handleSave = () => {
+        if (!session) {
+            toast.error("Please login to save courses");
+            return;
+        }
+
+        const previousState = isSaved;
+        setIsSaved(!isSaved);
+
+        toggleSave({ courseId: data.id }, {
+            onSuccess: (resData) => {
+                setIsSaved(!!resData.saved);
+            },
+            onError: () => {
+                setIsSaved(previousState);
+            }
+        });
+    };
 
     return (
         <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:border-primary/20 flex flex-col h-full p-0 relative">
@@ -124,14 +151,18 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8"
+                            disabled={isSaving}
+                            className={cn(
+                                "rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8 transition-colors",
+                                isSaved && "text-primary hover:text-primary/90"
+                            )}
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                // TODO: Implement save functionality
+                                handleSave();
                             }}
                         >
-                            <Bookmark className="size-4" />
+                            <Bookmark className={cn("size-4", isSaved && "fill-current")} />
                         </Button>
                     </div>
                 </div>

@@ -73,3 +73,9 @@ export const lessonSchema = z.object({
 export type CourseSchemaType = z.infer<typeof courseSchema>;
 export type chapterSchemaType = z.infer<typeof chapterSchema>;
 export type lessonSchemaType = z.infer<typeof lessonSchema>;
+
+export const toggleSaveCourseSchema = z.object({
+  courseId: z.string().min(1, "Course ID is required"),
+});
+export type ToggleSaveCourseSchemaType = z.infer<typeof toggleSaveCourseSchema>;
+

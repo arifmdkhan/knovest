@@ -15,7 +15,7 @@ export async function searchGlobal(query: string) {
     console.log(`[searchGlobal] Searching for: "${query}"`);
 
     try {
-        const [users, courses, articles] = await Promise.all([
+        const [users, coursesData, articles] = await Promise.all([
             // 1. Search Users
             prisma.user.findMany({
                 where: {
@@ -68,6 +68,10 @@ export async function searchGlobal(query: string) {
                             status: "Active",
                         },
                     } : false,
+                    savedBy: currentUserId ? {
+                        where: { userId: currentUserId },
+                        select: { id: true }
+                    } : false,
                 },
             }),
 
@@ -92,7 +96,13 @@ export async function searchGlobal(query: string) {
             }),
         ]);
 
-        return { users, courses, articles };
+        const formattedCourses = coursesData.map(course => ({
+            ...course,
+            isSaved: course.savedBy?.length > 0,
+            savedBy: undefined
+        }));
+
+        return { users, courses: formattedCourses, articles };
     } catch (error) {
         console.error("Global Search Error:", error);
         return { users: [], courses: [], articles: [] };

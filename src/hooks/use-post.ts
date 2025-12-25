@@ -1,12 +1,20 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient, InfiniteData } from "@tanstack/react-query";
 import { createPost } from "@/server/actions/post/create-post";
 import { deletePost } from "@/server/actions/post/delete-post";
 import { toggleLike } from "@/server/actions/post/toggle-like";
 import { toggleSave } from "@/server/actions/post/toggle-save";
 import { toggleRepost } from "@/server/actions/post/toggle-repost";
 import { CreatePostSchemaType, DeletePostSchemaType, ToggleLikeSchemaType, ToggleSaveSchemaType, ToggleRepostSchemaType } from "@/lib/schema/post-schema";
+import { toast } from "sonner";
+import { FeedPost } from "@/types/post";
+export type FeedType = 'FOR_YOU' | 'FOLLOWING' | 'SUBSCRIBED';
 
-// ... existing code ...
+interface FeedPage {
+    posts: FeedPost[];
+    nextCursor?: string | null;
+}
+
+import { getFeedPostsAction } from "@/server/actions/post/get-feed-posts-action";
 
 export const useToggleRepost = () => {
     const queryClient = useQueryClient();
@@ -14,17 +22,17 @@ export const useToggleRepost = () => {
         mutationFn: async (data: ToggleRepostSchemaType) => {
             const res = await toggleRepost(data);
             if (res.status === "error") throw new Error(res.message);
-            return { ...res.data, postId: data.postId };
+            return { ...(res.data as { reposted: boolean; count: number }), postId: data.postId };
         },
         onSuccess: (data) => {
             toast.success(data.reposted ? "Reposted" : "Removed repost");
 
             // Update feed cache
-            queryClient.setQueriesData({ queryKey: ["posts", "feed"] }, (oldData: any) => {
+            queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
                 if (!oldData) return oldData;
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page: any) => ({
+                    pages: oldData.pages.map((page) => ({
                         ...page,
                         posts: page.posts.map((post: FeedPost) => {
                             if (post.id === data.postId) {
@@ -57,31 +65,27 @@ export const useToggleRepost = () => {
                 };
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error(error.message || "Failed to repost");
         }
     });
 };
-import { toast } from "sonner";
-import { FeedPost } from "@/types/post";
-export type FeedType = 'FOR_YOU' | 'FOLLOWING' | 'SUBSCRIBED';
+
 
 export const useGetPosts = (authorId?: string, type: FeedType = 'FOR_YOU', initialData?: { posts: FeedPost[]; nextCursor?: string }) => {
     return useInfiniteQuery({
         queryKey: ["posts", "feed", authorId, type],
         queryFn: async ({ pageParam }) => {
-            const params = new URLSearchParams();
-            if (pageParam) params.append("cursor", pageParam as string);
-            params.append("limit", "10");
-            if (authorId) params.append("authorId", authorId);
-            params.append("type", type);
-
-            const res = await fetch(`/api/posts?${params.toString()}`);
-            if (!res.ok) throw new Error("Failed to fetch posts");
-            return res.json();
+            const res = await getFeedPostsAction(
+                pageParam as string | undefined,
+                10,
+                authorId,
+                type
+            );
+            return res;
         },
         initialPageParam: undefined as string | undefined,
-        getNextPageParam: (lastPage: any) => lastPage.nextCursor,
+        getNextPageParam: (lastPage: FeedPage) => lastPage.nextCursor,
         initialData: initialData ? {
             pages: [initialData],
             pageParams: [undefined]
@@ -96,13 +100,13 @@ export const useCreatePost = () => {
         mutationFn: async (data: CreatePostSchemaType) => {
             const res = await createPost(data);
             if (res.status === "error") throw new Error(res.message);
-            return res.data;
+            return res.data as FeedPost;
         },
         onSuccess: (newPost) => {
             toast.success("Post published!");
 
             // Optimistic update for feed
-            queryClient.setQueriesData({ queryKey: ["posts", "feed"] }, (oldData: any) => {
+            queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
                 if (!oldData) return { pages: [{ posts: [newPost], nextCursor: null }], pageParams: [undefined] };
 
                 const firstPage = oldData.pages[0];
@@ -117,7 +121,7 @@ export const useCreatePost = () => {
                 };
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error(error.message || "Failed to create post");
         }
     });
@@ -136,10 +140,10 @@ export const useDeletePost = () => {
             toast.success("Post deleted");
 
             // Remove from feed
-            queryClient.setQueriesData({ queryKey: ["posts", "feed"] }, (oldData: any) => {
+            queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
                 if (!oldData) return oldData;
 
-                const newPages = oldData.pages.map((page: any) => ({
+                const newPages = oldData.pages.map((page) => ({
                     ...page,
                     posts: page.posts.filter((post: FeedPost) => post.id !== deletedPostId)
                 }));
@@ -150,7 +154,7 @@ export const useDeletePost = () => {
                 };
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error(error.message || "Failed to delete post");
         }
     });
@@ -162,14 +166,14 @@ export const useToggleLike = () => {
         mutationFn: async (data: ToggleLikeSchemaType) => {
             const res = await toggleLike(data);
             if (res.status === "error") throw new Error(res.message);
-            return { ...res.data, postId: data.postId };
+            return { ...(res.data as { liked: boolean; count: number }), postId: data.postId };
         },
         onSuccess: (data) => {
-            queryClient.setQueriesData({ queryKey: ["posts", "feed"] }, (oldData: any) => {
+            queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
                 if (!oldData) return oldData;
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page: any) => ({
+                    pages: oldData.pages.map((page) => ({
                         ...page,
                         posts: page.posts.map((post: FeedPost) => {
                             if (post.id === data.postId) {
@@ -195,7 +199,7 @@ export const useToggleLike = () => {
                 };
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error(error.message || "Failed to like post");
         }
     });
@@ -207,16 +211,17 @@ export const useToggleSave = () => {
         mutationFn: async (data: ToggleSaveSchemaType) => {
             const res = await toggleSave(data);
             if (res.status === "error") throw new Error(res.message);
-            return { ...res.data, postId: data.postId };
+            return { ...(res.data as { saved: boolean }), postId: data.postId };
         },
         onSuccess: (data) => {
             toast.success(data.saved ? "Saved to bookmarks" : "Removed from bookmarks");
 
-            queryClient.setQueriesData({ queryKey: ["posts", "feed"] }, (oldData: any) => {
+            // Update main feed cache (preserving existing logic)
+            queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
                 if (!oldData) return oldData;
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page: any) => ({
+                    pages: oldData.pages.map((page) => ({
                         ...page,
                         posts: page.posts.map((post: FeedPost) => {
                             if (post.id === data.postId) {
@@ -230,8 +235,26 @@ export const useToggleSave = () => {
                     }))
                 };
             });
+
+            // Handle Bookmarks Page Cache
+            if (!data.saved) {
+                // If unsaving, remove from bookmarks list immediately
+                queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "bookmarks"] }, (oldData) => {
+                    if (!oldData) return oldData;
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map((page) => ({
+                            ...page,
+                            posts: page.posts.filter((post: FeedPost) => post.id !== data.postId)
+                        }))
+                    };
+                });
+            } else {
+                // If saving, invalidate to refetch (simplest way to add to list in correct order)
+                queryClient.invalidateQueries({ queryKey: ["posts", "bookmarks"] });
+            }
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error(error.message || "Failed to save post");
         }
     });

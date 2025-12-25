@@ -5,19 +5,10 @@ import { useInView } from "react-intersection-observer";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2, Bookmark } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { FeedPost } from "@/types/post";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { BookmarkEmptyState } from "./BookmarkEmptyState";
-
-const fetchBookmarks = async ({ pageParam }: { pageParam?: string }) => {
-    const params = new URLSearchParams();
-    if (pageParam) params.append("cursor", pageParam);
-
-    const res = await fetch(`/api/posts/bookmarks?${params.toString()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch bookmarks");
-    return res.json();
-};
+import { getSavedPostsAction } from "@/server/actions/post/get-saved-posts-action";
 
 export function SavedPostsTab() {
     const { ref, inView } = useInView();
@@ -28,11 +19,15 @@ export function SavedPostsTab() {
         hasNextPage,
         isFetchingNextPage,
         status,
+        error
     } = useInfiniteQuery({
         queryKey: ["posts", "bookmarks"],
-        queryFn: fetchBookmarks,
-        getNextPageParam: (lastPage) => lastPage.nextCursor,
-        initialPageParam: undefined as string | undefined,
+        queryFn: async ({ pageParam }) => {
+            const res = await getSavedPostsAction(pageParam as string | undefined);
+            return res;
+        },
+        getNextPageParam: (lastPage: any) => lastPage.nextCursor,
+        initialPageParam: undefined,
     });
 
     useEffect(() => {
@@ -59,7 +54,7 @@ export function SavedPostsTab() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {data.pages.map((page: any, i: number) => (
+            {data.pages.map((page: { posts: FeedPost[]; nextCursor?: string }, i: number) => (
                 <div key={i} className="space-y-6">
                     {page.posts.map((post: FeedPost) => (
                         <FeedCard key={post.id} post={post} />

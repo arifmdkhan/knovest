@@ -38,6 +38,7 @@ model User {
   posts                 Post[]
   reviews               Review[]
   savedPosts            SavedPost[]
+  savedCourses          SavedCourse[]
   subscribedTo          Subscription[] @relation("subscribedTo")
   subscribers           Subscription[] @relation("subscriber")
   accounts              Account[]
@@ -47,7 +48,7 @@ model User {
   notificationsReceived Notification[] @relation("notificationsReceived")
   notificationsSent     Notification[] @relation("notificationsSent")
   notifications         Notification[]
-  streamAccesses        StreamAccess[]
+  streamAccess          StreamAccess[]
 
   @@map("user")
 }
@@ -174,6 +175,17 @@ model SavedPost {
   @@unique([userId, postId])
 }
 
+model SavedCourse {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
 model Follow {
   followerId  String
   followingId String
@@ -188,25 +200,26 @@ model Follow {
 }
 
 model Course {
-  id               String       @id @default(uuid())
+  id               String        @id @default(uuid())
   title            String
   description      String
   fileKey          String
   price            Int
   offerPrice       Int?
   duration         Int
-  level            CourseLevel  @default(Beginner)
+  level            CourseLevel   @default(Beginner)
   category         String
   smallDescription String
-  slug             String       @unique
-  status           CourseStatus @default(Draft)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  slug             String        @unique
+  status           CourseStatus  @default(Draft)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   userId           String
   chapter          Chapter[]
-  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   enrollment       Enrollment[]
   reviews          Review[]
+  savedBy          SavedCourse[]
 }
 
 model Chapter {
@@ -356,8 +369,8 @@ model Notification {
   recipientId String
   actorId     String?
   type        NotificationType
-  entityId    String? // ID of the post, comment, etc.
-  message     String? // Optional custom message
+  entityId    String? 
+  message     String? 
   isRead      Boolean          @default(false)
   createdAt   DateTime         @default(now())
 
@@ -374,7 +387,7 @@ model Notification {
 model StreamAccess {
   id        String   @id @default(cuid())
   userId    String
-  streamId  String // Stream.io Call ID
+  streamId  String 
   amount    Int
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

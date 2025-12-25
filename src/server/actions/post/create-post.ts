@@ -51,8 +51,10 @@ export async function createPost(data: CreatePostSchemaType): Promise<ApiRespons
             ...rest,
             hasLiked: false,
             isSaved: false,
-            _count: { likes: 0, comments: 0 }
-        } as any;
+            isReposted: false,
+            originalPost: null,
+            _count: { likes: 0, comments: 0, other_Post: 0 }
+        };
 
         revalidatePath("/feed");
         return { status: "success", message: "Post created", data: formattedPost };

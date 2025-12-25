@@ -1,14 +1,13 @@
 "use client";
 
-import { useTransition, useState } from "react"; // Added useState for specific loading state
+import { useTransition, useState } from "react"; 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowRight, Mail } from "lucide-react"; // Removed generic Loader
+import { Loader2, ArrowRight, Mail } from "lucide-react"; 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +19,7 @@ import {
   CardTitle,
   CardFooter
 } from "@/components/ui/card";
-
 import { authClient } from "@/lib/auth-client";
-
 import { Separator } from "@/components/ui/separator";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { checkUserExists } from "@/server/actions/check-user-exist";
@@ -37,7 +34,7 @@ type LoginInput = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Explicit state for Google
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false); 
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -48,12 +45,11 @@ export function LoginForm() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/home', // Redirects here after success
-        // Note: fetchOptions usually aren't triggered for social redirects 
-        // because the browser navigates away to Google.
+        callbackURL: '/home', 
       });
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to connect to Google");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to connect to Google";
+      toast.error(errorMessage);
       setIsGoogleLoading(false);
     }
   }
@@ -61,15 +57,11 @@ export function LoginForm() {
   const onSubmit = (data: LoginInput) => {
     startTransition(async () => {
       try {
-        // 1. Check if user exists in the database
         const check = await checkUserExists(data.email);
-
         if (check.status === "error") {
           toast.error("Account not found. Please register first.");
           return;
         }
-
-        // 2. If user exists, send OTP via Better Auth
         await authClient.emailOtp.sendVerificationOtp({
           email: data.email,
           type: "sign-in",
@@ -84,7 +76,7 @@ export function LoginForm() {
             }
           }
         });
-      } catch (error) {
+      } catch  {
         toast.error("An unexpected error occurred");
       }
     });

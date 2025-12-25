@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
-import { emailOTP, admin, username } from "better-auth/plugins";
+import { emailOTP, admin, username, multiSession } from "better-auth/plugins";
 import { resend } from "./email/resend";
 import { ac, ADMIN, CREATOR, USER } from "./access-control";
 import OtpEmail from "./email/otp-email";
@@ -47,6 +47,7 @@ export const auth = betterAuth({
       },
     }),
     username(),
+    multiSession(),
   ],
   databaseHooks: {
     user: {

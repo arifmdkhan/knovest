@@ -49,9 +49,19 @@ export async function getAllCourses(authorId?: string, category?: string, userId
           status: true
         }
       } : false,
+      savedBy: userId ? {
+        where: { userId },
+        select: { id: true }
+      } : false,
     },
   });
-  return data;
+
+  // Transform data to include isSaved boolean
+  return data.map(course => ({
+    ...course,
+    isSaved: course.savedBy?.length > 0,
+    savedBy: undefined // cleanup
+  }));
 }
 
 export type PublicCourseType = Awaited<ReturnType<typeof getAllCourses>>[0];

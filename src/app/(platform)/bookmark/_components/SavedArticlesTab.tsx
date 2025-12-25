@@ -4,7 +4,6 @@ import { FileText } from "lucide-react";
 import { BookmarkEmptyState } from "./BookmarkEmptyState";
 
 export function SavedArticlesTab() {
-    // TODO: Implement fetching logic when endpoint is available
     const isEmpty = true;
 
     if (isEmpty) {

@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommentItem, Comment } from "./comment-item";
 
+import { getComments } from "@/server/actions/comment";
+
 interface CommentListProps {
   postId: string;
   parentId?: string; // Optional: if provided, loads replies for a specific comment
@@ -12,15 +14,9 @@ interface CommentListProps {
 
 const fetchComments = async ({ pageParam, queryKey }: any) => {
   const [_, postId, parentId] = queryKey;
-  const params = new URLSearchParams();
-  params.append("postId", postId);
-  if (parentId) params.append("parentId", parentId);
-  if (pageParam) params.append("cursor", pageParam);
-  params.append("limit", "5"); // Smaller limit for comments
 
-  const res = await fetch(`/api/comments?${params.toString()}`);
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  const res = await getComments(postId, parentId, pageParam as string | undefined, 5);
+  return res;
 };
 
 export function CommentList({ postId, parentId }: CommentListProps) {
@@ -48,9 +44,9 @@ export function CommentList({ postId, parentId }: CommentListProps) {
   const comments = data?.pages.flatMap((page) => page.comments) || [];
 
   if (comments.length === 0) {
-      if (parentId) return <div className="text-xs text-muted-foreground py-2 pl-2">No replies yet.</div>;
-      // For root list, maybe show nothing or "Be the first to comment"
-      return <div className="text-center text-sm text-muted-foreground py-8">No comments yet. Be the first to share your thoughts!</div>;
+    if (parentId) return <div className="text-xs text-muted-foreground py-2 pl-2">No replies yet.</div>;
+    // For root list, maybe show nothing or "Be the first to comment"
+    return <div className="text-center text-sm text-muted-foreground py-8">No comments yet. Be the first to share your thoughts!</div>;
   }
 
   return (
@@ -58,16 +54,16 @@ export function CommentList({ postId, parentId }: CommentListProps) {
       {comments.map((comment: Comment) => (
         <CommentItem key={comment.id} comment={comment} postId={postId} />
       ))}
-      
+
       {hasNextPage && (
-        <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => fetchNextPage()} 
-            disabled={isFetchingNextPage}
-            className="text-xs text-muted-foreground w-full mt-2"
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => fetchNextPage()}
+          disabled={isFetchingNextPage}
+          className="text-xs text-muted-foreground w-full mt-2"
         >
-            {isFetchingNextPage ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : "Load more comments"}
+          {isFetchingNextPage ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : "Load more comments"}
         </Button>
       )}
     </div>

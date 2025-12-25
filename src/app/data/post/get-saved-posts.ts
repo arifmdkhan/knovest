@@ -17,7 +17,7 @@ export async function getSavedPosts(cursor?: string, limit = 10) {
                 include: {
                     author: { select: { id: true, name: true, username: true, image: true, isVerified: true, isSebiVerified: true } },
                     media: true,
-                    _count: { select: { likes: true, comments: true } },
+                    _count: { select: { likes: true, comments: true, other_Post: true } },
                     likes: { where: { userId }, select: { id: true } },
                     savedBy: { where: { userId }, select: { id: true } },
                 }
@@ -36,6 +36,7 @@ export async function getSavedPosts(cursor?: string, limit = 10) {
         ...item.post,
         hasLiked: item.post.likes.length > 0,
         isSaved: true, // By definition
+        isReposted: false, // In saved context, we are showing the saved post itself
         likes: undefined,
         savedBy: undefined
     }));
