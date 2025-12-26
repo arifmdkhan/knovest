@@ -11,16 +11,17 @@ import { cn } from "@/lib/utils";
 
 interface CourseSidebarProps {
     course: CourseSidebarDataType['course']
+    completedLessonIds: string[];
 }
 
-export function CourseSidebar({ course }: CourseSidebarProps) {
+export function CourseSidebar({ course, completedLessonIds }: CourseSidebarProps) {
     const pathname = usePathname()
     const currentLessonId = pathname.split('/').pop()
 
-    // Calculate progress (mock logic for now, can be replaced with real data)
+    // Calculate progress
     const totalLessons = course.chapter.reduce((acc, chapter) => acc + chapter.lessons.length, 0);
-    const completedLessons = 0; // Placeholder
-    const progress = (completedLessons / totalLessons) * 100;
+    const completedLessons = completedLessonIds.length;
+    const progress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
 
     return (
         <div className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-r border-border/50">
@@ -84,6 +85,7 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
                                             lesson={lesson}
                                             slug={course.slug}
                                             isActive={currentLessonId === lesson.id}
+                                            isCompleted={completedLessonIds.includes(lesson.id)}
                                         />
                                     ))}
                                 </div>

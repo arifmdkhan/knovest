@@ -117,7 +117,7 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
         setIsLoading(true);
         try {
             // Prepare custom data with permissions
-            const customData: any = {
+            const customData: { [key: string]: any } = {
                 title,
                 description,
                 permissionType,
@@ -156,9 +156,9 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
 
             onOpenChange(false);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Failed to save audio room", error);
-            if (error.message?.includes("User token is not set")) {
+            if (error instanceof Error && error.message?.includes("User token is not set")) {
                 toast.error("Connection lost. Please refresh the page.");
             } else {
                 toast.error("Failed to save audio room");

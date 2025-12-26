@@ -5,10 +5,10 @@ import { useInView } from "react-intersection-observer";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2, Bookmark } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FeedPost } from "@/types/post";
+import { FeedPost, FeedPage } from "@/types/post";
+import { getSavedPostsAction } from "@/server/actions/post/get-saved-posts-action";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { BookmarkEmptyState } from "./BookmarkEmptyState";
-import { getSavedPostsAction } from "@/server/actions/post/get-saved-posts-action";
 
 export function SavedPostsTab() {
     const { ref, inView } = useInView();
@@ -24,9 +24,9 @@ export function SavedPostsTab() {
         queryKey: ["posts", "bookmarks"],
         queryFn: async ({ pageParam }) => {
             const res = await getSavedPostsAction(pageParam as string | undefined);
-            return res;
+            return res as FeedPage;
         },
-        getNextPageParam: (lastPage: any) => lastPage.nextCursor,
+        getNextPageParam: (lastPage: FeedPage) => lastPage.nextCursor,
         initialPageParam: undefined,
     });
 
@@ -54,7 +54,7 @@ export function SavedPostsTab() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {data.pages.map((page: { posts: FeedPost[]; nextCursor?: string }, i: number) => (
+            {data.pages.map((page: FeedPage, i: number) => (
                 <div key={i} className="space-y-6">
                     {page.posts.map((post: FeedPost) => (
                         <FeedCard key={post.id} post={post} />

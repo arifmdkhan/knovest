@@ -12,10 +12,11 @@ interface LessonItemProps {
     }
     slug: string;
     isActive?: boolean;
+    isCompleted?: boolean;
 }
 
-export function LessonItem({ lesson, slug, isActive }: LessonItemProps) {
-    const completed = false; // Placeholder for now
+export function LessonItem({ lesson, slug, isActive, isCompleted }: LessonItemProps) {
+    const completed = isCompleted;
 
     return (
         <Link href={`/academy/enrolled/${slug}/${lesson.id}`} className={cn(

@@ -12,11 +12,13 @@ interface CommentListProps {
   parentId?: string; // Optional: if provided, loads replies for a specific comment
 }
 
-const fetchComments = async ({ pageParam, queryKey }: any) => {
-  const [_, postId, parentId] = queryKey;
+import { QueryFunctionContext } from "@tanstack/react-query";
 
-  const res = await getComments(postId, parentId, pageParam as string | undefined, 5);
-  return res;
+type CommentQueryKey = ["comments", string, string | undefined];
+
+const fetchComments = async ({ pageParam, queryKey }: QueryFunctionContext) => {
+  const [_, postId, parentId] = queryKey as CommentQueryKey;
+  return await getComments(postId, parentId, pageParam as string | undefined, 5);
 };
 
 export function CommentList({ postId, parentId }: CommentListProps) {
@@ -30,7 +32,7 @@ export function CommentList({ postId, parentId }: CommentListProps) {
     queryKey: ["comments", postId, parentId],
     queryFn: fetchComments,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   if (status === "pending") {

@@ -37,13 +37,13 @@ function StreamConnectionWrapper({ call }: { call: Call }) {
                     setIsJoined(true);
                     console.log("StreamConnectionWrapper: Joined successfully");
                 }
-            } catch (error: any) {
-                if (error.code == 17 || error.message?.includes("JoinBackstage")) {
+            } catch (error: unknown) {
+                if (error instanceof Error && ((error as any).code === 17 || error.message?.includes("JoinBackstage"))) {
                     console.log("Stream is backstage. Waiting.");
                     if (isMounted) setIsJoined(true); // Treat as joined for UI purposes
                 } else {
                     console.error("Failed to join call", error);
-                    toast.error(`Connection failed: ${error.message || "Unknown error"}`);
+                    toast.error(`Connection failed: ${error instanceof Error ? error.message : "Unknown error"}`);
                 }
             }
         };
@@ -100,7 +100,7 @@ export default function StreamPage({ params }: StreamPageProps) {
                 const customData = (callObj.state.custom || {}) as CustomCallData;
                 const currentUserId = session.user.id;
                 const streamUserId = chatClient.userID;
-                const creatorId = (callObj.state.createdBy as any)?.id;
+                const creatorId = callObj.state.createdBy?.id;
 
                 // 1. Creator always has access
                 const isCreator = (creatorId === currentUserId) || (creatorId === streamUserId);
@@ -134,12 +134,12 @@ export default function StreamPage({ params }: StreamPageProps) {
                         // Handle potential formats
                         if (Array.isArray(customData.allowedUserIds)) {
                             // Map to strings to be safe
-                            allowedIds = customData.allowedUserIds.map((id: any) => String(id));
+                            allowedIds = customData.allowedUserIds.map((id: unknown) => String(id));
                         } else if (typeof customData.allowedUserIds === 'string') {
                             try {
                                 const parsed = JSON.parse(customData.allowedUserIds);
                                 if (Array.isArray(parsed)) {
-                                    allowedIds = parsed.map((id: any) => String(id));
+                                    allowedIds = parsed.map((id: unknown) => String(id));
                                 }
                             } catch (e) {
                                 // Maybe comma separated?

@@ -38,10 +38,19 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const EXPERTISE_OPTIONS = [
   "Stocks", "F&O", "Commodities", "Currencies", "Mutual Funds",
-  "Scalping", "Intraday", "Swing Trading", "Position Trading","Momentum Trading", "Fundamental Trading", "Technical Trading"
+  "Scalping", "Intraday", "Swing Trading", "Position Trading", "Momentum Trading", "Fundamental Trading", "Technical Trading"
 ];
 
-export function EditProfileDialog({ profile }: { profile: any }) {
+interface ProfileProps {
+  name: string;
+  bio?: string | null;
+  location?: string | null;
+  website?: string | null;
+  image?: string | null;
+  expertise?: string[];
+}
+
+export function EditProfileDialog({ profile }: { profile: ProfileProps }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
@@ -67,8 +76,12 @@ export function EditProfileDialog({ profile }: { profile: any }) {
       toast.success("Profile updated");
       setOpen(false);
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
     } finally {
       setIsSaving(false);
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState, useMemo } from "react";
-import { useStreamVideoClient, Call, StreamTheme, useCallStateHooks, ParticipantView } from "@stream-io/video-react-sdk";
+import { useStreamVideoClient, Call, StreamTheme, useCallStateHooks, ParticipantView, StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -36,11 +36,11 @@ const ActiveRoom = ({ call }: { call: Call }) => {
     const [showSettings, setShowSettings] = useState(false);
 
     // Manage reactions locally
-    const [latestReactions, setLatestReactions] = useState<Record<string, any>>({});
+    const [latestReactions, setLatestReactions] = useState<Record<string, { emoji: string; type: string }>>({});
     // Manage raised hands locally
     const [raisedHands, setRaisedHands] = useState<string[]>([]);
 
-    const showReaction = (userId: string, reaction: any) => {
+    const showReaction = (userId: string, reaction: { emoji: string; type: string }) => {
         setLatestReactions(prev => ({ ...prev, [userId]: reaction }));
         setTimeout(() => {
             setLatestReactions(prev => {
@@ -110,39 +110,32 @@ const ActiveRoom = ({ call }: { call: Call }) => {
     }, [call]);
 
     const participants = useMemo(() => {
-        const uniqueParticipantsMap = new Map();
-
+        // Simple dedupe by userId, preferring the one with tracks if duplicate
+        const unique = new Map();
         rawParticipants.forEach(p => {
-            if (!uniqueParticipantsMap.has(p.userId)) {
-                uniqueParticipantsMap.set(p.userId, p);
+            if (!unique.has(p.userId)) {
+                unique.set(p.userId, p);
             } else {
-                const existing = uniqueParticipantsMap.get(p.userId);
+                const current = unique.get(p.userId);
 
-                const pHasAudio = p.publishedTracks.includes('audio' as any);
-                const pHasVideo = p.publishedTracks.includes('video' as any);
-                const existingHasAudio = existing.publishedTracks.includes('audio' as any);
-                const existingHasVideo = existing.publishedTracks.includes('video' as any);
+                // Compare join times to keep the latest session
+                const currentJoined = current.joinedAt ? new Date(String(current.joinedAt)).getTime() : 0;
+                const newJoined = p.joinedAt ? new Date(String(p.joinedAt)).getTime() : 0;
 
-                // Helper to score connection quality/relevance
-                const getScore = (participant: any, hasAudio: boolean, hasVideo: boolean) => {
-                    let score = 0;
-                    if (hasAudio) score += 10;
-                    if (hasVideo) score += 5;
-                    if (participant.isSpeaking) score += 2;
-                    return score;
-                }
-
-                const pScore = getScore(p, pHasAudio, pHasVideo);
-                const existingScore = getScore(existing, existingHasAudio, existingHasVideo);
-
-                if (pScore > existingScore) {
-                    uniqueParticipantsMap.set(p.userId, p);
+                if (newJoined > currentJoined) {
+                    unique.set(p.userId, p);
+                } else if (!currentJoined && !newJoined) {
+                    // Fallback to track presence if no timestamps
+                    const currentActive = current.publishedTracks.length > 0;
+                    const newActive = p.publishedTracks.length > 0;
+                    if (!currentActive && newActive) {
+                        unique.set(p.userId, p);
+                    }
                 }
             }
         });
-
-        return Array.from(uniqueParticipantsMap.values());
-    }, [rawParticipants, tick]);
+        return Array.from(unique.values());
+    }, [rawParticipants]);
 
     const isHost = localParticipant?.roles?.includes('host') ||
         localParticipant?.roles?.includes('admin') ||
@@ -162,8 +155,8 @@ const ActiveRoom = ({ call }: { call: Call }) => {
         if (!call) return;
 
         const handleReaction = (event: any) => {
-            const { reaction } = event;
-            const user = reaction?.user || event.user;
+            const reaction = (event as any).reaction; // Type assertion needed as CallEvent is generic
+            const user = reaction?.user || (event as any).user;
 
             // Debug Remote Events
             const isLocal = user?.id === call.state.localParticipant?.userId;
@@ -217,7 +210,7 @@ const ActiveRoom = ({ call }: { call: Call }) => {
         if (!isHost) return;
 
         const handlePermissionRequest = (event: any) => {
-            const { user, permissions } = event;
+            const { user, permissions } = event as any; // Type assertion for specific event properties
             if (permissions.includes('send-audio')) {
                 setRaisedHands(prev => [...prev, user.id]);
 
@@ -293,7 +286,7 @@ const ActiveRoom = ({ call }: { call: Call }) => {
 
 
     // Helper for role detection
-    const getMainRole = (p: any) => {
+    const getMainRole = (p: StreamVideoParticipant | undefined) => {
         if (!p) return 'user';
         if (p.userId === call.state.createdBy?.id) return 'host';
 
@@ -312,35 +305,35 @@ const ActiveRoom = ({ call }: { call: Call }) => {
 
     if (isBackstage && !isHost) {
         return (
-            <div className="flex flex-col h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900/50 via-slate-950 to-black items-center justify-center p-6 text-center">
+            <div className="flex flex-col h-full bg-background dark:bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] dark:from-slate-900/50 dark:via-slate-950 dark:to-black items-center justify-center p-6 text-center transition-colors">
                 <div className="relative mb-8">
                     <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-xl animate-pulse"></div>
-                    <div className="relative bg-black/50 p-6 rounded-full border border-violet-500/30">
+                    <div className="relative bg-card dark:bg-black/50 p-6 rounded-full border border-violet-500/30">
                         <Loader2 className="h-12 w-12 text-violet-500 animate-spin" />
                     </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Room Starting Soon</h2>
-                <p className="text-slate-400 max-w-md">The host is currently backstage getting ready.</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Room Starting Soon</h2>
+                <p className="text-muted-foreground max-w-md">The host is currently backstage getting ready.</p>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900/50 via-slate-950 to-black">
+        <div className="flex flex-col h-full bg-background dark:bg-black dark:bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] dark:from-slate-900/50 dark:via-slate-950 dark:to-black transition-colors duration-500">
             {/* Header */}
-            <div className="p-6 border-b border-white/5 flex justify-between items-center backdrop-blur-md sticky top-0 z-10">
+            <div className="p-6 border-b border-border dark:border-white/5 flex justify-between items-center backdrop-blur-md sticky top-0 z-10">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                    <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
                         <div className={cn("h-3 w-3 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]", isBackstage ? "bg-yellow-500 shadow-yellow-500/50" : "bg-red-500 shadow-red-500/50")}></div>
                         {customData.title || "Untitled Room"}
                         {isBackstage && <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30">Backstage</span>}
                     </h1>
-                    <p className="text-sm text-slate-400 mt-1 pl-6">{customData.description || "Live Audio Discussion"}</p>
+                    <p className="text-sm text-muted-foreground mt-1 pl-6">{customData.description || "Live Audio Discussion"}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="bg-white/5 px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
-                        <Users className="h-4 w-4 text-violet-400" />
-                        <span className="text-sm font-medium text-slate-200">
+                    <div className="bg-zinc-200/50 dark:bg-white/5 px-3 py-1.5 rounded-full flex items-center gap-2 border border-border dark:border-white/10">
+                        <Users className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                        <span className="text-sm font-medium text-foreground dark:text-slate-200">
                             {participants.length} Listening
                         </span>
                     </div>
@@ -375,11 +368,11 @@ const ActiveRoom = ({ call }: { call: Call }) => {
                     </div>
 
                     {/* Divider */}
-                    <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-10"></div>
+                    <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-white/10 to-transparent my-10"></div>
 
                     {/* Listeners Section */}
                     <div>
-                        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
                             <Hand className="h-3 w-3" /> Audience
                         </h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -388,12 +381,12 @@ const ActiveRoom = ({ call }: { call: Call }) => {
                                 .map((p) => (
                                     <div key={p.sessionId}>
                                         <ParticipantMenu participant={p} call={call} isHost={isHost}>
-                                            <div className={cn("flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group select-none",
-                                                raisedHands.includes(p.userId) ? "bg-violet-900/20 border border-violet-500/30" : "")}>
+                                            <div className={cn("flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer group select-none",
+                                                raisedHands.includes(p.userId) ? "bg-violet-500/10 dark:bg-violet-900/20 border border-violet-500/30" : "")}>
                                                 <div className="relative">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarImage src={p.image} />
-                                                        <AvatarFallback className="text-xs">{p.name?.charAt(0)}</AvatarFallback>
+                                                        <AvatarFallback className="text-xs bg-zinc-200 dark:bg-zinc-800">{p.name?.charAt(0)}</AvatarFallback>
                                                     </Avatar>
 
                                                     {latestReactions[p.userId] && (
@@ -408,13 +401,13 @@ const ActiveRoom = ({ call }: { call: Call }) => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="text-sm text-slate-300 truncate group-hover:text-white transition-colors">{p.name}</span>
+                                                <span className="text-sm text-muted-foreground truncate group-hover:text-foreground dark:group-hover:text-white transition-colors">{p.name}</span>
                                             </div>
                                         </ParticipantMenu>
                                     </div>
                                 ))}
                             {participants.filter(p => getMainRole(p) === 'user').length === 0 && (
-                                <div className="text-slate-600 text-sm col-span-full">The audience is quiet...</div>
+                                <div className="text-muted-foreground text-sm col-span-full">The audience is quiet...</div>
                             )}
                         </div>
                     </div>
@@ -422,22 +415,22 @@ const ActiveRoom = ({ call }: { call: Call }) => {
             </div>
 
             {/* Controls Bar */}
-            <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-xl">
+            <div className="p-4 border-t border-border dark:border-white/10 bg-white/80 dark:bg-black/40 backdrop-blur-xl">
                 <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-white/10" onClick={() => setShowSettings(true)}>
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/10" onClick={() => setShowSettings(true)}>
                             <Settings className="h-5 w-5" />
                         </Button>
                     </div>
 
                     <div className="flex items-center gap-4">
                         {isHost && isBackstage && (
-                            <Button size="sm" onClick={handleGoLive} className="bg-green-600 hover:bg-green-700 text-white border-none rounded-full px-6">
+                            <Button size="sm" onClick={handleGoLive} className="bg-green-600 hover:bg-green-700 text-white border-none rounded-full px-6 shadow-lg shadow-green-500/20">
                                 Go Live
                             </Button>
                         )}
                         {isHost && !isBackstage && (
-                            <Button size="sm" variant="destructive" onClick={handleEndSession} className="rounded-full px-6">
+                            <Button size="sm" variant="destructive" onClick={handleEndSession} className="rounded-full px-6 shadow-lg shadow-red-500/20">
                                 End Session
                             </Button>
                         )}
@@ -452,7 +445,7 @@ const ActiveRoom = ({ call }: { call: Call }) => {
                             <Button
                                 size="sm"
                                 variant="destructive"
-                                className="rounded-full h-10 w-10 p-0 bg-red-600 hover:bg-red-700"
+                                className="rounded-full h-10 w-10 p-0 shadow-lg shadow-red-500/20"
                                 onClick={handleLeaveRoom}
                             >
                                 <LogOut className="h-4 w-4" />
@@ -462,7 +455,7 @@ const ActiveRoom = ({ call }: { call: Call }) => {
 
                     <div className="flex items-center gap-2">
                         {getMainRole(localParticipant) === 'user' && (
-                            <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 gap-2" onClick={requestMicrophone}>
+                            <Button variant="ghost" className="text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/10 gap-2" onClick={requestMicrophone}>
                                 <Hand className="h-4 w-4" />
                                 <span className="hidden sm:inline">Raise Hand</span>
                             </Button>
@@ -504,12 +497,12 @@ const MicControl = ({ call }: { call: Call }) => {
     }
 
     return (
-        <div className="flex items-center rounded-full bg-white/10 p-0.5">
+        <div className="flex items-center rounded-full bg-zinc-200/50 dark:bg-white/10 p-0.5 border border-border dark:border-white/5">
             <Button
                 size="sm"
                 variant={micStatus === 'enabled' ? "secondary" : "destructive"}
-                className={cn("rounded-l-full rounded-r-none h-9 pl-3 pr-2 transition-colors border-r border-black/10",
-                    micStatus === 'enabled' ? "bg-white text-black hover:bg-slate-200" : "bg-red-500 text-white hover:bg-red-600")}
+                className={cn("rounded-l-full rounded-r-none h-9 pl-3 pr-2 transition-colors border-r border-border dark:border-black/10",
+                    micStatus === 'enabled' ? "bg-white dark:bg-zinc-200 text-zinc-900 hover:bg-zinc-100" : "bg-red-600 text-white hover:bg-red-700")}
                 onClick={toggleMic}
             >
                 {micStatus === 'enabled' ? <Mic className="h-4 w-4 mr-2" /> : <MicOff className="h-4 w-4 mr-2" />}
@@ -521,15 +514,15 @@ const MicControl = ({ call }: { call: Call }) => {
                         size="sm"
                         variant={micStatus === 'enabled' ? "secondary" : "destructive"}
                         className={cn("rounded-r-full rounded-l-none h-9 px-2 transition-colors",
-                            micStatus === 'enabled' ? "bg-white text-black hover:bg-slate-200" : "bg-red-500 text-white hover:bg-red-600")}
+                            micStatus === 'enabled' ? "bg-white dark:bg-zinc-200 text-zinc-900 hover:bg-zinc-100" : "bg-red-600 text-white hover:bg-red-700")}
                     >
                         <ChevronDown className="h-3 w-3" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-1 bg-zinc-900 border-zinc-800 text-white" align="end" side="top">
-                    <div className="text-xs font-semibold text-zinc-400 px-2 py-2 uppercase tracking-wider">Microphone Input</div>
+                <PopoverContent className="w-64 p-1 bg-background border-border text-foreground shadow-2xl z-50" align="end" side="top">
+                    <div className="text-[10px] font-bold text-muted-foreground px-2 py-2 uppercase tracking-widest">Microphone Input</div>
                     <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                        {audioDevices.length === 0 && <div className="px-2 py-1 text-sm text-zinc-500">No devices found</div>}
+                        {audioDevices.length === 0 && <div className="px-2 py-3 text-center text-sm text-disabled italic">No devices found</div>}
                         {audioDevices.map(d => (
                             <button
                                 key={d.deviceId}
@@ -537,8 +530,8 @@ const MicControl = ({ call }: { call: Call }) => {
                                     try { await call.microphone.select(d.deviceId); toast.success(`Microphone set to ${d.label}`); }
                                     catch (e) { toast.error("Failed to select device"); }
                                 }}
-                                className={cn("flex items-center justify-between text-sm px-2 py-2 rounded hover:bg-white/10 transition-colors w-full text-left",
-                                    call.microphone.state.selectedDevice === d.deviceId ? "text-violet-400 bg-violet-500/10" : "text-zinc-300")}
+                                className={cn("flex items-center justify-between text-sm px-2 py-2 rounded hover:bg-zinc-200/50 dark:hover:bg-white/10 transition-colors w-full text-left",
+                                    call.microphone.state.selectedDevice === d.deviceId ? "text-violet-600 dark:text-violet-400 bg-violet-500/10" : "text-muted-foreground")}
                             >
                                 <span className="truncate flex-1 pr-2">{d.label || `Mic ${d.deviceId.slice(0, 4)}...`}</span>
                                 {call.microphone.state.selectedDevice === d.deviceId && <Check className="h-3 w-3 shrink-0" />}
@@ -559,6 +552,8 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
     const { isLoadingGroups, myGroupIds } = useTradeRoomContext();
     const { activeCall, joinRoom, isJoining } = useActiveCall();
 
+    const [isWaitingForHost, setIsWaitingForHost] = useState(false);
+
     useEffect(() => {
         if (!client || !audioRoomId || !session?.user || isLoadingGroups) return;
         if (activeCall?.id === audioRoomId) return;
@@ -569,7 +564,7 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
                 const call = client.call("audio_room", audioRoomId);
                 await call.get();
 
-                const custom = call.state.custom as any;
+                const custom = (call.state.custom || {}) as CustomCallData;
                 const creatorId = call.state.createdBy?.id;
                 const currentUserId = session.user.id;
 
@@ -586,13 +581,13 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
 
                     // Check Users
                     if (!hasAccess) {
-                        let allowedIds: any[] = [];
-                        if (Array.isArray(custom.allowedUserIds)) allowedIds = custom.allowedUserIds;
+                        let allowedIds: string[] = [];
+                        if (Array.isArray(custom.allowedUserIds)) allowedIds = custom.allowedUserIds.map(String);
                         else if (typeof custom.allowedUserIds === 'string') {
-                            try { allowedIds = JSON.parse(custom.allowedUserIds); } catch (e) { }
+                            try { allowedIds = (JSON.parse(custom.allowedUserIds) as any[]).map(String); } catch (e) { }
                         }
 
-                        if (allowedIds.some((id: any) => String(id).trim() === String(currentUserId).trim())) {
+                        if (allowedIds.some((id) => id.trim() === String(currentUserId).trim())) {
                             hasAccess = true;
                         }
                     }
@@ -605,8 +600,16 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
                 }
 
                 await joinRoom(audioRoomId);
-            } catch (error) {
+                setIsWaitingForHost(false); // Reset if successful
+            } catch (error: any) {
                 console.error("Failed to join room", error);
+
+                // Handle Backstage permission error (code 17)
+                if (error?.code === 17) {
+                    setIsWaitingForHost(true);
+                    return;
+                }
+
                 toast.error("Failed to join room");
                 router.push("/trade-room");
             }
@@ -616,8 +619,33 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
     }, [client, audioRoomId, session?.user, isLoadingGroups, activeCall, joinRoom, myGroupIds, router]);
 
     if (!session || !client || isJoining || !activeCall || activeCall.id !== audioRoomId) {
+        if (isWaitingForHost) {
+            return (
+                <div className="flex h-screen w-full items-center justify-center bg-background dark:bg-black flex-col gap-6 text-foreground dark:text-white p-6 text-center transition-colors duration-500">
+                    <div className="relative">
+                        <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-xl animate-pulse"></div>
+                        <div className="relative bg-card dark:bg-zinc-900 p-6 rounded-full border border-violet-500/30 shadow-xl shadow-violet-500/10">
+                            <Loader2 className="h-12 w-12 text-violet-500 animate-spin" />
+                        </div>
+                    </div>
+                    <div className="space-y-2 max-w-md">
+                        <h2 className="text-2xl font-bold">Room hasn't started yet</h2>
+                        <p className="text-muted-foreground">The host is currently backstage or hasn't started the session. Please wait or try again later.</p>
+                    </div>
+                    <div className="flex gap-4">
+                        <Button variant="outline" onClick={() => window.location.reload()} className="border-border hover:bg-muted">
+                            Retry
+                        </Button>
+                        <Button onClick={() => router.push('/trade-room')} className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20">
+                            Go Back
+                        </Button>
+                    </div>
+                </div>
+            );
+        }
+
         return (
-            <div className="flex h-screen w-full items-center justify-center bg-black flex-col gap-4 text-white">
+            <div className="flex h-screen w-full items-center justify-center bg-background dark:bg-black flex-col gap-4 text-foreground dark:text-white transition-colors duration-500">
                 <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
                 <p>{isJoining ? "Joining Audio Room..." : "Loading..."}</p>
             </div>

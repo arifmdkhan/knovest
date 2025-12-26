@@ -17,15 +17,15 @@ export default async function CourseLayout({ children, params }: CourseLayoutPro
     return (
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background">
             {/* Desktop Sidebar */}
-            <div className="hidden md:block w-80 border-r border-border/50 shrink-0 h-full">
-                <CourseSidebar course={courseSidebarData.course} />
+            <div className="hidden lg:block w-80 border-r border-border/50 shrink-0 h-full">
+                <CourseSidebar course={courseSidebarData.course} completedLessonIds={courseSidebarData.completedLessonIds} />
             </div>
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                 {/* Mobile Header */}
-                <div className="md:hidden p-4 border-b border-border/50 flex items-center gap-4 bg-background/80 backdrop-blur-md z-10">
-                    <MobileCourseSidebar course={courseSidebarData.course} />
+                <div className="lg:hidden p-4 border-b border-border/50 flex items-center gap-4 bg-background/80 backdrop-blur-md z-10">
+                    <MobileCourseSidebar course={courseSidebarData.course} completedLessonIds={courseSidebarData.completedLessonIds} />
                     <span className="font-semibold truncate text-sm">{courseSidebarData.course.title}</span>
                 </div>
 

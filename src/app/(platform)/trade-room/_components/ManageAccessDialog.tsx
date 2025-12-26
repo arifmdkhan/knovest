@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, Shield, Crown } from "lucide-react";
 import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
+import { Channel } from "stream-chat";
 import { UserMultiSelect } from "@/components/UserMultiSelect";
+import { CustomChannelData } from "@/lib/chat-types";
 import { toast } from "sonner";
 import { revokeStreamAccess, getStreamAccessDetails } from "@/server/actions/stream-access";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,9 +24,9 @@ interface ManageAccessDialogProps {
 
 type AccessUser = {
     id: string;
-    name?: string;
-    image?: string;
-    username?: string;
+    name?: string | null;
+    image?: string | null;
+    username?: string | null;
     type: "manual" | "paid" | "creator";
     isGroup?: boolean;
 };
@@ -34,20 +36,27 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
     const { client: chatClient } = useChatContext();
     const [isLoading, setIsLoading] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-    
+
     // Data State
     const [paidMembers, setPaidMembers] = useState<AccessUser[]>([]);
     const [manualMembers, setManualMembers] = useState<AccessUser[]>([]);
-    const [allowedGroups, setAllowedGroups] = useState<any[]>([]);
-    
+    const [allowedGroups, setAllowedGroups] = useState<Channel[]>([]);
+
     // Pagination State
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingInfo, setIsFetchingInfo] = useState(false);
-    
-    const { ref, inView } = useInView();
 
-    const customData = (call.state.custom || {}) as any;
+    const { ref: loadMoreRef, inView } = useInView();
+
+    // Define custom data type based on usage
+
+    // Define custom data type based on usage
+    interface CustomCallData {
+        allowedUserIds?: string[] | string;
+        allowedGroups?: string[];
+    }
+    const customData = (call.state.custom || {}) as CustomCallData;
     const manualIdsRaw = customData.allowedUserIds;
 
     const fetchDetails = useCallback(async (pageNum: number) => {
@@ -56,21 +65,21 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         // Only parse manual IDs on first page to check them once
         if (pageNum === 1) {
             if (Array.isArray(manualIdsRaw)) {
-                 manualIds.push(...manualIdsRaw.map((id: any) => String(id)));
+                manualIds.push(...manualIdsRaw.map((id: any) => String(id)));
             } else if (typeof manualIdsRaw === 'string') {
-                try { manualIds.push(...JSON.parse(manualIdsRaw)); } catch {}
+                try { manualIds.push(...JSON.parse(manualIdsRaw)); } catch { }
             }
         }
 
         try {
             const details = await getStreamAccessDetails(call.id, manualIds, pageNum);
-            
+
             if (details) {
                 if (pageNum === 1) {
-                    setPaidMembers(details.paidUsers as any);
-                    setManualMembers(details.manualUsers as any);
+                    setPaidMembers(details.paidUsers);
+                    setManualMembers(details.manualUsers);
                 } else {
-                    setPaidMembers(prev => [...prev, ...details.paidUsers as any]);
+                    setPaidMembers(prev => [...prev, ...details.paidUsers]);
                     // Manual users are only on page 1, so no need to merge them on subsequent pages
                 }
                 setHasMore(!!details.hasMorePaid);
@@ -111,13 +120,13 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         if (!chatClient || !open || !groupIds.length) return;
 
         const fetchGroups = async () => {
-             try {
-                 const filters = { type: 'messaging', id: { $in: groupIds } };
-                 const channels = await chatClient.queryChannels(filters, {}, { limit: 50 });
-                 setAllowedGroups(channels);
-             } catch (error) {
-                 console.error("Failed to fetch groups", error);
-             }
+            try {
+                const filters = { type: 'messaging', id: { $in: groupIds } };
+                const channels = await chatClient.queryChannels(filters, {}, { limit: 50 });
+                setAllowedGroups(channels);
+            } catch (error) {
+                console.error("Failed to fetch groups", error);
+            }
         };
         fetchGroups();
     }, [chatClient, open, JSON.stringify(groupIds)]);
@@ -128,15 +137,15 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         const creatorId = (call.state.createdBy as any)?.id;
         const list: AccessUser[] = [];
 
-         // A. Groups
+        // A. Groups
         allowedGroups.forEach(g => {
-             list.push({
-                 id: g.id!,
-                 name: g.data?.name || g.id,
-                 image: g.data?.image,
-                 type: 'manual', 
-                 isGroup: true
-             });
+            list.push({
+                id: g.id!,
+                name: (g.data as CustomChannelData)?.name || g.id,
+                image: (g.data as CustomChannelData)?.image,
+                type: 'manual',
+                isGroup: true
+            });
         });
 
         // B. Merging Users
@@ -145,7 +154,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
 
         // 1. Paid
         paidMembers.forEach(u => allUsersMap.set(u.id, u));
-        
+
         // 2. Manual (Overwrite paid if same, to show as Invited)
         manualMembers.forEach(u => allUsersMap.set(u.id, u));
 
@@ -153,17 +162,17 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         if (creatorId) {
             allUsersMap.set(creatorId, {
                 id: creatorId,
-                name: (call.state.createdBy as any).name,
-                image: (call.state.createdBy as any).image,
+                name: call.state.createdBy?.name || "Creator",
+                image: call.state.createdBy?.image,
                 type: 'creator'
             });
         }
 
         // Convert to list
         Array.from(allUsersMap.values()).forEach(u => {
-             // Ensure Creator is marked creator even if in other lists
-             if (u.id === creatorId) u.type = 'creator';
-             list.push(u);
+            // Ensure Creator is marked creator even if in other lists
+            if (u.id === creatorId) u.type = 'creator';
+            list.push(u);
         });
 
         return list;
@@ -178,7 +187,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
             if (Array.isArray(manualIdsRaw)) {
                 currentAllowed.push(...manualIdsRaw);
             } else if (typeof manualIdsRaw === 'string') {
-                 try { currentAllowed.push(...JSON.parse(manualIdsRaw)); } catch {}
+                try { currentAllowed.push(...JSON.parse(manualIdsRaw)); } catch { }
             }
 
             const newAllowed = Array.from(new Set([...currentAllowed, ...selectedUserIds]));
@@ -189,11 +198,11 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                     allowedUserIds: newAllowed
                 }
             });
-            
+
             toast.success("Users added successfully");
             setSelectedUserIds([]);
             // Trigger refetch or optimistic update could be nice, but simple refetch page 1 ensures sync
-            fetchDetails(1); 
+            fetchDetails(1);
         } catch (error) {
             console.error("Failed to add users", error);
             toast.error("Failed to add users");
@@ -206,9 +215,9 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         setIsLoading(true);
         try {
             if (user.isGroup) {
-                 const currentGroups: string[] = customData.allowedGroups || [];
-                 const newGroups = currentGroups.filter(g => g !== user.id);
-                 await call.update({
+                const currentGroups: string[] = customData.allowedGroups || [];
+                const newGroups = currentGroups.filter(g => g !== user.id);
+                await call.update({
                     custom: {
                         ...customData,
                         allowedGroups: newGroups
@@ -221,10 +230,10 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
 
             if (user.type === 'manual') {
                 const currentAllowed: string[] = [];
-                 if (Array.isArray(manualIdsRaw)) {
+                if (Array.isArray(manualIdsRaw)) {
                     currentAllowed.push(...manualIdsRaw);
                 } else if (typeof manualIdsRaw === 'string') {
-                     try { currentAllowed.push(...JSON.parse(manualIdsRaw)); } catch {}
+                    try { currentAllowed.push(...JSON.parse(manualIdsRaw)); } catch { }
                 }
 
                 const newAllowed = currentAllowed.filter(id => id !== user.id);
@@ -262,7 +271,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                         Manage Access
                     </DialogTitle>
                 </DialogHeader>
-                
+
                 <div className="flex-1 flex flex-col gap-4 p-6 pt-2 min-h-0">
                     {/* Add Users Section */}
                     <div className="space-y-3 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
@@ -273,9 +282,9 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                                 onSelectedUserIdsChange={setSelectedUserIds}
                             />
                             {selectedUserIds.length > 0 && (
-                                <Button 
-                                    size="sm" 
-                                    onClick={handleAddUsers} 
+                                <Button
+                                    size="sm"
+                                    onClick={handleAddUsers}
                                     disabled={isLoading}
                                     className="bg-violet-600 hover:bg-violet-700 text-white w-full"
                                 >
@@ -288,26 +297,26 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
 
                     {/* Users List */}
                     <div className="flex-1 flex flex-col min-h-0">
-                         <h4 className="text-sm font-medium text-zinc-400 mb-3">Allowed Groups & Users ({accessList.length})</h4>
-                         <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                        <h4 className="text-sm font-medium text-zinc-400 mb-3">Allowed Groups & Users ({accessList.length})</h4>
+                        <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                             {accessList.map(item => (
                                 <div key={item.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-900 transition-colors border border-transparent hover:border-zinc-800">
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-9 w-9 border border-zinc-800">
-                                            <AvatarImage src={item.image} />
+                                            <AvatarImage src={item.image || undefined} />
                                             <AvatarFallback className="bg-zinc-800 text-xs">{item.name?.[0] || (item.isGroup ? 'G' : 'U')}</AvatarFallback>
                                         </Avatar>
                                         <div>
                                             <p className="text-sm font-medium text-zinc-200">{item.name || item.id}</p>
                                             {!item.isGroup && item.username && <p className="text-xs text-zinc-500">@{item.username}</p>}
                                             <div className="flex gap-2 mt-0.5">
-                                                 {item.type === 'creator' && <Badge variant="secondary" className="h-5 text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20 px-1.5 gap-1"><Crown className="h-3 w-3" /> Creator</Badge>}
-                                                 
-                                                 {item.isGroup && <Badge variant="secondary" className="h-5 text-[10px] bg-purple-500/10 text-purple-500 border-purple-500/20 px-1.5">Group</Badge>}
-                                                 
-                                                 {!item.isGroup && item.type === 'manual' && <Badge variant="secondary" className="h-5 text-[10px] bg-blue-500/10 text-blue-500 border-blue-500/20 px-1.5">Invited</Badge>}
-                                                 
-                                                 {!item.isGroup && item.type === 'paid' && <Badge variant="secondary" className="h-5 text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-1.5">Paid Pass</Badge>}
+                                                {item.type === 'creator' && <Badge variant="secondary" className="h-5 text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20 px-1.5 gap-1"><Crown className="h-3 w-3" /> Creator</Badge>}
+
+                                                {item.isGroup && <Badge variant="secondary" className="h-5 text-[10px] bg-purple-500/10 text-purple-500 border-purple-500/20 px-1.5">Group</Badge>}
+
+                                                {!item.isGroup && item.type === 'manual' && <Badge variant="secondary" className="h-5 text-[10px] bg-blue-500/10 text-blue-500 border-blue-500/20 px-1.5">Invited</Badge>}
+
+                                                {!item.isGroup && item.type === 'paid' && <Badge variant="secondary" className="h-5 text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-1.5">Paid Pass</Badge>}
                                             </div>
                                         </div>
                                     </div>
@@ -326,11 +335,11 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                                 </div>
                             ))}
                             {hasMore && (
-                                <div ref={ref} className="h-10 flex w-full items-center justify-center">
+                                <div ref={loadMoreRef} className="h-10 flex w-full items-center justify-center">
                                     {isFetchingInfo && <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />}
                                 </div>
                             )}
-                         </div>
+                        </div>
                     </div>
                 </div>
             </DialogContent>

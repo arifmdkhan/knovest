@@ -46,5 +46,30 @@ export async function getEnrolledCourses() {
         }
     })
 
-    return enrolledCourses
+    const coursesWithProgress = await Promise.all(enrolledCourses.map(async (enrollment) => {
+        const totalLessons = enrollment.course.chapter.reduce((acc, chapter) => acc + chapter.lessons.length, 0);
+
+        const completedLessonsCount = await prisma.enrolledCourseProgress.count({
+            where: {
+                userId: user.id,
+                isCompleted: true,
+                lesson: {
+                    chapter: {
+                        courseId: enrollment.course.id
+                    }
+                }
+            }
+        });
+
+        const progress = totalLessons > 0 ? (completedLessonsCount / totalLessons) * 100 : 0;
+
+        return {
+            ...enrollment,
+            progress
+        };
+    }));
+
+    return coursesWithProgress;
 }
+
+export type EnrolledCourseWithProgress = Awaited<ReturnType<typeof getEnrolledCourses>>[number];

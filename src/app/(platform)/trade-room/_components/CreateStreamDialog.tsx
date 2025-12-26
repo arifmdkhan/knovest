@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { StreamChatGenerics, CustomChannelData } from "@/lib/chat-types";
+import { CustomCallData } from "@/types/stream";
 import { Channel } from "stream-chat";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { UserMultiSelect } from "@/components/UserMultiSelect";
@@ -48,7 +49,7 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
     useEffect(() => {
         if (open) {
             if (editCall) {
-                const custom = (editCall.state.custom || {}) as any;
+                const custom = (editCall.state.custom || {}) as CustomCallData;
                 setTitle(custom.title || "");
                 setDescription(custom.description || "");
                 setPermissionType(custom.permissionType || "everyone");
@@ -121,7 +122,7 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
         setIsLoading(true);
         try {
             // Prepare custom data with permissions
-            const customData: any = {
+            const customData: CustomCallData = {
                 title,
                 description,
                 permissionType,
@@ -165,12 +166,12 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
 
             onOpenChange(false);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Failed to save stream", error);
-            if (error.message?.includes("User token is not set")) {
+            if (error instanceof Error && error.message?.includes("User token is not set")) {
                 toast.error("Connection lost. Please refresh the page.");
             } else {
-                toast.error("Failed to save stream: " + (error.message || "Unknown error"));
+                toast.error("Failed to save stream: " + (error instanceof Error ? error.message : "Unknown error"));
             }
         } finally {
             setIsLoading(false);

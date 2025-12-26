@@ -166,7 +166,7 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
     setOptimisticLike({ liked: newLiked, count: newLiked ? optimisticLike.count + 1 : optimisticLike.count - 1 });
 
     toggleLike({ postId: displayPost.id }, {
-      onSuccess: (data: any) => setOptimisticLike({ liked: data.hasLiked ?? data.liked, count: data._count?.likes ?? data.count }),
+      onSuccess: (data) => setOptimisticLike({ liked: data.liked, count: data.count }),
       onError: () => setOptimisticLike(previousState)
     });
   };
@@ -176,7 +176,7 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
     const previousState = optimisticSave;
     setOptimisticSave(!previousState);
     toggleSave({ postId: displayPost.id }, {
-      onSuccess: (data: any) => setOptimisticSave(data.isSaved ?? data.saved),
+      onSuccess: (data) => setOptimisticSave(data.saved),
       onError: () => setOptimisticSave(previousState)
     });
   };
@@ -207,7 +207,7 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
 
     // We toggle repost on the DISPLAYED post (the original content)
     toggleRepost({ postId: displayPost.id }, {
-      onSuccess: (data: any) => {
+      onSuccess: (data) => {
         setOptimisticRepost({ reposted: data.reposted, count: data.count });
         setShowRepostDialog(false);
       },
@@ -329,7 +329,7 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
                 displayPost.media.length === 2 && "grid-cols-2",
                 displayPost.media.length >= 3 && "grid-cols-2",
               )}>
-                {displayPost.media.map((media: any, idx: number) => {
+                {displayPost.media.map((media, idx) => {
                   const isFeatured = displayPost.media.length === 3 && idx === 0;
                   return (
                     <div key={media.id} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedMedia({ url: media.url, type: media.type }); }} className={cn("relative bg-muted/30 cursor-pointer overflow-hidden group/media", isFeatured ? "row-span-2 aspect-[4/5]" : "aspect-square", displayPost.media.length === 1 && "aspect-video max-h-[500px]")}>

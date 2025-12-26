@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, InfiniteData } from "@tanstack/react-query";
+import { FeedPost } from "@/types/post";
+interface FeedPage {
+  posts: FeedPost[];
+  nextCursor?: string | null;
+}
 import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea"; // Or Input if single line preference
@@ -36,13 +41,17 @@ export function CreateCommentForm({ postId, parentId, onSuccess, autoFocus }: Cr
       // Update feed cache to increment comment count
       // We only do this for top-level comments (no parentId) or if we want to track all comments
       // Usually feed shows total comments, so any comment adds to count.
-      queryClient.setQueriesData({ queryKey: ["posts", "feed"] }, (oldData: any) => {
+      // Update feed cache to increment comment count
+      // We only do this for top-level comments (no parentId) or if we want to track all comments
+      // Usually feed shows total comments, so any comment adds to count.
+      // We assume the feed query key is similar to useGetPosts
+      queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts"] }, (oldData) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
-          pages: oldData.pages.map((page: any) => ({
+          pages: oldData.pages.map((page) => ({
             ...page,
-            posts: page.posts.map((post: any) => {
+            posts: page.posts.map((post) => {
               if (post.id === postId) {
                 return {
                   ...post,

@@ -15,6 +15,10 @@ export type StreamChatGenerics = {
         image?: string;
         name?: string;
         description?: string;
+        permissions?: {
+            send_messages?: string;
+            view_members?: string;
+        };
     };
     commandType: LiteralStringForUnion;
     eventType: Event;

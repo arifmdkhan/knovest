@@ -75,8 +75,8 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
         const fetchCalls = async () => {
             setIsLoading(true);
             try {
-                let filter_conditions: any = { type: 'audio_room' };
-                let sort: any = [{ field: 'starts_at', direction: -1 }];
+                let filter_conditions: { [key: string]: any } = { type: 'audio_room' };
+                let sort: { field: string; direction: number }[] = [{ field: 'starts_at', direction: -1 }];
 
                 if (type === 'live') {
                     filter_conditions = {
@@ -141,7 +141,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                             }
 
                             if (Array.isArray(allowedUserIds)) {
-                                const isAllowed = allowedUserIds.some((id: any) => {
+                                const isAllowed = allowedUserIds.some((id: unknown) => {
                                     const strId = String(id).trim();
                                     return (currentUserId && strId === String(currentUserId).trim()) ||
                                         (streamUserId && strId === String(streamUserId).trim());
@@ -276,7 +276,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                                 <div className="flex items-center justify-between pt-1">
                                     <UserAvatarWithInfo
                                         name={call.state.createdBy?.name || "Unknown"}
-                                        username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username || "user"}
+                                        username={(call.state.createdBy?.custom?.username as string) || "user"}
                                         image={call.state.createdBy?.image || null}
                                         avatarClassName="h-8 w-8"
                                     />

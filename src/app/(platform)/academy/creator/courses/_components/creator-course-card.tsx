@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { constructUrl } from '@/lib/construct-url';
-import { ArrowRight, BarChart, Clock, Eye, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { ArrowRight, BarChart, Clock, Edit, Eye, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { UserAvatarWithInfo } from '@/components/UserAvatarWithInfo';
@@ -132,8 +132,9 @@ export default function CreatorCourseCard({ data }: CreatorCourseCardProps) {
                     />
 
                     <Link href={`/academy/creator/courses/${data.id}/edit`}>
-                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary h-8 w-8">
-                            <ArrowRight className="size-4" />
+                        <Button variant="outline" size="sm" className="gap-2 h-8">
+                            <Edit className="size-3.5" />
+                            <span>Edit</span>
                         </Button>
                     </Link>
                 </div>

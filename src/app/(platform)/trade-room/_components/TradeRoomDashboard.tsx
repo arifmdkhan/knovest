@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Call } from "@stream-io/video-react-sdk";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Calendar, Radio, Mic, Headphones } from "lucide-react";
@@ -20,8 +21,8 @@ import { User } from "@/generated/prisma/client";
 import { PremiumBackground } from "../../chat/_components/PremiumBackground";
 
 interface TradeRoomDashboardProps {
-    initialActiveStreams?: any[];
-    initialAudioRooms?: any[];
+    initialActiveStreams?: Call[];
+    initialAudioRooms?: Call[];
 }
 
 export default function TradeRoomDashboard({ initialActiveStreams, initialAudioRooms }: TradeRoomDashboardProps) {

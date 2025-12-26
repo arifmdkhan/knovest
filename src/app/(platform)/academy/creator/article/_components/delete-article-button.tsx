@@ -12,7 +12,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash } from "lucide-react";
+import {  Trash2 } from "lucide-react";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useTransition } from "react";
 import { DeleteArticle } from "@/server/actions/articles/delete-article";
 import { tryCatch } from "@/helper/try-catch";
@@ -22,9 +23,10 @@ import { useRouter } from "next/navigation";
 interface DeleteArticleButtonProps {
     articleId: string;
     articleTitle: string;
+    asDropdownItem?: boolean;
 }
 
-export function DeleteArticleButton({ articleId, articleTitle }: DeleteArticleButtonProps) {
+export function DeleteArticleButton({ articleId, articleTitle, asDropdownItem }: DeleteArticleButtonProps) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -47,16 +49,23 @@ export function DeleteArticleButton({ articleId, articleTitle }: DeleteArticleBu
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isPending}>
-                    <Trash className="w-4 h-4" />
-                </Button>
+                {asDropdownItem ? (
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive w-full cursor-pointer">
+                        <Trash2 className="size-4 mr-2" />
+                        Delete Article
+                    </DropdownMenuItem>
+                ) : (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors" disabled={isPending}>
+                        <Trash2 className="size-4" />
+                    </Button>
+                )}
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Article?</AlertDialogTitle>
                     <AlertDialogDescription>
                         This action cannot be undone. This will permanently delete your
-                        article "{articleTitle}".
+                        article &quot;{articleTitle}&quot;.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

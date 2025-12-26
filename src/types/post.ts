@@ -21,3 +21,8 @@ export type PostWithRelations = Post & {
     comments: Comment[];
     savedBy: SavedPost[];
 };
+
+export type FeedPage = {
+    posts: FeedPost[];
+    nextCursor?: string;
+};

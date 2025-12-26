@@ -66,10 +66,11 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         setFollowersCount(res.data.followersCount);
       }
       toast.success(res.message);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setIsFollowing(prevFollowing);
       setFollowersCount(prevCount);
-      toast.error(error.message || "Failed to follow");
+      const errorMessage = error instanceof Error ? error.message : "Failed to follow";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

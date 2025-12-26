@@ -47,8 +47,8 @@ export default async function EnrolledPage() {
                             />
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {enrolledCourses.map((course) => (
-                                    <EnrolledCourseCard key={course.course.id} data={course.course as any} />
+                                {enrolledCourses.map((item) => (
+                                    <EnrolledCourseCard key={item.course.id} data={item.course as any} progress={item.progress} />
                                 ))}
                             </div>
                         )}

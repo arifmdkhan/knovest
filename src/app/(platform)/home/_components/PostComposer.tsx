@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ConnectionUser } from "@/app/data/user/get-connections"; // Reusing this interface or define local if simpler, but reusing is consistent
 import { Globe, Lock, Users, Loader2, Send, UserStar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +47,7 @@ export function PostComposer() {
 
   /* State for Mentions */
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const [mentionResults, setMentionResults] = useState<any[]>([]);
+  const [mentionResults, setMentionResults] = useState<ConnectionUser[]>([]);
   const [showMentions, setShowMentions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
 
@@ -85,8 +86,9 @@ export function PostComposer() {
           const timeout = setTimeout(async () => {
             if (query.length > 0) {
               const { searchUsers } = await import("@/server/actions/user");
+              // searchUsers returns correct shape matching ConnectionUser mostly
               const users = await searchUsers(query);
-              setMentionResults(users);
+              setMentionResults(users as ConnectionUser[]);
             } else {
               setMentionResults([]);
             }
@@ -125,16 +127,13 @@ export function PostComposer() {
             <AvatarImage src={session.user.image || ""} />
             <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
           </Avatar>
-
         </Link>
-
 
         <div className="flex-1 space-y-4 relative">
           <div className="flex justify-between items-center">
             <Link href={`/profile/${session.user.username}`}>
-              <span className="font-semibold text-sm">{session.user.name}</span>
-            </Link>
-            <Select value={visibility} onValueChange={(v: any) => setVisibility(v)}>
+              <span className="font-semibold text-sm">{session.user.name}</span></Link>
+            <Select value={visibility} onValueChange={(v: "PUBLIC" | "FOLLOWERS" | "PRIVATE" | "SUBSCRIBER") => setVisibility(v)}>
               <SelectTrigger className="w-[130px] h-8 text-xs border-none bg-muted/50">
                 <SelectValue />
               </SelectTrigger>
@@ -153,7 +152,7 @@ export function PostComposer() {
           <div className="relative">
             <Textarea
               placeholder="Share your market analysis... (Type @ to mention)"
-              className="min-h-[80px] border-none resize-none p-2 focus-visible:ring-0 text-base bg-transparent shadow-none placeholder:text-muted-foreground/70"
+              className="min-h-20 border-none resize-none p-2 focus-visible:ring-0 text-base bg-transparent shadow-none placeholder:text-muted-foreground/70"
               value={content}
               onChange={handleContentChange}
               onKeyDown={(e) => {
@@ -169,10 +168,10 @@ export function PostComposer() {
                     <button
                       key={user.id}
                       className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-left transition-colors"
-                      onClick={() => insertMention(user.username)}
+                      onClick={() => insertMention(user.username || "")}
                     >
                       <Avatar className="w-6 h-6">
-                        <AvatarImage src={user.image} />
+                        <AvatarImage src={user.image || undefined} />
                         <AvatarFallback>{user.name?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col overflow-hidden">

@@ -81,8 +81,8 @@ export function StreamList({ type, initialData }: StreamListProps) {
         const fetchCalls = async () => {
             setIsLoading(true);
             try {
-                let filter_conditions: any = { type: 'livestream' };
-                let sort: any = [{ field: 'starts_at', direction: -1 }];
+                let filter_conditions: { [key: string]: any } = { type: 'livestream' };
+                let sort: { field: string; direction: number }[] = [{ field: 'starts_at', direction: -1 }];
 
                 if (type === 'live') {
                     filter_conditions = {
@@ -166,7 +166,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
                     setCalls(visibleCalls);
                 }
 
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("Failed to fetch calls", error);
             } finally {
                 setIsLoading(false);
@@ -364,7 +364,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                 <div className="flex items-center justify-between pt-1">
                                     <UserAvatarWithInfo
                                         name={call.state.createdBy?.name || "Unknown"}
-                                        username={(call.state.createdBy as any)?.username || (call.state.createdBy as any)?.custom?.username || "user"}
+                                        username={(call.state.createdBy?.custom?.username as string) || "user"}
                                         image={call.state.createdBy?.image || null}
                                         avatarClassName="h-8 w-8 ring-2 ring-white dark:ring-zinc-800"
                                     />

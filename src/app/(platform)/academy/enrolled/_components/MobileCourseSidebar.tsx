@@ -11,9 +11,10 @@ import { useEffect } from "react";
 
 interface MobileCourseSidebarProps {
     course: CourseSidebarDataType['course']
+    completedLessonIds: string[];
 }
 
-export function MobileCourseSidebar({ course }: MobileCourseSidebarProps) {
+export function MobileCourseSidebar({ course, completedLessonIds }: MobileCourseSidebarProps) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
 
@@ -31,7 +32,7 @@ export function MobileCourseSidebar({ course }: MobileCourseSidebarProps) {
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-80">
                 <SheetTitle className="sr-only">Course Navigation</SheetTitle>
-                <CourseSidebar course={course} />
+                <CourseSidebar course={course} completedLessonIds={completedLessonIds} />
             </SheetContent>
         </Sheet>
     )

@@ -1,7 +1,7 @@
 "use client";
 
 import { Call, useStreamVideoClient, StreamCall, useCallStateHooks, ParticipantView } from "@stream-io/video-react-sdk";
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { MiniPlayer } from "@/components/audio-room/MiniPlayer";
@@ -28,7 +28,7 @@ export const ActiveCallProvider = ({ children }: { children: ReactNode }) => {
     const client = useStreamVideoClient();
     const router = useRouter();
 
-    const joinRoom = async (roomId: string) => {
+    const joinRoom = useCallback(async (roomId: string) => {
         if (!client) return;
 
         // If already in this room, do nothing
@@ -46,23 +46,45 @@ export const ActiveCallProvider = ({ children }: { children: ReactNode }) => {
             setActiveCall(call);
         } catch (error) {
             console.error("Failed to join room", error);
-            toast.error("Failed to join audio room");
+            // Don't toast if it's a permission error related to backstage
+            const streamErrorCode = (error as { code?: number }).code;
+            if (streamErrorCode !== 17) {
+                toast.error("Failed to join audio room");
+            }
             throw error;
         } finally {
             setIsJoining(false);
         }
-    };
+    }, [client, activeCall]);
 
-    const leaveRoom = async () => {
+    const leaveRoom = useCallback(async () => {
         if (!activeCall) return;
         try {
             await activeCall.leave();
-            setActiveCall(null);
             toast.success("Left audio room");
         } catch (error) {
             console.error("Failed to leave room", error);
+        } finally {
+            setActiveCall(null);
         }
-    };
+    }, [activeCall]);
+
+    // Handle browser close / refresh
+    useEffect(() => {
+        if (!activeCall) return;
+
+        const handleBeforeUnload = () => {
+            // We can't await here, but firing it might help notify server quickly
+            activeCall.leave().catch(console.error);
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("pagehide", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("pagehide", handleBeforeUnload);
+        };
+    }, [activeCall]);
 
     return (
         <ActiveCallContext.Provider value={{ activeCall, joinRoom, leaveRoom, isJoining }}>

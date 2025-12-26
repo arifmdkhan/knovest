@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { getServerSession } from "@/lib/get-sessions";
 import { FeedPost } from "@/types/post";
 
@@ -41,7 +42,7 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
         followingIds = following?.following.map(f => f.followingId) || [];
     }
 
-    const orConditions: any[] = [];
+    const orConditions: Prisma.PostWhereInput[] = [];
 
     if (authorId) {
         // Profile Feed Logic (Specific Author)
@@ -118,7 +119,7 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
         orConditions.push({ id: 'NO_MATCH' });
     }
 
-    const whereClause: any = {
+    const whereClause: Prisma.PostWhereInput = {
         OR: orConditions
     };
 
@@ -179,16 +180,25 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
 
     const formattedPosts: FeedPost[] = posts.map(post => {
         // Helper to format a post object (reused for originalPost)
-        const formatPost = (p: any) => ({
-            ...p,
-            hasLiked: p.likes?.length > 0,
-            isSaved: p.savedBy?.length > 0,
-            isReposted: p.other_Post?.length > 0,
-            likes: undefined,
-            savedBy: undefined,
-            other_Post: undefined,
-            Post: undefined, // Remove circular/raw ref
-        });
+        const formatPost = (p: typeof post | typeof post.Post): FeedPost => {
+            if (!p) throw new Error("Post is null");
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { likes, savedBy, other_Post, Post, ...rest } = p as any;
+            // Note: We use 'as any' intermediately here to destructure properties that might not exist 
+            // on the strict type if p is potentially undefined or has different relation shapes, 
+            // but effectively we are stripping the raw relations to build the FeedPost.
+            // A cleaner way is to manually construct the object.
+
+            return {
+                ...rest,
+                hasLiked: (p as any).likes?.length > 0,
+                isSaved: (p as any).savedBy?.length > 0,
+                isReposted: (p as any).other_Post?.length > 0,
+                originalPost: undefined, // Default, overridden if recursive
+                _count: p._count
+            } as FeedPost;
+        };
 
         const formatted = formatPost(post);
 
@@ -198,7 +208,7 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
         }
 
         return formatted;
-    }) as any;
+    });
 
     return { posts: formattedPosts, nextCursor };
 }

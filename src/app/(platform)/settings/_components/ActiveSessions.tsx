@@ -22,14 +22,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 
+interface Session {
+    token: string;
+    userAgent?: string;
+    ipAddress?: string;
+    updatedAt?: string | Date;
+    createdAt: string | Date;
+    isCurrent?: boolean;
+    expiresAt: string | Date;
+}
+
 export function ActiveSessions() {
     const { data: currentSession } = authClient.useSession();
     const { data: sessions, isPending, refetch } = useQuery({
         queryKey: ["sessions"],
         queryFn: async () => {
             const res = await authClient.listSessions();
-            // @ts-ignore - better-auth types might be inferred differently
-            return res.data || res;
+            return (res.data || res) as Session[];
         }
     });
 
@@ -63,8 +72,8 @@ export function ActiveSessions() {
     };
 
     const processedSessions = useMemo(() => {
-        const sessionList = Array.isArray(sessions) ? sessions : [];
-        return sessionList.map((session: any) => {
+        const sessionList = (Array.isArray(sessions) ? sessions : []) as Session[];
+        return sessionList.map((session) => {
             const parser = new UAParser(session.userAgent || "");
             const device = parser.getDevice();
             const browser = parser.getBrowser();

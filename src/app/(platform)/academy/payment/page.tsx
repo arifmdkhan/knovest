@@ -30,7 +30,7 @@ function PaymentContent() {
             
             if (res.status === "success") {
                 toast.success("Payment successful! You are now enrolled.");
-                router.push("/academy/enrolled"); // Or redirect to the course page if we had the slug
+                 router.push("/academy/enrolled");  // Or redirect to the course page if we had the slug
             } else {
                 toast.error(res.message);
             }

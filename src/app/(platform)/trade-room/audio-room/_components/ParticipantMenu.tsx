@@ -1,6 +1,6 @@
 "use client";
 
-import { Call } from "@stream-io/video-react-sdk";
+import { Call, StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { Mic, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,7 @@ import {
 
 interface MenuProps {
     children: React.ReactNode;
-    participant: any;
+    participant: StreamVideoParticipant;
     call: Call;
     isHost: boolean;
 }
@@ -29,7 +29,7 @@ export const ParticipantMenu = ({ children, participant, call, isHost }: MenuPro
             });
             await call.grantPermissions(participant.userId, ['send-audio', 'screenshare']);
             toast.success(`Invited ${participant.name || "user"} to speak`);
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Failed to grant speaker permissions:", err);
             toast.error("Failed to grant permission");
         }
@@ -42,10 +42,10 @@ export const ParticipantMenu = ({ children, participant, call, isHost }: MenuPro
                     {children}
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-800 text-zinc-200 shadow-xl z-50">
+            <DropdownMenuContent className="w-56 bg-background border-border text-foreground shadow-xl z-50">
                 <DropdownMenuLabel>{participant.name || "User Options"}</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleGrantSpeaker} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800 transition-colors">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleGrantSpeaker} className="cursor-pointer transition-colors">
                     <Mic className="mr-2 h-4 w-4" />
                     <span>Invite to Speak</span>
                 </DropdownMenuItem>
@@ -67,7 +67,7 @@ export const SpeakerMenu = ({ children, participant, call, isHost }: MenuProps) 
                 update_members: [{ user_id: participant.userId, role: 'user' }]
             });
             toast.success(`Moved ${participant.name || "user"} to audience`);
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Failed to demote speaker:", err);
             toast.error("Failed to move to audience");
         }
@@ -80,10 +80,10 @@ export const SpeakerMenu = ({ children, participant, call, isHost }: MenuProps) 
                     {children}
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-800 text-zinc-200 shadow-xl z-50">
+            <DropdownMenuContent className="w-56 bg-background border-border text-foreground shadow-xl z-50">
                 <DropdownMenuLabel>{participant.name || "Speaker Options"}</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleDemoteToAudience} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800 text-red-400 focus:text-red-400 transition-colors">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDemoteToAudience} className="cursor-pointer text-red-500 focus:text-red-500 transition-colors">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Move to Audience</span>
                 </DropdownMenuItem>

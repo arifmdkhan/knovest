@@ -8,9 +8,10 @@ import {
     MessageList,
     MessageInput,
     Thread,
-    useChatContext,
-    useMessageContext,
     MessageSimple,
+    MessageUIComponentProps,
+    useMessageContext,
+    useChatContext,
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/v2/index.css";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ interface PageProps {
 }
 
 // Custom Message Component to handle time-based actions
-const CustomMessage = (props: any) => {
+const CustomMessage = (props: MessageUIComponentProps) => {
     const messageContext = useMessageContext();
     const { client } = useChatContext();
     const [tick, setTick] = useState(0); // Used to force re-render
@@ -93,7 +94,7 @@ const CustomMessage = (props: any) => {
         actions.push('flag', 'mute');
     }
 
-    return <MessageSimple {...props} messageActions={actions} />;
+    return <MessageSimple {...props} getMessageActions={() => actions} />;
 };
 
 export default function ChannelPage({ params }: PageProps) {

@@ -48,7 +48,7 @@ export async function purchaseStreamAccess(streamId: string, price: number) {
 
             const call = client.video.call("livestream", streamId);
             // Add user as a member to bypass permission gates for private/group calls
-            await (call as any).updateCallMembers({
+            await call.updateCallMembers({
                 update_members: [{ user_id: session.user.id, role: "user" }]
             });
             console.log(`Added user ${session.user.id} to members of stream ${streamId}`);
@@ -62,9 +62,10 @@ export async function purchaseStreamAccess(streamId: string, price: number) {
         revalidatePath(`/trade-room/${streamId}`);
         return { success: true };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Purchase failed:", error);
-        return { success: false, error: error.message || "Payment failed" };
+        const errorMessage = error instanceof Error ? error.message : "Payment failed";
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -101,14 +102,14 @@ export async function revokeStreamAccess(streamId: string, userId: string) {
 
     // 1. Verify Creator
     const callState = await call.get();
-    const creatorId = (callState.call.created_by as any)?.id;
+    const creatorId = callState.call.created_by.id;
 
     if (creatorId !== session.user.id) {
         throw new Error("Only the stream creator can revoke access.");
     }
 
     // 2. Remove from Stream Members
-    await (call as any).updateCallMembers({
+    await call.updateCallMembers({
         remove_members: [userId]
     });
 
@@ -161,7 +162,7 @@ export async function getStreamAccessDetails(streamId: string, manualUserIds: st
 
         // 2. Fetch Manual Users Details from User table
         // Only fetch manual users on the first page to avoid redundancy
-        let manualUsers: any[] = [];
+        let manualUsers: { id: string; name: string | null; image: string | null; username: string | null; type: "manual" }[] = [];
         if (page === 1 && manualUserIds.length > 0) {
             const manualDbUsers = await prisma.user.findMany({
                 where: { id: { in: manualUserIds } }

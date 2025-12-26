@@ -6,11 +6,52 @@ import { Button } from "@/components/ui/button";
 
 import { BookIcon, CheckCircle, FileText, LayoutDashboard, Share2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { constructUrl } from "@/lib/construct-url";
+import { toggleLessonCompletion } from "@/server/actions/course-progress";
+import { useTransition } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface CourseContentProps {
-  data: LessonContentType;
+  data: LessonContentType & { isCompleted: boolean };
+}
+
+function MarkCompleteButton({ lessonId, isCompleted }: { lessonId: string, isCompleted: boolean }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleToggle = () => {
+    startTransition(async () => {
+      const result = await toggleLessonCompletion(lessonId, !isCompleted);
+      if (result.success) {
+        toast.success(isCompleted ? "Marked as incomplete" : "Lesson completed!");
+      } else {
+        toast.error("Something went wrong");
+      }
+    });
+  };
+
+  return (
+    <Button
+      onClick={handleToggle}
+      disabled={isPending}
+      variant={isCompleted ? "outline" : "default"}
+      className={cn(
+        "gap-2 min-w-[140px]",
+        isCompleted
+          ? "border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
+          : "bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+      )}
+    >
+      {isPending ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <CheckCircle className={cn("size-4", isCompleted && "fill-current")} />
+      )}
+      {isCompleted ? "Completed" : "Mark Complete"}
+    </Button>
+  );
 }
 
 function VideoPlayer({ thumbnailKey, videoKey }: {
@@ -59,10 +100,7 @@ export function CourseContent({ data }: CourseContentProps) {
               <Share2 className="size-4" />
               Share
             </Button>
-            <Button className="gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700">
-              <CheckCircle className="size-4" />
-              Mark Complete
-            </Button>
+            <MarkCompleteButton lessonId={data.id} isCompleted={data.isCompleted} />
           </div>
         </div>
 

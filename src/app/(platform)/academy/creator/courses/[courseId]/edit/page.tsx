@@ -1,12 +1,12 @@
 
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { creatorGetCourse } from '@/app/data/creator/creator-get-course'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import EditCourseForm from './_components/edit-course-form'
 import CourseStructure from './_components/course-structure'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
 
 type Params = Promise<{ courseId: string }>
 export default async function EditCourseRoute({ params }: { params: Params }) {
@@ -15,16 +15,14 @@ export default async function EditCourseRoute({ params }: { params: Params }) {
 
     return (
         <div>
-            <div className="mb-8">
-                <Link
-                    href="/academy/creator"
-                    className={buttonVariants({ variant: 'outline' })}
-                >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                </Link>
-            </div>
             <div className="mb-8 pb-5 border-b border-gray-500">
-                <h1 className="text-3xl font-bold">
+                <Link href="/academy/creator">
+                    <Button variant="ghost" className="mb-4 gap-2 pl-0 hover:bg-transparent hover:text-primary">
+                        <ArrowLeft className="size-4" />
+                        Back to Courses
+                    </Button>
+                </Link>
+                <h1 className="text-xl font-bold">
                     ✏️ Edit Course:{' '}
                     <span className="text-primary bg-primary/5 px-2 py-1 rounded-md">
                         {data.title}

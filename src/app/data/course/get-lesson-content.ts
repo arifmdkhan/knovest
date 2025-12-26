@@ -42,7 +42,19 @@ export async function getLessonContent(lessonId: string) {
     return notFound();
   }
 
-  return lesson;
+  const progress = await prisma.enrolledCourseProgress.findUnique({
+    where: {
+      userId_lessonId: {
+        userId: user.id,
+        lessonId: lesson.id,
+      },
+    },
+  });
+
+  return {
+    ...lesson,
+    isCompleted: progress?.isCompleted ?? false,
+  };
 }
 
 export type LessonContentType = Awaited<ReturnType<typeof getLessonContent>>;

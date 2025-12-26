@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 
 import { useChatContext } from "stream-chat-react";
-import { StreamChatGenerics, CustomChannelData } from "@/lib/chat-types";
+import { CustomChannelData, StreamChatGenerics } from "@/lib/chat-types";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { AddMembersDialog } from "./AddMembersDialog";
 import { ViewMembersDialog } from "./ViewMembersDialog";
@@ -82,8 +82,8 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
             send_messages: sendMessagesPermission,
             view_members: viewMembersPermission
           }
-        }
-      } as any);
+        } as any
+      });
       toast.success("Channel updated");
       onOpenChange(false);
     } catch (error) {
@@ -93,9 +93,9 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
     }
   };
 
-  const handleImageUpdate = async (files: any[]) => {
+  const handleImageUpdate = async (files: { url: string; type: string }[]) => {
     if (files?.[0]?.url) {
-      await channel.updatePartial({ set: { image: files[0].url } } as any);
+      await channel.updatePartial({ set: { image: files[0].url } as any });
       toast.success("Group icon updated");
     }
   };

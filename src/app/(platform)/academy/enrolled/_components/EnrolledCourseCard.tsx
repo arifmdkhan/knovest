@@ -10,11 +10,15 @@ import Link from "next/link";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { cn } from "@/lib/utils";
 
+import { EnrolledCourseWithProgress } from "@/app/data/user/get-enrolled-courses";
+import { Progress } from "@/components/ui/progress";
+
 interface EnrolledCourseCardProps {
-    data: PublicCourseType
+    data: EnrolledCourseWithProgress['course']
+    progress: number
 }
 
-export function EnrolledCourseCard({ data }: EnrolledCourseCardProps) {
+export function EnrolledCourseCard({ data, progress }: EnrolledCourseCardProps) {
     const thumbnailUrl = constructUrl(data.fileKey)
 
     return (
@@ -37,7 +41,7 @@ export function EnrolledCourseCard({ data }: EnrolledCourseCardProps) {
                 </div>
             </div>
 
-            <CardContent className="flex-1 p-4 space-y-3">
+            <CardContent className="flex-1 p-4 space-y-2">
                 {/* Title & Description */}
                 <div className="space-y-1.5">
                     <Link href={`/academy/enrolled/${data.slug}`} className="block">
@@ -62,6 +66,14 @@ export function EnrolledCourseCard({ data }: EnrolledCourseCardProps) {
                     </div>
                 </div>
             </CardContent>
+
+            <div className="px-4 pb-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+                    <span className="font-medium">Progress</span>
+                    <span>{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="h-1.5" />
+            </div>
 
             <CardFooter className="p-4 pt-0 mt-auto flex flex-col gap-3">
                 <div className="w-full h-px bg-border/50" />

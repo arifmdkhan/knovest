@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 
-
 export async function getSavedCourses(cursor?: string, limit = 10) {
     const session = await getServerSession();
     if (!session?.user) return { courses: [], nextCursor: undefined };

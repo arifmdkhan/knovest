@@ -10,9 +10,14 @@ import { FeedPost } from "@/types/post";
 
 import { getFeedPostsAction } from "@/server/actions/post/get-feed-posts-action";
 
+
 // Fetcher function updated to accept authorId
-const fetchUserPosts = async ({ pageParam, queryKey }: any) => {
-  const [_, __, authorId] = queryKey; // Extract authorId from queryKey: ["posts", "user", authorId]
+import { QueryFunctionContext } from "@tanstack/react-query";
+
+type ProfileFeedQueryKey = ["posts", "user", string];
+
+const fetchUserPosts = async ({ pageParam, queryKey }: QueryFunctionContext) => {
+  const [_, __, authorId] = queryKey as ProfileFeedQueryKey; // Extract authorId from queryKey: ["posts", "user", authorId]
 
   const res = await getFeedPostsAction(
     pageParam as string | undefined,

@@ -12,7 +12,7 @@ export async function RenderCourses() {
       {data.length === 0 ? (
         <EmptyState title='No course found' description='Create a new course to get started' buttonText='Create Course' href='/academy/creator/courses/create' />
       ) : (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-7'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
           {data.map((course) => (
             <CreatorCourseCard key={course.id} data={course} />
           ))}
@@ -29,8 +29,8 @@ export async function RenderCourses() {
 
 export function CreatorCourseCardSkeletonLayout() {
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-7'>
-      {Array.from({ length: 4 }).map((_, index) => (
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+      {Array.from({ length: 6 }).map((_, index) => (
         <CreatorCourseCardSkeleton key={index} />
 
       ))

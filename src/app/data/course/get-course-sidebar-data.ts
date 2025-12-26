@@ -61,8 +61,26 @@ export async function getCourseSidebarData(slug: string) {
         return notFound()
     }
 
+    const completedLessons = await prisma.enrolledCourseProgress.findMany({
+        where: {
+            userId: user.id,
+            lesson: {
+                chapter: {
+                    courseId: course.id
+                }
+            },
+            isCompleted: true
+        },
+        select: {
+            lessonId: true
+        }
+    })
+
+    const completedLessonIds = completedLessons.map(p => p.lessonId)
+
     return {
-        course
+        course,
+        completedLessonIds
     }
 }
 
