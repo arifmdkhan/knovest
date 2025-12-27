@@ -254,8 +254,8 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
               name={displayPost.author.name}
               username={displayPost.author.username}
               image={displayPost.author.image}
-              isVerified={displayPost.author.isVerified}
-              isSebiVerified={displayPost.author.isSebiVerified}
+              expertVerificationType={displayPost.author.expertVerificationType}
+              accountVerificationType={displayPost.author.accountVerificationType}
             />
             <div className="flex items-center gap-2 text-xs text-muted-foreground -mt-3 ml-13 sm:ml-0 sm:mt-0">
               <span>•</span>

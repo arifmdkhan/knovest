@@ -9,14 +9,15 @@ interface UserAvatarWithInfoProps {
     name: string | null;
     username: string | null;
     image: string | null;
-    isVerified?: boolean;
-    isSebiVerified?: boolean;
+    expertVerificationType?: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+    accountVerificationType?: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
     className?: string;
     avatarClassName?: string;
     children?: React.ReactNode;
 }
 
 import { memo } from "react";
+import { Award, TrendingUp, BadgeCheck } from "lucide-react";
 
 // ... imports
 
@@ -26,8 +27,8 @@ export const UserAvatarWithInfo = memo(function UserAvatarWithInfo({
     name,
     username,
     image,
-    isVerified,
-    isSebiVerified,
+    expertVerificationType,
+    accountVerificationType,
     className,
     avatarClassName,
     children,
@@ -48,16 +49,37 @@ export const UserAvatarWithInfo = memo(function UserAvatarWithInfo({
                             {displayName}
                         </span>
 
-                        {/* --- BADGES --- */}
-                        {(isVerified || isSebiVerified) && (
+                        {/* --- ACCOUNT VERIFICATION --- */}
+                        {accountVerificationType === "VERIFIED_USER" && (
                             <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 fill-blue-500/10" />
                         )}
-                        {isSebiVerified && (
+                        {accountVerificationType === "OFFICIAL" && (
+                            <BadgeCheck className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/10" /> // Gold check
+                        )}
+
+                        {/* --- EXPERT BADGES --- */}
+                        {expertVerificationType === "SEBI" && (
                             <Badge
                                 variant="outline"
-                                className="h-4 px-1 rounded-[4px] bg-green-500/10 text-[7px] font-bold text-green-600 border-blue-500 flex items-center gap-0.5"
+                                className="h-4 px-1 rounded-[4px] bg-green-500/10 text-[7px] font-bold text-green-600 border-green-200 flex items-center gap-0.5"
                             >
-                                <ShieldCheck className="w-1.5 h-1.5" /> SEBI RA
+                                <ShieldCheck className="w-2.5 h-2.5" /> SEBI
+                            </Badge>
+                        )}
+                        {expertVerificationType === "CERTIFIED" && (
+                            <Badge
+                                variant="outline"
+                                className="h-4 px-1 rounded-[4px] bg-blue-500/10 text-[7px] font-bold text-blue-600 border-blue-200 flex items-center gap-0.5"
+                            >
+                                <Award className="w-2.5 h-2.5" /> PRO
+                            </Badge>
+                        )}
+                        {expertVerificationType === "TRACK_RECORD" && (
+                            <Badge
+                                variant="outline"
+                                className="h-4 px-1 rounded-[4px] bg-purple-500/10 text-[7px] font-bold text-purple-600 border-purple-200 flex items-center gap-0.5"
+                            >
+                                <TrendingUp className="w-2.5 h-2.5" /> TRADER
                             </Badge>
                         )}
 

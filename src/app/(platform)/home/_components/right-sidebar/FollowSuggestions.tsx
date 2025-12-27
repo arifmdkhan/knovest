@@ -14,8 +14,8 @@ interface Suggestion {
   name: string;
   username: string | null;
   image: string | null;
-  isVerified: boolean;
-  isSebiVerified: boolean;
+  expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+  accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
 }
 
 export function FollowSuggestionsSkeleton() {
@@ -85,8 +85,8 @@ function SuggestionItem({ user }: { user: Suggestion }) {
         name={user.name}
         username={user.username}
         image={user.image}
-        isVerified={user.isVerified}
-        isSebiVerified={user.isSebiVerified}
+        expertVerificationType={user.expertVerificationType}
+        accountVerificationType={user.accountVerificationType}
         className="flex-1 min-w-0"
       />
 

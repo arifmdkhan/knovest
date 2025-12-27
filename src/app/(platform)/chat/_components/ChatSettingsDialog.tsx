@@ -17,7 +17,8 @@ import {
 
 import { useChatContext } from "stream-chat-react";
 import { CustomChannelData, StreamChatGenerics } from "@/lib/chat-types";
-import { MediaUploader } from "@/components/handle-media/media-uploader";
+import { AvatarUploader } from "@/components/handle-media/avatar-uploader";
+import { UploadIntent } from "@/lib/storage/types";
 import { AddMembersDialog } from "./AddMembersDialog";
 import { ViewMembersDialog } from "./ViewMembersDialog";
 import { useRouter } from "next/navigation";
@@ -93,9 +94,9 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
     }
   };
 
-  const handleImageUpdate = async (files: { url: string; type: string }[]) => {
-    if (files?.[0]?.url) {
-      await channel.updatePartial({ set: { image: files[0].url } as any });
+  const handleImageUpdate = async (url: string) => {
+    if (url) {
+      await channel.updatePartial({ set: { image: url } as any });
       toast.success("Group icon updated");
     }
   };
@@ -188,12 +189,12 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
 
             <div className="flex justify-center">
               <div className="w-20 h-20 relative">
-                <MediaUploader
-                  maxFiles={1}
-                  acceptedTypes="image"
+                <AvatarUploader
+                  value={(channel.data as CustomChannelData)?.image}
                   onChange={handleImageUpdate}
-                  existingMedia={(channel.data as CustomChannelData)?.image ? [{ url: (channel.data as CustomChannelData).image!, type: "IMAGE" }] : []}
-                  className="w-20 h-20 rounded-full overflow-hidden"
+                  className="w-20 h-20"
+                  intent={UploadIntent.CHAT_GROUP_IMAGE}
+                  uploadParams={{ channelId: channel.id! }}
                 />
               </div>
             </div>

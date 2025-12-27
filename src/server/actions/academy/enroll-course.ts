@@ -32,7 +32,7 @@ export async function enrollCourse(courseId: string): Promise<ApiResponse<{ chec
             });
 
             if (existingEnrollment?.status === "Active") {
-                return { status: "error", message: "You are already enrolled in this course" }; // Changed to error to prevent redirect loop or handle differently
+                return { status: "error", message: "You are already enrolled in this course" };
             }
 
             let enrollmentId = existingEnrollment?.id;
@@ -57,14 +57,14 @@ export async function enrollCourse(courseId: string): Promise<ApiResponse<{ chec
             return { checkoutUrl: `/academy/payment?enrollmentId=${enrollmentId}` };
         });
 
-        if ('status' in result && result.status === 'error') {
+        if ("status" in result && result.status === "error") {
             return result as ApiResponse<{ checkoutUrl: string }>;
         }
 
         return {
             status: "success",
             message: "Redirecting to payment...",
-            data: { checkoutUrl: (result as any).checkoutUrl }
+            data: { checkoutUrl: result.checkoutUrl as string }
         };
 
     } catch (error) {

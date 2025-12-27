@@ -99,7 +99,7 @@ export function ChatLayout({ children, sessionUser }: ChatLayoutProps) {
             <CreateChatDialog
                 open={showCreateDialog}
                 onOpenChange={setShowCreateDialog}
-                isVerified={(sessionUser as any)?.isVerified ?? false}
+                canCreateGroup={!!(sessionUser as any)?.expertVerificationType}
             />
         </div>
     );

@@ -18,6 +18,11 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { NotificationBadge } from "@/components/notification-badge"
 
+import { useMemo } from "react"
+// ... (imports)
+
+// ...
+
 export function NavMain({
   items,
 }: {
@@ -34,14 +39,30 @@ export function NavMain({
 }) {
   const pathname = usePathname()
 
+  // Find the single best matching item (longest URL match)
+  const activeItemUrl = useMemo(() => {
+    if (!pathname) return null;
+
+    // 1. Find all items that could effectively "claim" this path
+    const matchingItems = items.filter(item =>
+      pathname === item.url || pathname.startsWith(`${item.url}/`)
+    );
+
+    // 2. Sort by URL length descending (most specific match first)
+    //    e.g. "/admin/expert-verification" (longer) beats "/admin" (shorter)
+    matchingItems.sort((a, b) => b.url.length - a.url.length);
+
+    return matchingItems[0]?.url || null;
+  }, [pathname, items]);
+
   return (
     <SidebarGroup>
 
       <SidebarMenu>
         {items.map((item) => {
-         
-          // Old: const isActive = pathname === item.url;
-          const isActive = pathname === item.url || pathname?.startsWith(`${item.url}/`);
+
+          // Only the best match is active
+          const isActive = item.url === activeItemUrl;
           return (
             <Collapsible
               key={item.title}

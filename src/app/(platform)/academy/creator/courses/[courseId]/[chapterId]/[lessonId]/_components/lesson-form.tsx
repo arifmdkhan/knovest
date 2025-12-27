@@ -20,6 +20,7 @@ import { TextEditor } from "@/components/shared/text-editor/editor";
 import { updateLesson } from "@/server/actions/courses/update-lesson";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { constructUrl } from "@/lib/construct-url";
+import { UploadIntent } from "@/lib/storage/types";
 
 
 interface LessonFormProps {
@@ -39,7 +40,8 @@ export function LessonForm({ data, chapterId, courseId }: LessonFormProps) {
             courseId: courseId,
             description: data.description ?? undefined,
             videoKey: data.videoKey ?? undefined,
-            thumbnailKey: data.thumbnailKey ?? undefined
+            thumbnailKey: data.thumbnailKey ?? undefined,
+            resources: data.resources?.map(r => ({ name: r.name, url: r.url })) || []
 
         },
     })
@@ -111,8 +113,11 @@ export function LessonForm({ data, chapterId, courseId }: LessonFormProps) {
                                                     field.onChange("")
                                                 }
                                             }}
-                                            existingMedia={field.value ? [{ url: constructUrl(field.value), type: "IMAGE" }] : []}
-                                            acceptedTypes="image"
+                                            existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${data.updatedAt.getTime()}`, type: "IMAGE" }] : []}
+                                            allowedTypes={["image"]}
+                                            maxSizeMB={2}
+                                            intent={UploadIntent.COURSE_LESSON_THUMBNAIL}
+                                            uploadParams={{ courseId, lessonId: data.id }}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -131,7 +136,41 @@ export function LessonForm({ data, chapterId, courseId }: LessonFormProps) {
                                                 }
                                             }}
                                             existingMedia={field.value ? [{ url: constructUrl(field.value), type: "VIDEO" }] : []}
-                                            acceptedTypes="video"
+                                            allowedTypes={["video"]}
+                                            maxSizeMB={1024}
+                                            intent={UploadIntent.COURSE_LESSON_VIDEO}
+                                            uploadParams={{ courseId, lessonId: data.id }}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            <FormField control={form.control} name="resources" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Lesson Resources (PDFs)</FormLabel>
+                                    <FormControl>
+                                        <MediaUploader
+                                            onChange={(files) => {
+                                                const resources = files.map(f => ({
+                                                    name: f.name || "Resource",
+                                                    url: f.key || ""
+                                                })).filter(r => r.url !== "");
+                                                field.onChange(resources);
+                                            }}
+                                            existingMedia={
+                                                field.value?.map(r => ({
+                                                    url: constructUrl(r.url),
+                                                    key: r.url,
+                                                    name: r.name,
+                                                    type: "PDF"
+                                                })) || []
+                                            }
+                                            allowedTypes={["pdf"]}
+                                            maxFiles={5}
+                                            maxSizeMB={20}
+                                            intent={UploadIntent.COURSE_LESSON_RESOURCE}
+                                            uploadParams={{ courseId, lessonId: data.id }}
                                         />
                                     </FormControl>
                                     <FormMessage />

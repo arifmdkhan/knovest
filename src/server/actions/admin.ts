@@ -2,12 +2,13 @@
 
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/permissions";
-import { Role } from "@/generated/prisma/client";
+import { Role, AccountVerificationType } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { ApiResponse } from "@/lib/types";
 
-export async function banUser(userId: string, reason?: string) {
+export async function banUser(userId: string, reason?: string): Promise<ApiResponse> {
     await requireAdmin();
 
     try {
@@ -21,14 +22,14 @@ export async function banUser(userId: string, reason?: string) {
         });
 
         revalidatePath("/admin/users");
-        return { success: true };
+        return { status: "success", message: "User banned successfully" };
     } catch (error) {
         console.error("Failed to ban user:", error);
-        return { success: false, error: "Failed to ban user" };
+        return { status: "error", message: "Failed to ban user" };
     }
 }
 
-export async function unbanUser(userId: string) {
+export async function unbanUser(userId: string): Promise<ApiResponse> {
     await requireAdmin();
 
     try {
@@ -41,58 +42,76 @@ export async function unbanUser(userId: string) {
         });
 
         revalidatePath("/admin/users");
-        return { success: true };
+        return { status: "success", message: "User unbanned successfully" };
     } catch (error) {
         console.error("Failed to unban user:", error);
-        return { success: false, error: "Failed to unban user" };
+        return { status: "error", message: "Failed to unban user" };
     }
 }
 
-export async function updateUserRole(userId: string, role: Role) {
+export async function updateUserRole(userId: string, role: Role): Promise<ApiResponse> {
+    // Basic Admin check
     await requireAdmin();
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) return { status: "error", message: "Unauthorized" };
+    const currentUserRole = session.user.role;
+
+    // Constraint 1: Only SUPER_ADMIN can promote someone to ADMIN (or SUPER_ADMIN)
+    if ((role === "ADMIN" || role === "SUPER_ADMIN") && currentUserRole !== "SUPER_ADMIN") {
+        return { status: "error", message: "Only Super Admins can grant Admin privileges." };
+    }
 
     try {
+        // Fetch target to check if we are modifying a SUPER_ADMIN
+        const targetUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true }
+        });
+
+        // Constraint 2: Only SUPER_ADMIN can modify another SUPER_ADMIN
+        if (targetUser?.role === "SUPER_ADMIN" && currentUserRole !== "SUPER_ADMIN") {
+            return { status: "error", message: "Only Super Admins can modify other Super Admins." };
+        }
+
         // Use better-auth admin plugin to set role if available, or update DB directly
-        // Better-auth 'admin' plugin usually provides setRole
         await auth.api.setRole({
             body: {
                 userId,
-                role: role.toLowerCase() as any // better-auth roles are usually lowercase strings, but our DB uses Enum. 
-                // If better-auth is configured with our Prisma adapter, it should map correctly 
-                // or we might need to be careful. 
-                // Let's check if setRole exists and what it expects.
-                // If not sure, direct DB update is safer for now given our custom Role enum.
-                // However, user requested better-auth API.
-                // Let's assume setRole works with string.
+                role: role.toLowerCase() as any
             },
             headers: await headers()
         });
 
-        // Fallback/Ensure DB consistency if better-auth doesn't map perfectly to our Enum immediately
-        // (Though with Prisma adapter it should be fine)
-
         revalidatePath("/admin/users");
-        return { success: true };
+        return { status: "success", message: "User role updated successfully" };
     } catch (error) {
         console.error("Failed to update user role:", error);
-        // Fallback to direct DB update if API fails (e.g. if setRole isn't exposed or configured)
+        // Fallback to direct DB update
         try {
             await prisma.user.update({
                 where: { id: userId },
                 data: { role },
             });
             revalidatePath("/admin/users");
-            return { success: true };
+            return { status: "success", message: "User role updated successfully (DB fallback)" };
         } catch (dbError) {
             console.error("Fallback DB update failed:", dbError);
-            return { success: false, error: "Failed to update user role" };
+            return { status: "error", message: "Failed to update user role" };
         }
     }
 }
 
 
-export async function revokeUserSessions(userId: string) {
+export async function revokeUserSessions(userId: string): Promise<ApiResponse> {
     await requireAdmin();
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    // Check target role
+    const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (targetUser?.role === "SUPER_ADMIN" && session?.user?.role !== "SUPER_ADMIN") {
+        return { status: "error", message: "Only Super Admins can manage Super Admin sessions." };
+    }
 
     try {
         await auth.api.revokeUserSessions({
@@ -103,15 +122,22 @@ export async function revokeUserSessions(userId: string) {
         });
 
         revalidatePath("/admin/users");
-        return { success: true };
+        return { status: "success", message: "Sessions revoked successfully" };
     } catch (error) {
         console.error("Failed to revoke user sessions:", error);
-        return { success: false, error: "Failed to revoke sessions" };
+        return { status: "error", message: "Failed to revoke sessions" };
     }
 }
 
-export async function removeUser(userId: string) {
+export async function removeUser(userId: string): Promise<ApiResponse> {
     await requireAdmin();
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    // Check target role
+    const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (targetUser?.role === "SUPER_ADMIN" && session?.user?.role !== "SUPER_ADMIN") {
+        return { status: "error", message: "Only Super Admins can remove Super Admins." };
+    }
 
     try {
         await auth.api.removeUser({
@@ -122,43 +148,33 @@ export async function removeUser(userId: string) {
         });
 
         revalidatePath("/admin/users");
-        return { success: true };
+        return { status: "success", message: "User removed successfully" };
     } catch (error) {
         console.error("Failed to remove user:", error);
-        return { success: false, error: "Failed to remove user" };
+        return { status: "error", message: "Failed to remove user" };
     }
 }
 
-export async function updateUserVerification(userId: string, type: 'verified' | 'sebi', value: boolean) {
+export async function updateAccountVerification(userId: string, type: AccountVerificationType): Promise<ApiResponse> {
     await requireAdmin();
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    // Only SUPER_ADMIN can set OFFICIAL or modify verification freely
+    if (session?.user?.role !== "SUPER_ADMIN") {
+        return { status: "error", message: "Only Super Admins can manage verification statuses." };
+    }
 
     try {
-        const data: any = {};
-
-        if (type === 'sebi') {
-            data.isSebiVerified = value;
-            // If setting SEBI verified to true, also set isVerified to true and role to CREATOR
-            if (value) {
-                data.isVerified = true;
-                data.role = "CREATOR";
-            }
-        } else {
-            data.isVerified = value;
-            // If setting verified to true, set role to CREATOR
-            if (value) {
-                data.role = "CREATOR";
-            }
-        }
-
         await prisma.user.update({
             where: { id: userId },
-            data,
+            data: { accountVerificationType: type }
         });
-
         revalidatePath("/admin/users");
-        return { success: true };
+        return { status: "success", message: "Verification status updated successfully" };
     } catch (error) {
-        console.error("Failed to update user verification:", error);
-        return { success: false, error: "Failed to update verification status" };
+        console.error("Failed to update verification:", error);
+        return { status: "error", message: "Failed to update verification" };
     }
 }
+
+// Obsolete verification toggle Removed. Use specific update actions if needed.

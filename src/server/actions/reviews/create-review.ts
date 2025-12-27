@@ -4,6 +4,7 @@ import { requireUser } from "@/app/data/user/require-user";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ApiResponse } from "@/lib/types";
 
 const createReviewSchema = z.object({
     courseId: z.string(),
@@ -22,7 +23,7 @@ const createReviewSchema = z.object({
     }
 });
 
-export async function createReview(formData: FormData) {
+export async function createReview(formData: FormData): Promise<ApiResponse> {
     const user = await requireUser();
 
     const rawData = {

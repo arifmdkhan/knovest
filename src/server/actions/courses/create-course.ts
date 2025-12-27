@@ -1,7 +1,7 @@
 "use server";
 
 import { requireCreator } from "@/app/data/creator/require-creator";
-import arcjet, {  fixedWindow } from "@/lib/arcjet";
+import arcjet, { fixedWindow } from "@/lib/arcjet";
 import { prisma } from "@/lib/db";
 import { courseSchema, CourseSchemaType } from "@/lib/schema/zod-schema";
 import { ApiResponse } from "@/lib/types";
@@ -54,6 +54,7 @@ export async function CreateCourse(
     const data = await prisma.course.create({
       data: {
         ...validation.data,
+        id: validation.data.id || undefined,
         userId: session.user.id as string,
       },
     });

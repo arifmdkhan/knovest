@@ -20,7 +20,7 @@ export async function requireRole(allowedRoles: Role[]) {
 
 //admin
 export async function requireAdmin() {
-  return requireRole([Role.ADMIN]);
+  return requireRole([Role.ADMIN, Role.SUPER_ADMIN]);
 }
 
 export function hasRole(user: { role: string }, role: Role) {

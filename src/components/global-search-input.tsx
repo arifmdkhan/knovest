@@ -48,9 +48,14 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
 
         const timer = setTimeout(() => {
             startTransition(async () => {
-                const data = await searchGlobal(query);
-                setResults(data);
-                setIsOpen(true);
+                const res = await searchGlobal(query);
+                if (res.status === "success" && res.data) {
+                    setResults(res.data);
+                    setIsOpen(true);
+                } else {
+                    setResults(null);
+                    setIsOpen(false);
+                }
             });
         }, 300);
 

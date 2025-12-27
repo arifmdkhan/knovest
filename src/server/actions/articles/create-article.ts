@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { articleSchema, ArticleSchemaType } from "@/lib/schema/article-schema";
 import { ApiResponse } from "@/lib/types";
 import { request } from "@arcjet/next";
+import { revalidatePath } from "next/cache";
 
 const aj = arcjet
     .withRule(
@@ -16,21 +17,11 @@ const aj = arcjet
         })
     );
 
+
+
 export async function CreateArticle(
     values: ArticleSchemaType
 ): Promise<ApiResponse> {
-    // Using requireUser instead of requireCreator as articles might be for all users. 
-    // If requireUser doesn't exist, I'll need to find the equivalent.
-    // For now I will assume I need to authenticate the user.
-    // Let's check if requireUser exists first in the next step, but I'll write this file assuming I can import it or fix it.
-    // Actually, better to check first. But I can write it and if it fails I fix it.
-    // I'll assume standard auth pattern.
-
-    // Wait, I should verify if requireUser exists. 
-    // I'll use a placeholder import and fix it if needed.
-    // Or I can check `src/lib/auth` or similar if I can find it.
-    // `create-course.ts` used `requireCreator`.
-
     const user = await requireUser();
 
     try {
@@ -62,9 +53,10 @@ export async function CreateArticle(
             };
         }
 
-        const data = await prisma.article.create({
+        await prisma.article.create({
             data: {
                 ...validation.data,
+                id: validation.data.id || undefined,
                 authorId: user.id as string,
             },
         });
@@ -74,14 +66,9 @@ export async function CreateArticle(
         };
     } catch (error) {
         console.error("Failed to create article:", error);
-        // Log the full error object for debugging
-        if (error instanceof Error) {
-            console.error(error.message);
-            console.error(error.stack);
-        }
         return {
             status: "error",
-            message: "Failed to create article. Please check the logs.",
+            message: "Failed to create article.",
         };
     }
 }

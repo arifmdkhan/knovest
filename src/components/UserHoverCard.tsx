@@ -35,8 +35,8 @@ interface UserProfileData {
     followersCount: number;
     followingCount: number;
     isFollowing: boolean;
-    isVerified: boolean;
-    isSebiVerified: boolean;
+    expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+    accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
 }
 
 export function UserHoverCard({ username, children }: UserHoverCardProps) {
@@ -56,9 +56,10 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
         if (isOpen && !data && !isLoading) {
             setIsLoading(true);
             getUserProfile(username)
-                .then((profile) => {
-                    if (profile) {
-                        const profileData = profile as UserProfileData;
+                .then((res) => {
+                    if (res?.status === "success" && res.data) {
+                        // @ts-ignore
+                        const profileData = res.data as UserProfileData;
                         setData(profileData);
                         setIsFollowing(profileData.isFollowing);
                         setFollowersCount(profileData.followersCount);
@@ -109,8 +110,12 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
 
         setIsMessaging(true);
         try {
-            const channelId = await createDM(data.id);
-            router.push(`/chat/${channelId}`);
+            const res = await createDM(data.id);
+            if (res.status === "success" && res.data) {
+                router.push(`/chat/${res.data}`);
+            } else {
+                toast.error(res.message || "Failed to start chat");
+            }
         } catch (error) {
             toast.error("Failed to start chat");
         } finally {
@@ -178,12 +183,26 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
                             <div className="pt-2">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <h4 className="text-sm font-semibold">{data.name}</h4>
-                                    {(data.isVerified || data.isSebiVerified) && (
-                                        <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                    {data.accountVerificationType === "VERIFIED_USER" && (
+                                        <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500/10" />
                                     )}
-                                    {data.isSebiVerified && (
+                                    {data.accountVerificationType === "OFFICIAL" && (
+                                        <ShieldCheck className="w-4 h-4 text-yellow-500 fill-yellow-500/10" />
+                                    )}
+
+                                    {data.expertVerificationType === "SEBI" && (
                                         <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1 h-5 px-1.5 text-[10px]">
                                             <ShieldCheck className="w-3 h-3" /> SEBI RA
+                                        </Badge>
+                                    )}
+                                    {data.expertVerificationType === "CERTIFIED" && (
+                                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1 h-5 px-1.5 text-[10px]">
+                                            PRO
+                                        </Badge>
+                                    )}
+                                    {data.expertVerificationType === "TRACK_RECORD" && (
+                                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 gap-1 h-5 px-1.5 text-[10px]">
+                                            TRADER
                                         </Badge>
                                     )}
                                 </div>

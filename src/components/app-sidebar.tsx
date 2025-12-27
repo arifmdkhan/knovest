@@ -13,6 +13,7 @@ import {
   Settings2,
   User,
   Command,
+  ShieldCheck,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -98,6 +99,11 @@ const data = {
       icon: Settings2,
 
     },
+    {
+      title: "Expert Verification",
+      url: "/admin/expert-verification",
+      icon: ShieldCheck,
+    },
   ],
 
 }
@@ -109,13 +115,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return {
       ...data,
       navMain: data.navMain
-        // 1. FILTER: Remove items based on role
+        // 1. FILTER: Remove items based on permissions
         .filter((item) => {
-          const restrictedPaths = ["/dashboard"];
-          const isRestricted = restrictedPaths.includes(item.url);
-          const hasPermission = ["ADMIN", "CREATOR"].includes(session?.user?.role as Role);
+          // Admin Restricted Routes
+          if (item.url.startsWith("/admin")) {
+            const allowedRoles = ["ADMIN", "SUPER_ADMIN"];
+            return session?.user?.role && allowedRoles.includes(session.user.role);
+          }
 
-          return !isRestricted || hasPermission;
+          // Creator/Expert Restricted Routes
+          if (item.url === "/dashboard") {
+            // Initial logic: Admins or Verified Experts can access dashboard
+            const hasExpertStatus = !!(session?.user as any)?.expertVerificationType;
+            const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN';
+            return hasExpertStatus || isAdmin;
+          }
+
+          return true;
         })
         // 2. MAP: Transform specific items (Profile)
         .map((item) => {
@@ -137,7 +153,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group">
-              <BrandLogo/>
+              <BrandLogo />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -36,7 +36,6 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
       }
     });
 
-    // Notify Post Author
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { authorId: true }
@@ -52,7 +51,6 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
       });
     }
 
-    // If Reply, notify parent comment author (Optional, simplistic logic)
     if (parentId) {
       const parentComment = await prisma.comment.findUnique({
         where: { id: parentId },
@@ -69,8 +67,7 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
       }
     }
 
-    // Revalidate paths if needed, or rely on client cache update
-    // revalidatePath(`/posts/${postId}`); 
+    revalidatePath("/feed"); // Or more specific path if applicable
 
     return {
       status: "success",
@@ -84,26 +81,35 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
   }
 }
 
-export async function getComments(postId: string, parentId?: string, cursor?: string, limit = 5) {
-  const comments = await prisma.comment.findMany({
-    take: limit + 1,
-    cursor: cursor ? { id: cursor } : undefined,
-    where: {
-      postId,
-      parentId: parentId || null, // Fetch root comments if parentId is undefined
-    },
-    orderBy: { createdAt: 'desc' }, // Newest first
-    include: {
-      user: { select: { id: true, name: true, username: true, image: true } },
-      _count: { select: { replies: true } }
+export async function getComments(postId: string, parentId?: string, cursor?: string, limit = 5): Promise<ApiResponse<{ comments: any[]; nextCursor: string | undefined }>> {
+  try {
+    const comments = await prisma.comment.findMany({
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      where: {
+        postId,
+        parentId: parentId || null,
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, username: true, image: true } },
+        _count: { select: { replies: true } }
+      }
+    });
+
+    let nextCursor: string | undefined = undefined;
+    if (comments.length > limit) {
+      const nextItem = comments.pop();
+      nextCursor = nextItem?.id;
     }
-  });
 
-  let nextCursor: string | undefined = undefined;
-  if (comments.length > limit) {
-    const nextItem = comments.pop();
-    nextCursor = nextItem?.id;
+    return {
+      status: "success",
+      message: "Comments fetched successfully",
+      data: { comments, nextCursor }
+    };
+  } catch (error) {
+    console.error("Get Comments Error:", error);
+    return { status: "error", message: "Failed to fetch comments" };
   }
-
-  return { comments, nextCursor };
 }

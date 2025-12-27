@@ -15,7 +15,7 @@ export async function getSavedPosts(cursor?: string, limit = 10) {
         include: {
             post: {
                 include: {
-                    author: { select: { id: true, name: true, username: true, image: true, isVerified: true, isSebiVerified: true } },
+                    author: { select: { id: true, name: true, username: true, image: true, expertVerificationType: true, accountVerificationType: true } },
                     media: true,
                     _count: { select: { likes: true, comments: true, other_Post: true } },
                     likes: { where: { userId }, select: { id: true } },

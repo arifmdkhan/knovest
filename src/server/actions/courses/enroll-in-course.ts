@@ -21,10 +21,10 @@ export async function enrollInCourseAction(
   courseId: string
 ): Promise<ApiResponse | never> {
   const user = await requireUser();
-  let checkoutUrl: string;
+  let checkoutUrl: string | undefined;
 
   try {
-     const req = await request();
+    const req = await request();
     const decision = await aj.protect(req, {
       fingerprint: user.id,
     });
@@ -43,9 +43,6 @@ export async function enrollInCourseAction(
         };
       }
     }
-
-
-
 
     const course = await prisma.course.findUnique({
       where: {
@@ -82,7 +79,7 @@ export async function enrollInCourseAction(
 
       if (existingEnrollment?.status === "Active") {
         return {
-          status: "success",
+          status: "success" as const,
           message: "You are already enrolled in this course",
         };
       }
@@ -117,13 +114,22 @@ export async function enrollInCourseAction(
       };
     });
 
-    checkoutUrl = result.checkoutUrl as string;
-  } catch {
+    if ("status" in result && result.status === "success") {
+      return result;
+    }
+
+    checkoutUrl = (result as any).checkoutUrl;
+  } catch (error) {
+    console.error("Enroll in Course Action Error:", error);
     return {
       status: "error",
       message: "Failed to enroll in course",
     };
   }
 
-  redirect(checkoutUrl);
+  if (checkoutUrl) {
+    redirect(checkoutUrl);
+  } else {
+    return { status: "error", message: "Failed to generate checkout URL" };
+  }
 }

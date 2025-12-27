@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "*.t3.storage.dev",
+      },
+      {
+        protocol: "https",
         hostname: "lh3.googleusercontent.com"
       }
     ]

@@ -21,16 +21,36 @@ export async function updateLesson(
       };
     }
 
-    await prisma.lesson.update({
-      where: {
-        id: lessonId,
-      },
-      data: {
-        title: result.data.name,
-        description: result.data.description,
-        thumbnailKey: result.data.thumbnailKey,
-        videoKey: result.data.videoKey,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.lesson.update({
+        where: {
+          id: lessonId,
+        },
+        data: {
+          title: result.data.name,
+          description: result.data.description,
+          thumbnailKey: result.data.thumbnailKey,
+          videoKey: result.data.videoKey,
+        },
+      });
+
+      if (result.data.resources) {
+        await tx.lessonResource.deleteMany({
+          where: {
+            lessonId,
+          },
+        });
+
+        if (result.data.resources.length > 0) {
+          await tx.lessonResource.createMany({
+            data: result.data.resources.map((r) => ({
+              name: r.name,
+              url: r.url,
+              lessonId,
+            })),
+          });
+        }
+      }
     });
 
     return {

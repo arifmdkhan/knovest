@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
-import { Users, Star,  TrendingUp, Mic, Monitor } from "lucide-react";
+import { Users, Star, TrendingUp, Mic, Monitor } from "lucide-react";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 
 export function FeatureBento() {
@@ -153,13 +153,13 @@ export function FeatureBento() {
 
                 <div className="flex items-center gap-2 mb-6">
 
-                   <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" isVerified={true} isSebiVerified={true} />
+                  <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
                 </div>
 
                 <div className="mt-auto flex items-center justify-between">
                   <div>
                     <div className="text-lg font-bold">₹2,999</div>
-                 
+
                   </div>
                   <Button size="sm" className="rounded-full px-4 shadow-lg shadow-primary/20" aria-label="Buy Technical Analysis Masterclass">
                     Buy Now

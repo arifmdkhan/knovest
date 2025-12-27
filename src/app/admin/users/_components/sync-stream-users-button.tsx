@@ -15,10 +15,10 @@ export function SyncStreamUsersButton({ className }: { className?: string }) {
         try {
             toast.info("Starting Stream user sync...");
             const res = await syncAllUsersToStream();
-            if (res.success) {
-                toast.success(`Successfully synced ${res.count} users to Stream.`);
+            if (res.status === "success") {
+                toast.success(`Successfully synced ${res.data?.count} users to Stream.`);
             } else {
-                toast.error("Failed to sync users.");
+                toast.error(res.message || "Failed to sync users.");
             }
         } catch (error) {
             console.error(error);

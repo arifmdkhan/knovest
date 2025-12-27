@@ -75,8 +75,8 @@ function ReviewItem({
                         name={review.user.name}
                         username={review.user.username}
                         image={review.user.image}
-                        isVerified={review.user.isVerified}
-                        isSebiVerified={review.user.isSebiVerified}
+                        expertVerificationType={review.user.expertVerificationType}
+                        accountVerificationType={review.user.accountVerificationType}
                     />
                     <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}
@@ -146,8 +146,8 @@ function ReviewItem({
                                     name={reply.user.name}
                                     username={reply.user.username}
                                     image={reply.user.image}
-                                    isVerified={reply.user.isVerified}
-                                    isSebiVerified={reply.user.isSebiVerified}
+                                    expertVerificationType={reply.user.expertVerificationType}
+                                    accountVerificationType={reply.user.accountVerificationType}
                                     avatarClassName="w-6 h-6"
                                 />
                                 <span className="text-xs text-muted-foreground">

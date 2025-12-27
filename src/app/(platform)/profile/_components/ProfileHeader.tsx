@@ -10,6 +10,9 @@ import {
   Calendar,
   CheckCircle2,
   ShieldCheck,
+  Award,
+  TrendingUp,
+  BadgeCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -83,8 +86,12 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
     }
     setIsMessaging(true);
     try {
-      const channelId = await createDM(profile.id);
-      router.push(`/chat/${channelId}`);
+      const res = await createDM(profile.id);
+      if (res.status === "success" && res.data) {
+        router.push(`/chat/${res.data}`);
+      } else {
+        toast.error(res.message || "Failed to start chat");
+      }
     } catch (error) {
       toast.error("Failed to start chat");
     } finally {
@@ -167,12 +174,29 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
                 {profile.name}
               </h1>
-              {(profile.isVerified || profile.isSebiVerified) && (
-                <CheckCircle2 className="w-5 h-5 text-blue-500" />
+
+              {/* --- ACCOUNT VERIFICATION --- */}
+              {profile.accountVerificationType === "VERIFIED_USER" && (
+                <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-500/10" />
               )}
-              {profile.isSebiVerified && (
-                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1">
+              {profile.accountVerificationType === "OFFICIAL" && (
+                <BadgeCheck className="w-5 h-5 text-yellow-500 fill-yellow-500/10" />
+              )}
+
+              {/* --- EXPERT VERIFICATION --- */}
+              {profile.expertVerificationType === "SEBI" && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1 h-6">
                   <ShieldCheck className="w-4 h-4" /> SEBI RA
+                </Badge>
+              )}
+              {profile.expertVerificationType === "CERTIFIED" && (
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1 h-6">
+                  <Award className="w-4 h-4" /> PRO
+                </Badge>
+              )}
+              {profile.expertVerificationType === "TRACK_RECORD" && (
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 gap-1 h-6">
+                  <TrendingUp className="w-4 h-4" /> TRADER
                 </Badge>
               )}
 

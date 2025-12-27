@@ -19,7 +19,7 @@ import Link from "next/link";
 
 interface ArticleCardProps {
     article: Article & {
-        author: Pick<User, "name" | "username" | "image" | "isVerified" | "isSebiVerified">;
+        author: Pick<User, "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType">;
     };
 }
 
@@ -60,8 +60,8 @@ export function ArticleCard({ article }: ArticleCardProps) {
                     name={article.author.name}
                     username={article.author.username}
                     image={article.author.image}
-                    isVerified={article.author.isVerified}
-                    isSebiVerified={article.author.isSebiVerified}
+                    expertVerificationType={article.author.expertVerificationType}
+                    accountVerificationType={article.author.accountVerificationType}
                     className="hover:no-underline"
                 >
                     <span className="text-xs text-muted-foreground">• {readTime}</span>

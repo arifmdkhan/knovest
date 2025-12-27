@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/select";
 
 import { MediaUploader, UploadedMedia } from "@/components/handle-media/media-uploader";
+import { UploadIntent } from "@/lib/storage/types";
+import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useCreatePost } from "@/hooks/use-post";
 import Link from "next/link";
@@ -23,24 +25,44 @@ export function PostComposer() {
   const { data: session } = authClient.useSession();
   const { mutate: createPost, isPending: isPosting } = useCreatePost();
 
+  /* State */
   const [content, setContent] = useState("");
   const [media, setMedia] = useState<UploadedMedia[]>([]);
   const [visibility, setVisibility] = useState<"PUBLIC" | "FOLLOWERS" | "PRIVATE" | "SUBSCRIBER">("PUBLIC");
+  // Generate a stable ID for the session (re-gen on submit)
+  // We need to import uuid/cuid. Since "uuid" is likely used elsewhere, let's dynamic import or move to top if available.
+  // Actually, standard practice for client-side ID:
+  // Initialize synchronously to ensure it's never empty during first render
+  const [postId, setPostId] = useState<string>(() => crypto.randomUUID());
+
+  // useEffect removed as valid ID is generated on mount via initializer
+
   const [uploaderKey, setUploaderKey] = useState(0);
 
   const handleSubmit = async () => {
     if (!content.trim() && media.length === 0) return;
 
     createPost({
+      id: postId,
       content,
       visibility,
-      media
+      media: media
+        ? media
+          .filter((m) => m.type === "IMAGE" || m.type === "VIDEO")
+          .map((m) => ({
+            url: m.url,
+            type: m.type as "IMAGE" | "VIDEO",
+            width: (m as any).width,
+            height: (m as any).height,
+          }))
+        : undefined
     }, {
       onSuccess: () => {
         // Reset Form
         setContent("");
         setMedia([]);
         setUploaderKey(prev => prev + 1);
+        setPostId(crypto.randomUUID()); // New ID for next post
       }
     });
   };
@@ -87,8 +109,12 @@ export function PostComposer() {
             if (query.length > 0) {
               const { searchUsers } = await import("@/server/actions/user");
               // searchUsers returns correct shape matching ConnectionUser mostly
-              const users = await searchUsers(query);
-              setMentionResults(users as ConnectionUser[]);
+              const res = await searchUsers(query);
+              if (res.status === "success" && res.data) {
+                setMentionResults(res.data as ConnectionUser[]);
+              } else {
+                setMentionResults([]);
+              }
             } else {
               setMentionResults([]);
             }
@@ -189,7 +215,10 @@ export function PostComposer() {
             key={uploaderKey}
             onChange={setMedia}
             maxFiles={4}
-            acceptedTypes="mixed"
+            allowedTypes={["image", "video"]}
+            maxSizeMB={30}
+            intent={UploadIntent.POST_MEDIA}
+            uploadParams={{ postId }}
           />
 
           <div className="flex justify-end pt-2 border-t border-border/50">

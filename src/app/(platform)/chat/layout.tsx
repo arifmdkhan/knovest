@@ -4,10 +4,10 @@ import { ChatProvider } from "./_components/ChatProvider";
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const user = await requireUser();
-    const token = await getStreamToken();
+    const res = await getStreamToken();
 
     return (
-        <ChatProvider user={user} streamToken={token}>
+        <ChatProvider user={user} streamToken={res.status === "success" ? res.data || "" : ""}>
             {children}
         </ChatProvider>
     );

@@ -17,6 +17,7 @@ export const articleSchema = z.object({
         message: "Please select a category.",
     }),
     status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
+    id: z.string().optional(),
 });
 
 export type ArticleSchemaType = z.infer<typeof articleSchema>;

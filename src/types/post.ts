@@ -1,7 +1,7 @@
 import { Post, User, Media, Like, Comment, SavedPost } from "@/generated/prisma/client";
 
 export type FeedPost = Post & {
-    author: Pick<User, "id" | "name" | "username" | "image" | "isVerified" | "isSebiVerified">;
+    author: Pick<User, "id" | "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType">;
     media: Media[];
     _count: {
         likes: number;

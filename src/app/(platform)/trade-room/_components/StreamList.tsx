@@ -71,9 +71,37 @@ export function StreamList({ type, initialData }: StreamListProps) {
     const [isLoading, setIsLoading] = useState(!initialData);
     const [editingCall, setEditingCall] = useState<Call | null>(null);
     const [paidStreamIds, setPaidStreamIds] = useState<Set<string>>(new Set());
+    // Store manually fetched user data to ensure valid usernames/badges
+    const [creatorsData, setCreatorsData] = useState<Record<string, any>>({});
 
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
+
+    // Fetch creator details from Chat Client to ensure fresh data (username, badges)
+    useEffect(() => {
+        if (!chatClient || calls.length === 0) return;
+
+        const fetchCreators = async () => {
+            const creatorIds = Array.from(new Set(calls.map(c => (c.state.createdBy as any)?.id).filter(Boolean)));
+            // Only fetch what we don't have
+            const missingIds = creatorIds.filter(id => !creatorsData[id]);
+
+            if (missingIds.length === 0) return;
+
+            try {
+                const { users } = await chatClient.queryUsers({ id: { $in: missingIds } });
+                setCreatorsData(prev => {
+                    const next = { ...prev };
+                    users.forEach(u => next[u.id] = u);
+                    return next;
+                });
+            } catch (err) {
+                console.error("Failed to fetch stream creators", err);
+            }
+        };
+
+        fetchCreators();
+    }, [calls, chatClient]); // Intentionally omitting creatorsData to treat it as cache-first logic, and calls update triggers re-check.
 
     useEffect(() => {
         if (!client || !chatClient || (type !== 'my-streams' && isLoadingGroups)) return;
@@ -188,8 +216,8 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
             await Promise.all(paidStreams.map(async (call) => {
                 if (!newPaidSet.has(call.id)) {
-                    const hasPaid = await hasUserPaidForStream(call.id, session.user.id);
-                    if (hasPaid) {
+                    const response = await hasUserPaidForStream(call.id, session.user.id);
+                    if (response.status === "success" && response.data) {
                         newPaidSet.add(call.id);
                         changed = true;
                     }
@@ -362,12 +390,21 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                 </div>
 
                                 <div className="flex items-center justify-between pt-1">
-                                    <UserAvatarWithInfo
-                                        name={call.state.createdBy?.name || "Unknown"}
-                                        username={(call.state.createdBy?.custom?.username as string) || "user"}
-                                        image={call.state.createdBy?.image || null}
-                                        avatarClassName="h-8 w-8 ring-2 ring-white dark:ring-zinc-800"
-                                    />
+                                    {(() => {
+                                        const creatorId = (call.state.createdBy as any)?.id;
+                                        const creator = (creatorId && creatorsData[creatorId]) || call.state.createdBy;
+
+                                        return (
+                                            <UserAvatarWithInfo
+                                                name={creator?.name || "Unknown"}
+                                                username={creator?.username || creator?.custom?.username || "user"}
+                                                image={creator?.image || null}
+                                                expertVerificationType={creator?.expertVerificationType || creator?.custom?.expertVerificationType}
+                                                accountVerificationType={creator?.accountVerificationType || creator?.custom?.accountVerificationType}
+                                                avatarClassName="h-8 w-8 ring-2 ring-white dark:ring-zinc-800"
+                                            />
+                                        );
+                                    })()}
                                 </div>
                             </CardHeader>
 

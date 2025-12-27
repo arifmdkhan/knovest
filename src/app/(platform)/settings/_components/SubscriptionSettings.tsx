@@ -45,7 +45,7 @@ export function SubscriptionSettings({ user }: SubscriptionSettingsProps) {
         });
     }
 
-    if (!user.isVerified && !user.isSebiVerified) {
+    if (user.expertVerificationType !== "SEBI") {
         return null;
     }
 

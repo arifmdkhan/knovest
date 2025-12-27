@@ -10,7 +10,12 @@ import { useRouter } from "next/navigation";
 import { getDmChannelId } from "@/lib/chat-utils";
 import { useDebounce } from "use-debounce";
 
-type SearchedUser = Awaited<ReturnType<typeof searchUsers>>[0];
+type SearchedUser = {
+    id: string;
+    name: string;
+    username: string;
+    image: string | null;
+};
 
 export function CustomChannelSearch() {
     const { client } = useChatContext();
@@ -40,12 +45,16 @@ export function CustomChannelSearch() {
             }
             setIsSearching(true);
             try {
-                const users = await searchUsers(debouncedQuery);
-                // Filter out self
-                const filtered = users.filter((u) => u.id !== client.userID);
-                setResults(filtered);
+                const result = await searchUsers(debouncedQuery);
+                if (result.status === "success" && result.data) {
+                    const filtered = result.data.filter((u) => u.id !== client.userID);
+                    setResults(filtered as SearchedUser[]);
+                } else {
+                    setResults([]);
+                }
             } catch (error) {
                 console.error(error);
+                setResults([]);
             } finally {
                 setIsSearching(false);
             }

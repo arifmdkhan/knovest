@@ -27,8 +27,8 @@ export async function getFollowSuggestions(limit = 5) {
             name: true,
             username: true,
             image: true,
-            isVerified: true,
-            isSebiVerified: true,
+            expertVerificationType: true,
+            accountVerificationType: true,
         },
         orderBy: {
             // Simple heuristic: suggest users who joined recently or randomly

@@ -102,8 +102,8 @@ export function CreatorArticleCard({ article }: CreatorArticleCardProps) {
                         name={article.author.name}
                         username={article.author.username}
                         image={article.author.image}
-                        isVerified={article.author.isVerified}
-                        isSebiVerified={article.author.isSebiVerified}
+                        expertVerificationType={article.author.expertVerificationType}
+                        accountVerificationType={article.author.accountVerificationType}
                         className="flex-1 min-w-0"
                         avatarClassName="h-8 w-8"
                     />

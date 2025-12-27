@@ -13,14 +13,20 @@ import { toast } from "sonner";
 import { searchUsers } from "@/server/actions/user";
 import { addMembersToChannel } from "@/server/actions/stream";
 
-
 interface AddMembersDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     channel: Channel;
 }
 
-type SearchedUser = Awaited<ReturnType<typeof searchUsers>>[0];
+type SearchedUser = {
+    id: string;
+    name: string;
+    username: string;
+    image: string | null;
+    expertVerificationType: string | null;
+    accountVerificationType: string | null;
+};
 
 export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDialogProps) {
     const { client } = useChatContext();
@@ -40,11 +46,16 @@ export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDial
         }
         setIsSearching(true);
         try {
-            const users = await searchUsers(val);
-            const newUsers = users.filter((u: SearchedUser) => !existingMembers.includes(u.id));
-            setResults(newUsers);
+            const result = await searchUsers(val);
+            if (result.status === "success" && result.data) {
+                const newUsers = result.data.filter((u: SearchedUser) => !existingMembers.includes(u.id));
+                setResults(newUsers as SearchedUser[]);
+            } else {
+                setResults([]);
+            }
         } catch (error) {
             console.error(error);
+            setResults([]);
         } finally {
             setIsSearching(false);
         }
@@ -61,7 +72,8 @@ export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDial
         setIsAdding(true);
 
         try {
-            await addMembersToChannel(channel.id!, selectedUsers);
+            const result = await addMembersToChannel(channel.id!, selectedUsers);
+            if (result.status === "error") throw new Error(result.message);
 
             toast.success("Members added successfully");
             onOpenChange(false);
@@ -76,7 +88,6 @@ export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDial
         }
     };
 
-    // Creator Check Logic
     const isGroup = (channel.data?.member_count || 0) > 2 || !!(channel.data as CustomChannelData)?.name;
     const isCreator = channel.data?.created_by?.id === client.userID;
 

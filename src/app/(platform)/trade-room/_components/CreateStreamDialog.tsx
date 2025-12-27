@@ -131,11 +131,11 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
             if (permissionType === "group") {
                 customData.allowedGroups = selectedGroups;
                 customData.allowedUserIds = selectedUserIds;
+            }
 
-                if (isPaid) {
-                    customData.isPaid = true;
-                    customData.price = Number(price);
-                }
+            if (isPaid) {
+                customData.isPaid = true;
+                customData.price = Number(price);
             }
 
             const starts_at = isScheduled && scheduledTime ? scheduledTime.toISOString() : undefined;
@@ -295,31 +295,33 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-4 border-t">
-                                    <div className="space-y-0.5">
-                                        <Label htmlFor="paid-access">Enable Paid Access Pass</Label>
-                                        <p className="text-xs text-muted-foreground">Allow others to pay to join this stream (15 min window)</p>
-                                    </div>
-                                    <Switch
-                                        id="paid-access"
-                                        checked={isPaid}
-                                        onCheckedChange={setIsPaid}
-                                    />
-                                </div>
 
-                                {isPaid && (
-                                    <div className="space-y-2 pt-2 border-t">
-                                        <Label htmlFor="price">Access Pass Price (₹)</Label>
-                                        <Input
-                                            id="price"
-                                            type="number"
-                                            min="1"
-                                            value={price}
-                                            onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : "")}
-                                            placeholder="Enter amount"
-                                        />
-                                    </div>
-                                )}
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="paid-access">Enable Paid Access Pass</Label>
+                                <p className="text-xs text-muted-foreground">Allow others to pay to join this stream (15 min window)</p>
+                            </div>
+                            <Switch
+                                id="paid-access"
+                                checked={isPaid}
+                                onCheckedChange={setIsPaid}
+                            />
+                        </div>
+
+                        {isPaid && (
+                            <div className="space-y-2 pt-2 border-t">
+                                <Label htmlFor="price">Access Pass Price (₹)</Label>
+                                <Input
+                                    id="price"
+                                    type="number"
+                                    min="1"
+                                    value={price}
+                                    onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : "")}
+                                    placeholder="Enter amount"
+                                />
                             </div>
                         )}
                     </div>

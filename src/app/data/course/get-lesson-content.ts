@@ -2,6 +2,7 @@ import "server-only";
 import { requireUser } from "../user/require-user";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+import { StorageService } from "@/lib/storage/storage-service";
 
 export async function getLessonContent(lessonId: string) {
   const user = await requireUser();
@@ -17,6 +18,7 @@ export async function getLessonContent(lessonId: string) {
       thumbnailKey: true,
       videoKey: true,
       position: true,
+      resources: true,
       chapter: {
         select: {
           courseId: true,
@@ -51,8 +53,23 @@ export async function getLessonContent(lessonId: string) {
     },
   });
 
+  let videoUrl: string | undefined;
+  if (lesson.videoKey) {
+    // Generate signed URL for private bucket
+    videoUrl = await StorageService.getPlaybackUrl(lesson.videoKey);
+  }
+
+  const resources = await Promise.all(
+    lesson.resources.map(async (r) => ({
+      ...r,
+      url: await StorageService.getPlaybackUrl(r.url),
+    }))
+  );
+
   return {
     ...lesson,
+    videoUrl, // Pass signed URL
+    resources,
     isCompleted: progress?.isCompleted ?? false,
   };
 }

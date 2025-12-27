@@ -8,8 +8,8 @@ export interface ConnectionUser {
     name: string;
     username: string | null;
     image: string | null;
-    isVerified: boolean;
-    isSebiVerified: boolean;
+    expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+    accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
 }
 
 export async function getUserConnections(userId: string, type: ConnectionType, cursor?: string, limit = 10) {
@@ -36,8 +36,8 @@ export async function getUserConnections(userId: string, type: ConnectionType, c
                         name: true,
                         username: true,
                         image: true,
-                        isVerified: true,
-                        isSebiVerified: true,
+                        expertVerificationType: true,
+                        accountVerificationType: true,
                     }
                 }
             }
@@ -62,8 +62,8 @@ export async function getUserConnections(userId: string, type: ConnectionType, c
                         name: true,
                         username: true,
                         image: true,
-                        isVerified: true,
-                        isSebiVerified: true,
+                        expertVerificationType: true,
+                        accountVerificationType: true,
                     }
                 }
             }
@@ -91,8 +91,8 @@ export async function getUserConnections(userId: string, type: ConnectionType, c
                         name: true,
                         username: true,
                         image: true,
-                        isVerified: true,
-                        isSebiVerified: true,
+                        expertVerificationType: true,
+                        accountVerificationType: true,
                     }
                 }
             }

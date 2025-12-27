@@ -38,10 +38,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, PlusIcon, SparkleIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
 import { toast } from "sonner";
+import { UploadIntent } from "@/lib/storage/types";
 
 export default function WriteArticlePage() {
     const [isPending, startTransition] = useTransition();
@@ -59,9 +60,19 @@ export default function WriteArticlePage() {
         },
     });
 
+    const [articleId, setArticleId] = useState<string>("");
+
+    useEffect(() => {
+        // Generate a stable ID for the session
+        setArticleId(crypto.randomUUID());
+    }, []);
+
     function onSubmit(values: ArticleSchemaType) {
         startTransition(async () => {
-            const { data: result, error } = await tryCatch(CreateArticle(values));
+            const { data: result, error } = await tryCatch(CreateArticle({
+                ...values,
+                id: articleId
+            }));
             if (error) {
                 toast.error("An unexpected error occurred.");
                 return;
@@ -201,16 +212,25 @@ export default function WriteArticlePage() {
                                                 <FormLabel>Thumbnail Image</FormLabel>
                                                 <FormControl>
                                                     <div className="aspect-video bg-muted rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors">
-                                                        <MediaUploader
-                                                            acceptedTypes="image"
-                                                            onChange={(files) => {
-                                                                if (files.length > 0 && files[0].key) {
-                                                                    field.onChange(files[0].key);
-                                                                } else {
-                                                                    field.onChange("");
-                                                                }
-                                                            }}
-                                                        />
+                                                        {articleId ? (
+                                                            <MediaUploader
+                                                                allowedTypes={["image"]}
+                                                                maxSizeMB={2}
+                                                                intent={UploadIntent.ARTICLE_THUMBNAIL}
+                                                                uploadParams={{ articleId }}
+                                                                onChange={(files) => {
+                                                                    if (files.length > 0 && files[0].key) {
+                                                                        field.onChange(files[0].key);
+                                                                    } else {
+                                                                        field.onChange("");
+                                                                    }
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="flex items-center justify-center h-full">
+                                                                <Loader2 className="animate-spin text-muted-foreground" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </FormControl>
                                                 <FormMessage />

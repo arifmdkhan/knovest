@@ -24,10 +24,10 @@ function MarkCompleteButton({ lessonId, isCompleted }: { lessonId: string, isCom
   const handleToggle = () => {
     startTransition(async () => {
       const result = await toggleLessonCompletion(lessonId, !isCompleted);
-      if (result.success) {
+      if (result.status === "success") {
         toast.success(isCompleted ? "Marked as incomplete" : "Lesson completed!");
       } else {
-        toast.error("Something went wrong");
+        toast.error(result.message || "Something went wrong");
       }
     });
   };
@@ -54,11 +54,13 @@ function MarkCompleteButton({ lessonId, isCompleted }: { lessonId: string, isCom
   );
 }
 
-function VideoPlayer({ thumbnailKey, videoKey }: {
+function VideoPlayer({ thumbnailKey, videoKey, videoUrl }: {
   thumbnailKey: string;
-  videoKey: string
+  videoKey: string;
+  videoUrl?: string;
 }) {
-  const videoUrl = constructUrl(videoKey);
+  // Use signed URL if available, otherwise fallback to constructUrl (legacy/public)
+  const source = videoUrl || constructUrl(videoKey);
   const thumbnailUrl = constructUrl(thumbnailKey)
 
   if (!videoKey) {
@@ -73,7 +75,7 @@ function VideoPlayer({ thumbnailKey, videoKey }: {
   return (
     <div className="aspect-video bg-black rounded-xl relative overflow-hidden shadow-lg ring-1 ring-border/10">
       <video
-        src={videoUrl}
+        src={source}
         className="w-full h-full object-cover"
         controls
         poster={thumbnailUrl}
@@ -88,7 +90,11 @@ export function CourseContent({ data }: CourseContentProps) {
     <div className="flex flex-col h-full bg-background w-full">
       <div className="p-6 space-y-6">
         {/* Video Section */}
-        <VideoPlayer thumbnailKey={data.thumbnailKey ?? ''} videoKey={data.videoKey ?? ''} />
+        <VideoPlayer
+          thumbnailKey={data.thumbnailKey ?? ''}
+          videoKey={data.videoKey ?? ''}
+          videoUrl={data.videoUrl} // Pass pre-signed URL
+        />
 
         {/* Action Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
@@ -131,11 +137,37 @@ export function CourseContent({ data }: CourseContentProps) {
           </TabsContent>
 
           <TabsContent value="resources" className="space-y-6 outline-none animate-in fade-in-50 duration-500">
-            <div className="bg-muted/30 rounded-lg p-8 text-center border border-border/50 border-dashed">
-              <FileText className="size-10 text-muted-foreground/50 mx-auto mb-3" />
-              <h3 className="font-medium text-foreground">No resources attached</h3>
-              <p className="text-sm text-muted-foreground mt-1">There are no downloadable resources for this lesson.</p>
-            </div>
+            {data.resources && data.resources.length > 0 ? (
+              <div className="grid gap-3">
+                {data.resources.map((resource) => (
+                  <div
+                    key={resource.id}
+                    className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-md">
+                        <FileText className="size-5 text-red-600 dark:text-red-400" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">{resource.name}</span>
+                        <span className="text-xs text-muted-foreground">PDF Document</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={resource.url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                        Open
+                      </a>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-muted/30 rounded-lg p-8 text-center border border-border/50 border-dashed">
+                <FileText className="size-10 text-muted-foreground/50 mx-auto mb-3" />
+                <h3 className="font-medium text-foreground">No resources attached</h3>
+                <p className="text-sm text-muted-foreground mt-1">There are no downloadable resources for this lesson.</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

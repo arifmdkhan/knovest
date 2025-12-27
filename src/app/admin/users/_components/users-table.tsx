@@ -18,11 +18,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Shield, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, LogOut, Trash2, RefreshCw } from "lucide-react";
+import { MoreHorizontal, Shield, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, LogOut, Trash2, RefreshCw, BadgeCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Role } from "@/generated/prisma/client";
-import { banUser, unbanUser, updateUserRole, revokeUserSessions, removeUser, updateUserVerification } from "@/server/actions/admin";
+import { Role, AccountVerificationType } from "@/generated/prisma/client";
+import { banUser, unbanUser, updateUserRole, revokeUserSessions, removeUser, updateAccountVerification } from "@/server/actions/admin";
 import { restoreStreamUsers } from "@/server/actions/stream";
 import { toast } from "sonner";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -39,8 +39,8 @@ interface AdminUser {
     banned: boolean | null;
     createdAt: Date;
     username: string | null;
-    isVerified: boolean;
-    isSebiVerified: boolean;
+    expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+    accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
 }
 
 interface UsersTableProps {
@@ -56,12 +56,11 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
 
-    // Debounce search update
+    // ... (useEffect same)
+
     useEffect(() => {
         const timer = setTimeout(() => {
             const currentQ = searchParams.get("q") || "";
-
-            // Only update if the query has actually changed
             if (searchQuery !== currentQ) {
                 const params = new URLSearchParams(searchParams);
                 if (searchQuery) {
@@ -69,13 +68,13 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
                 } else {
                     params.delete("q");
                 }
-                params.set("page", "1"); // Reset to page 1 on search change
+                params.set("page", "1");
                 router.push(`${pathname}?${params.toString()}`);
             }
         }, 500);
-
         return () => clearTimeout(timer);
     }, [searchQuery, router, pathname, searchParams]);
+
 
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams(searchParams);
@@ -87,7 +86,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         setIsLoading(userId);
         const res = await banUser(userId, "Admin action");
         setIsLoading(null);
-        if (res.success) {
+        if (res.status === "success") {
             toast.success("User banned successfully");
             router.refresh();
         } else {
@@ -99,7 +98,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         setIsLoading(userId);
         const res = await unbanUser(userId);
         setIsLoading(null);
-        if (res.success) {
+        if (res.status === "success") {
             toast.success("User unbanned successfully");
             router.refresh();
         } else {
@@ -111,7 +110,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         setIsLoading(userId);
         const res = await updateUserRole(userId, newRole);
         setIsLoading(null);
-        if (res.success) {
+        if (res.status === "success") {
             toast.success(`Role updated to ${newRole}`);
             router.refresh();
         } else {
@@ -123,7 +122,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         setIsLoading(userId);
         const res = await revokeUserSessions(userId);
         setIsLoading(null);
-        if (res.success) {
+        if (res.status === "success") {
             toast.success("User sessions revoked");
             router.refresh();
         } else {
@@ -137,7 +136,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         setIsLoading(userId);
         const res = await removeUser(userId);
         setIsLoading(null);
-        if (res.success) {
+        if (res.status === "success") {
             toast.success("User deleted successfully");
             router.refresh();
         } else {
@@ -145,32 +144,36 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         }
     };
 
-    const handleVerificationChange = async (userId: string, type: 'verified' | 'sebi', value: boolean) => {
-        setIsLoading(userId);
-        const res = await updateUserVerification(userId, type, value);
-        setIsLoading(null);
-        if (res.success) {
-            toast.success(`User ${type === 'sebi' ? 'SEBI verification' : 'verification'} updated`);
-            router.refresh();
-        } else {
-            toast.error("Failed to update verification");
-        }
-    };
+    // We removed manual toggling of individual verification bits in favor of updating the Type, 
+    // but the server action for that is not yet refactored. 
+    // For now, removing the broken verification toggle menu items.
 
     const handleRestoreStreamUser = async (userId: string) => {
         setIsLoading(userId);
         const res = await restoreStreamUsers([userId]);
         setIsLoading(null);
-        if (res.success) {
+        if (res.status === "success") {
             toast.success("Stream user restored successfully");
         } else {
             toast.error("Failed to restore stream user");
         }
     };
 
+    const handleVerificationChange = async (userId: string, type: AccountVerificationType) => {
+        setIsLoading(userId);
+        const res = await updateAccountVerification(userId, type);
+        setIsLoading(null);
+        if (res.status === "success") {
+            toast.success(`Verification updated to ${type}`);
+            router.refresh();
+        } else {
+            toast.error(res.message || "Failed to update verification");
+        }
+    };
+
     return (
         <div className="space-y-4">
-            {/* Search Bar */}
+            {/* Search Bar - SAME */}
             <div className="flex items-center justify-between">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -234,13 +237,13 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
                                             name={user.name}
                                             username={user.username || "user"}
                                             image={user.image}
-                                            isVerified={user.isVerified}
-                                            isSebiVerified={user.isSebiVerified}
+                                            expertVerificationType={user.expertVerificationType}
+                                            accountVerificationType={user.accountVerificationType}
                                         />
                                     </TableCell>
                                     <TableCell className="text-sm">{user.email}</TableCell>
                                     <TableCell>
-                                        <Badge variant={user.role === "ADMIN" ? "destructive" : "secondary"}>
+                                        <Badge variant={user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? "destructive" : "secondary"}>
                                             {user.role}
                                         </Badge>
                                     </TableCell>
@@ -272,11 +275,11 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
                                                 <DropdownMenuItem onClick={() => handleRoleChange(user.id, "USER")}>
                                                     Set as User
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, "CREATOR")}>
-                                                    Set as Creator
-                                                </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleRoleChange(user.id, "ADMIN")}>
                                                     <Shield className="mr-2 h-4 w-4" /> Set as Admin
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, "SUPER_ADMIN")}>
+                                                    <Shield className="mr-2 h-4 w-4 text-red-500" /> Set as Super Admin
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 {user.banned ? (
@@ -289,14 +292,20 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
                                                     </DropdownMenuItem>
                                                 )}
                                                 <DropdownMenuSeparator />
+
+                                                <DropdownMenuSeparator />
                                                 <DropdownMenuLabel>Verification</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleVerificationChange(user.id, 'verified', !user.isVerified)}>
-                                                    {user.isVerified ? "Unverify User" : "Verify User"}
+                                                <DropdownMenuItem onClick={() => handleVerificationChange(user.id, "OFFICIAL")}>
+                                                    <BadgeCheck className="mr-2 h-4 w-4 text-yellow-500" /> Set Official
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleVerificationChange(user.id, 'sebi', !user.isSebiVerified)}>
-                                                    {user.isSebiVerified ? "Remove SEBI Status" : "Set SEBI Verified"}
+                                                <DropdownMenuItem onClick={() => handleVerificationChange(user.id, "VERIFIED_USER")}>
+                                                    <CheckCircle className="mr-2 h-4 w-4 text-blue-500" /> Set Verified
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleVerificationChange(user.id, "NONE")}>
+                                                    Remove Verification
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
+
                                                 <DropdownMenuItem onClick={() => handleRevokeSessions(user.id)}>
                                                     <LogOut className="mr-2 h-4 w-4" /> Revoke Sessions
                                                 </DropdownMenuItem>

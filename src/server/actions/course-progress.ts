@@ -3,8 +3,9 @@
 import { requireUser } from "@/app/data/user/require-user";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { ApiResponse } from "@/lib/types";
 
-export async function toggleLessonCompletion(lessonId: string, isCompleted: boolean) {
+export async function toggleLessonCompletion(lessonId: string, isCompleted: boolean): Promise<ApiResponse> {
     const user = await requireUser();
 
     try {
@@ -40,9 +41,9 @@ export async function toggleLessonCompletion(lessonId: string, isCompleted: bool
         }
 
         revalidatePath("/academy/enrolled/[slug]");
-        return { success: true };
+        return { status: "success", message: "Progress updated successfully" };
     } catch (error) {
         console.error("Error toggling lesson completion:", error);
-        return { success: false, error: "Failed to update progress" };
+        return { status: "error", message: "Failed to update progress" };
     }
 }

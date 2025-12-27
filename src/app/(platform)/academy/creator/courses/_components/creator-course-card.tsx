@@ -125,8 +125,8 @@ export default function CreatorCourseCard({ data }: CreatorCourseCardProps) {
                         name={data.user.name}
                         username={data.user.username}
                         image={data.user.image}
-                        isVerified={data.user.isVerified}
-                        isSebiVerified={data.user.isSebiVerified}
+                        expertVerificationType={data.user.expertVerificationType}
+                        accountVerificationType={data.user.accountVerificationType}
                         className="flex-1 min-w-0"
                         avatarClassName="h-8 w-8"
                     />

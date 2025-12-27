@@ -18,8 +18,8 @@ export async function getPost(postId: string): Promise<FeedPost> {
                     name: true,
                     username: true,
                     image: true,
-                    isVerified: true,
-                    isSebiVerified: true,
+                    expertVerificationType: true,
+                    accountVerificationType: true,
                 }
             },
             media: true,

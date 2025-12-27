@@ -51,12 +51,12 @@ export default function PaymentPage({ params }: PaymentPageProps) {
             setIsProcessing(true);
             const result = await purchaseStreamAccess(streamId, price);
 
-            if (result.success) {
+            if (result.status === "success") {
                 toast.success("Payment Successful! Access granted.");
                 // Force a hard navigation back to the stream page to ensure fresh state
                 window.location.href = `/trade-room/${streamId}`;
             } else {
-                toast.error(result.error || "Payment failed");
+                toast.error(result.message || "Payment failed");
             }
         } catch (error) {
             console.error("Payment error", error);

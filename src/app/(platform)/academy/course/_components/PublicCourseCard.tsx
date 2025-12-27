@@ -142,8 +142,8 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                             name={data.user.name}
                             username={data.user.username}
                             image={data.user.image}
-                            isVerified={data.user.isVerified}
-                            isSebiVerified={data.user.isSebiVerified}
+                            expertVerificationType={data.user.expertVerificationType}
+                            accountVerificationType={data.user.accountVerificationType}
                         />
                     </div>
 

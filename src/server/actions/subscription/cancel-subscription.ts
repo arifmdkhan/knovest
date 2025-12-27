@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 import { revalidatePath } from "next/cache";
+import { ApiResponse } from "@/lib/types";
 
-export async function cancelSubscription(subscriptionId: string) {
+export async function cancelSubscription(subscriptionId: string): Promise<ApiResponse> {
     try {
         const session = await getServerSession();
         const userId = session?.user?.id;
@@ -22,7 +23,7 @@ export async function cancelSubscription(subscriptionId: string) {
         }
 
         if (subscription.subscriberId !== userId) {
-            return { status: "error", message: "Unauthorized to cancel this subscription" };
+            return { status: "error", message: "Unauthorized" };
         }
 
         const updatedSubscription = await prisma.subscription.update({
@@ -31,7 +32,6 @@ export async function cancelSubscription(subscriptionId: string) {
             include: { subscribedTo: true }
         });
 
-        // Remove from Stream Group if exists
         const subscriptionChannelId = updatedSubscription.subscribedTo.subscriptionChannelId;
         if (subscriptionChannelId) {
             try {

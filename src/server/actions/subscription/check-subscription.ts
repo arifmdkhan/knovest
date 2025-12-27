@@ -2,12 +2,13 @@
 
 import { requireUser } from "@/app/data/user/require-user";
 import { prisma } from "@/lib/db";
+import { ApiResponse } from "@/lib/types";
 
-export async function checkSubscription(creatorId: string) {
+export async function checkSubscription(creatorId: string): Promise<ApiResponse<"ACTIVE" | string | null>> {
     try {
         const user = await requireUser();
 
-        if (user.id === creatorId) return "ACTIVE";
+        if (user.id === creatorId) return { status: "success", message: "Active", data: "ACTIVE" };
 
         const subscription = await prisma.subscription.findUnique({
             where: {
@@ -21,16 +22,11 @@ export async function checkSubscription(creatorId: string) {
             },
         });
 
-        if (!subscription) return null;
+        if (!subscription) return { status: "success", message: "No subscription", data: null };
 
-        // Check if subscription is active
-        if (subscription.status === "ACTIVE") {
-            return "ACTIVE";
-        }
-
-        return subscription.status; // Return "PENDING", "CANCELLED", etc. or "ACTIVE" if valid
+        return { status: "success", message: "Subscription found", data: subscription.status };
     } catch (error) {
         console.error("Error checking subscription:", error);
-        return null;
+        return { status: "error", message: "Failed to check subscription" };
     }
 }

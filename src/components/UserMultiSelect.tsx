@@ -76,14 +76,18 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
             try {
                 // Use server action for reliable user search (Postgres)
                 // This ensures we get username, verification badges, etc. correctly
-                const results = await searchUsers(debouncedQuery);
+                const res = await searchUsers(debouncedQuery);
 
-                setUsers(results.map(u => ({
-                    id: u.id,
-                    name: u.name,
-                    image: u.image || undefined,
-                    username: u.username || undefined
-                })));
+                if (res.status === "success" && res.data) {
+                    setUsers(res.data.map((u: any) => ({
+                        id: u.id,
+                        name: u.name,
+                        image: u.image || undefined,
+                        username: u.username || undefined
+                    })));
+                } else {
+                    setUsers([]);
+                }
             } catch (error) {
                 console.error("Failed to search users", error);
             } finally {

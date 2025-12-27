@@ -9,6 +9,7 @@ export const createPostSchema = z.object({
         width: z.number().optional(),
         height: z.number().optional(),
     })).max(4).optional(),
+    id: z.string().optional(),
 });
 
 export type CreatePostSchemaType = z.infer<typeof createPostSchema>;

@@ -18,7 +18,9 @@ type CommentQueryKey = ["comments", string, string | undefined];
 
 const fetchComments = async ({ pageParam, queryKey }: QueryFunctionContext) => {
   const [_, postId, parentId] = queryKey as CommentQueryKey;
-  return await getComments(postId, parentId, pageParam as string | undefined, 5);
+  const res = await getComments(postId, parentId, pageParam as string | undefined, 5);
+  if (res.status === "error") throw new Error(res.message);
+  return res.data;
 };
 
 export function CommentList({ postId, parentId }: CommentListProps) {
@@ -31,7 +33,7 @@ export function CommentList({ postId, parentId }: CommentListProps) {
   } = useInfiniteQuery({
     queryKey: ["comments", postId, parentId],
     queryFn: fetchComments,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 
@@ -43,7 +45,7 @@ export function CommentList({ postId, parentId }: CommentListProps) {
     return <div className="text-center text-xs text-destructive py-2">Failed to load comments</div>;
   }
 
-  const comments = data?.pages.flatMap((page) => page.comments) || [];
+  const comments = data?.pages.flatMap((page) => page?.comments || []) || [];
 
   if (comments.length === 0) {
     if (parentId) return <div className="text-xs text-muted-foreground py-2 pl-2">No replies yet.</div>;

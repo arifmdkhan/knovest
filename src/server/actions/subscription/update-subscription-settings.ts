@@ -25,8 +25,8 @@ export async function updateSubscriptionSettings(
         id: true,
         username: true,
         image: true,
-        isVerified: true,
-        isSebiVerified: true,
+        expertVerificationType: true,
+        accountVerificationType: true,
         subscriptionChannelId: true,
       }
     });
@@ -38,10 +38,10 @@ export async function updateSubscriptionSettings(
       };
     }
 
-    if (!user.isVerified && !user.isSebiVerified) {
+    if (!user.expertVerificationType) {
       return {
         status: "error",
-        message: "Only verified users can enable subscriptions",
+        message: "Only expert users can enable subscriptions",
       };
     }
 

@@ -32,7 +32,7 @@ export async function confirmEnrollment(enrollmentId: string): Promise<ApiRespon
         });
 
         revalidatePath(`/academy/course/${enrollment.course.slug}`);
-        revalidatePath("/academy/enrolled");
+          revalidatePath("/academy/enrolled");
 
         return { status: "success", message: "Enrollment confirmed successfully" };
 

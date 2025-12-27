@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -50,8 +49,6 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
     const { ref: loadMoreRef, inView } = useInView();
 
     // Define custom data type based on usage
-
-    // Define custom data type based on usage
     interface CustomCallData {
         allowedUserIds?: string[] | string;
         allowedGroups?: string[];
@@ -72,14 +69,15 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         }
 
         try {
-            const details = await getStreamAccessDetails(call.id, manualIds, pageNum);
+            const res = await getStreamAccessDetails(call.id, manualIds, pageNum);
 
-            if (details) {
+            if (res.status === "success" && res.data) {
+                const details = res.data;
                 if (pageNum === 1) {
-                    setPaidMembers(details.paidUsers);
-                    setManualMembers(details.manualUsers);
+                    setPaidMembers(details.paidUsers as AccessUser[]);
+                    setManualMembers(details.manualUsers as AccessUser[]);
                 } else {
-                    setPaidMembers(prev => [...prev, ...details.paidUsers]);
+                    setPaidMembers(prev => [...prev, ...(details.paidUsers as AccessUser[])]);
                     // Manual users are only on page 1, so no need to merge them on subsequent pages
                 }
                 setHasMore(!!details.hasMorePaid);
@@ -142,7 +140,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
             list.push({
                 id: g.id!,
                 name: (g.data as CustomChannelData)?.name || g.id,
-                image: (g.data as CustomChannelData)?.image,
+                image: (g.data as CustomChannelData)?.image as string,
                 type: 'manual',
                 isGroup: true
             });
@@ -249,7 +247,9 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                 setManualMembers(prev => prev.filter(m => m.id !== user.id));
 
             } else if (user.type === 'paid') {
-                await revokeStreamAccess(call.id, user.id);
+                const res = await revokeStreamAccess(call.id, user.id);
+                if (res.status === "error") throw new Error(res.message);
+
                 // Optimistic update
                 setPaidMembers(prev => prev.filter(m => m.id !== user.id));
                 toast.success("Paid access revoked");
@@ -346,4 +346,3 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         </Dialog>
     );
 }
-

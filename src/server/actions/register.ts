@@ -38,11 +38,9 @@ export async function updateProfileAfterLogin(data: { name: string, username: st
       return { status: "error", message: "Unauthorized" };
     }
 
-    // Double check username availability to be safe
     const check = await checkUsernameAvailability(data.username);
-    if (check.status === 'error') return check;
+    if (check.status === "error") return check;
 
-    // Update via Prisma to ensure we hit the unique fields correctly
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
@@ -52,14 +50,14 @@ export async function updateProfileAfterLogin(data: { name: string, username: st
       }
     });
 
-    // Sync to Stream
     await syncStreamUser(session.user.id, {
       name: data.name,
       username: data.username
     });
 
     return { status: "success", message: "Profile updated" };
-  } catch (error: any) {
-    return { status: "error", message: error.message || "Failed to update profile" };
+  } catch (error) {
+    console.error("Update Profile After Login Error:", error);
+    return { status: "error", message: "Failed to update profile" };
   }
 }

@@ -26,6 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
+import { UploadIntent } from "@/lib/storage/types";
 import { TextEditor } from "@/components/shared/text-editor/editor";
 import { tryCatch } from "@/helper/try-catch";
 import {
@@ -205,10 +206,13 @@ export function EditArticleForm({ article }: { article: Article }) {
                                                 <FormControl>
                                                     <div className="aspect-video bg-muted rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors">
                                                         <MediaUploader
-                                                            acceptedTypes="image"
+                                                            allowedTypes={["image"]}
+                                                            maxSizeMB={2}
+                                                            intent={UploadIntent.ARTICLE_THUMBNAIL}
+                                                            uploadParams={{ articleId: article.id }}
                                                             existingMedia={
                                                                 field.value
-                                                                    ? [{ url: constructUrl(field.value), type: "IMAGE" }]
+                                                                    ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, type: "IMAGE" }]
                                                                     : []
                                                             }
                                                             onChange={(files) => {

@@ -23,9 +23,9 @@ export default async function AcademyPage() {
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { role: true, expertVerificationType: true },
     });
-    if (user?.role === "CREATOR" || user?.role === "ADMIN") {
+    if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || !!user?.expertVerificationType) {
       showCreatorDashboard = true;
     }
   }

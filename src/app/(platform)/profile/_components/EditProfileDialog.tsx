@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfile } from "@/server/actions/user";
-import { MediaUploader } from "@/components/handle-media/media-uploader";
+import { AvatarUploader } from "@/components/handle-media/avatar-uploader";
 
 
 import { Badge } from "@/components/ui/badge";
@@ -116,16 +116,10 @@ export function EditProfileDialog({ profile }: { profile: ProfileProps }) {
           {/* Avatar Upload */}
           <div className="flex justify-center mb-6">
             <div className="w-24 h-24 relative">
-              <MediaUploader
-                maxFiles={1}
-                acceptedTypes="image"
-                onChange={(files) => {
-                  if (files?.[0]?.url) {
-                    form.setValue("image", files[0].url);
-                  }
-                }}
-                existingMedia={form.getValues("image") ? [{ url: form.getValues("image")!, type: "IMAGE" }] : []}
-                className="w-24 h-24 rounded-full overflow-hidden" // Pass classes to style the uploader
+              <AvatarUploader
+                value={form.watch("image")}
+                onChange={(url) => form.setValue("image", url)}
+                className="w-24 h-24"
               />
             </div>
           </div>

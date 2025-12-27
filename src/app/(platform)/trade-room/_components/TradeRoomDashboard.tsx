@@ -31,8 +31,10 @@ export default function TradeRoomDashboard({ initialActiveStreams, initialAudioR
     const [showCreateAudioRoom, setShowCreateAudioRoom] = useState(false);
     const [isScheduleMode, setIsScheduleMode] = useState(false);
 
-    // Check if user is verified
-    const isVerified = (session?.user as User)?.isVerified;
+    // Check if user is verified (Expert) or Admin
+    const userRole = (session?.user as any)?.role;
+    const isExpert = !!(session?.user as any)?.expertVerificationType;
+    const canHost = isExpert || userRole === "ADMIN" || userRole === "SUPER_ADMIN";
 
     const handleOpenCreateStream = (schedule: boolean) => {
         setIsScheduleMode(schedule);
@@ -52,7 +54,7 @@ export default function TradeRoomDashboard({ initialActiveStreams, initialAudioR
                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Trade Room</h1>
                         <p className="text-sm md:text-base text-muted-foreground">Live trading sessions, audio discussions, and market analysis.</p>
                     </div>
-                    {isVerified && (
+                    {canHost && (
                         <div className="flex flex-wrap gap-2 w-full md:w-auto">
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={() => handleOpenCreateAudioRoom(true)} className="flex-1 md:flex-none border-violet-200 hover:bg-violet-50 text-violet-700 dark:border-violet-800 dark:hover:bg-violet-900/20 dark:text-violet-400">
@@ -87,7 +89,7 @@ export default function TradeRoomDashboard({ initialActiveStreams, initialAudioR
                     </TabsList>
 
                     <TabsContent value="all" className="space-y-6">
-                        {isVerified && (
+                        {canHost && (
                             <Card className="col-span-full border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/10 backdrop-blur-sm">
                                 <CardHeader>
                                     <CardTitle>My Sessions</CardTitle>

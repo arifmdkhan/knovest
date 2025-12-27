@@ -7,7 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 import {
   X,
   UploadCloud,
-  Loader2
+  Loader2,
+  FileText
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -25,34 +26,65 @@ interface MediaFile {
   uploading: boolean;
   error: boolean;
   key?: string;
-  type: "IMAGE" | "VIDEO";
+  type: "IMAGE" | "VIDEO" | "PDF";
 }
 
 export interface UploadedMedia {
   url: string;
+  name?: string;
   key?: string; // Needed for deletion
-  type: "IMAGE" | "VIDEO";
+  type: "IMAGE" | "VIDEO" | "PDF";
 }
+
+export type MediaType = "image" | "video" | "pdf";
+
+import { useMediaUpload } from "@/hooks/use-media-upload";
+import { UploadIntent } from "@/lib/storage/types";
+import { deleteMediaAction } from "@/server/actions/delete-media.actions"; // Import Action
+
+// ... Types ...
 
 interface MediaUploaderProps {
   onChange: (files: UploadedMedia[]) => void;
   maxFiles?: number;
-  acceptedTypes?: "image" | "video" | "mixed";
+  allowedTypes?: MediaType[];
   existingMedia?: UploadedMedia[];
   className?: string;
+  maxSizeMB?: number;
+  intent?: UploadIntent; // New Prop
+  uploadParams?: Record<string, string>; // New Prop
 }
 
 export function MediaUploader({
   onChange,
   maxFiles = 1,
-  acceptedTypes = "mixed",
+  allowedTypes = ["image"],
   existingMedia = [],
-  className
+  className,
+  maxSizeMB = 5,
+  intent = UploadIntent.POST_MEDIA, // Default
+  uploadParams = {}
 }: MediaUploaderProps) {
 
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [completedFiles, setCompletedFiles] = useState<UploadedMedia[]>(existingMedia);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  // Use Hook for the "Active" file being uploaded (handling one at a time internally for simplicity, or parallel)
+  // Since useMediaUpload is simple, we can wrap it per file or call it. 
+  // Let's call the logic directly from the component mapping, as the hook maintains state for ONE upload at a time usually.
+  // We can instantiate the hook logic or better, create a helper inside:
+
+  const { uploadFile: startUpload, progress: uploadProgress } = useMediaUpload({
+    intent,
+    // callbacks handled per file below
+  });
+
+  // Sync hook progress to the active uploading file
+  // Note: This assumes one file uploads at a time or they share progress (limitation of current hook usage)
+  useEffect(() => {
+    setFiles(prev => prev.map(f => f.uploading ? { ...f, progress: uploadProgress } : f));
+  }, [uploadProgress]);
 
   // --- Upload Logic ---
   const uploadFile = async (file: File, id: string) => {
@@ -60,48 +92,40 @@ export function MediaUploader({
       let fileToUpload = file;
       const isImage = file.type.startsWith("image");
 
-      // 1. Compress (if image)
+      // 1. Compress (only if image)
       if (isImage) {
         fileToUpload = await compressImage(file);
       }
 
-      // 2. Get Presigned URL
-      const res = await fetch("/api/s3/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: fileToUpload.name,
-          contentType: fileToUpload.type,
-          size: fileToUpload.size,
-        }),
-      });
+      // Update Params if POST_MEDIA and no postId, we might need one.
+      // Assuming parent provides valid uploadParams.
 
-      if (!res.ok) throw new Error("Failed to get upload URL");
-      const { presignedUrl, url, key } = await res.json();
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 0 } : f)); // Reset to 0
 
+      // 2. Upload via Hook
+      // We need to capture progress. The hook exposes 'progress' state but it's shared.
+      // For accurate per-file progress with this hook structure, we ideally need the hook to support a callback.
+      // Assuming we've structured the hook to update its state, we can try to sync it, but it's tricky with multiple files.
+      // Since we are likely uploading one large video at a time, we'll try to use the hook's progress for the *active* upload.
 
-      // 3. Upload to S3
-      setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 50 } : f));
-
-      const uploadRes = await fetch(presignedUrl, {
-        method: "PUT",
-        body: fileToUpload,
-        headers: { "Content-Type": fileToUpload.type },
-      });
-
-      if (!uploadRes.ok) throw new Error("S3 Upload failed");
+      const key = await startUpload(fileToUpload, uploadParams);
 
       // 4. Success
-      setFiles(prev => prev.filter(f => f.id !== id)); // Remove from uploading list
+      setFiles(prev => prev.filter(f => f.id !== id));
 
+      const isPdf = fileToUpload.type === "application/pdf";
       const newMedia: UploadedMedia = {
-        url: constructUrl(key),
+        url: constructUrl(key), // Convert Key to URL for Display
         key,
-        type: (isImage ? "IMAGE" : "VIDEO") as "IMAGE" | "VIDEO"
+        name: fileToUpload.name,
+        type: isImage ? "IMAGE" : isPdf ? "PDF" : "VIDEO"
       };
 
+      // Cache busting for images to ensure updates show immediately
+      if (isImage) {
+        newMedia.url = `${newMedia.url}?t=${Date.now()}`;
+      }
 
-      // Safe State Update
       setCompletedFiles(prev => {
         const updated = [...prev, newMedia];
         setTimeout(() => onChange(updated), 0);
@@ -110,9 +134,9 @@ export function MediaUploader({
 
       toast.success("Uploaded successfully");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Upload failed");
+      toast.error(error.message || "Upload failed");
       setFiles(prev => prev.map(f => f.id === id ? { ...f, error: true, uploading: false } : f));
     }
   };
@@ -129,13 +153,10 @@ export function MediaUploader({
     if (fileToRemove.key) {
       try {
         setIsDeleting(fileToRemove.url);
-        const res = await fetch("/api/s3/delete", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: fileToRemove.key }),
-        });
+        // Use Server Action
+        const res = await deleteMediaAction(fileToRemove.key);
 
-        if (!res.ok) throw new Error("Failed to delete");
+        if (res.status === "error") throw new Error(res.message || "Failed to delete");
         toast.success("File removed");
       } catch (error) {
         console.error(error);
@@ -154,11 +175,34 @@ export function MediaUploader({
     });
   };
 
+  // --- Configuration ---
+  const getAcceptConfig = () => {
+    const config: Accept = {};
+
+    if (allowedTypes.includes("image")) {
+      config['image/png'] = [];
+      config['image/jpeg'] = [];
+      config['image/webp'] = [];
+      config['image/avif'] = [];
+    }
+
+    if (allowedTypes.includes("video")) {
+      config['video/mp4'] = [];
+      config['video/webm'] = [];
+    }
+
+    if (allowedTypes.includes("pdf")) {
+      config['application/pdf'] = [];
+    }
+
+    return config;
+  }
+
   // --- Drop Handler ---
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
       fileRejections.forEach(({ errors }) => {
-        toast.error(errors[0]?.message || "Invalid file");
+        toast.error(errors[0]?.message || "Invalid file type or size");
       });
     }
 
@@ -168,8 +212,16 @@ export function MediaUploader({
     }
 
     acceptedFiles.forEach(file => {
+      // Manual Size Check
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        toast.error(`File ${file.name} exceeds ${maxSizeMB}MB limit`);
+        return;
+      }
+
       const id = uuidv4();
-      const type = file.type.startsWith("video") ? "VIDEO" : "IMAGE";
+      let type: "IMAGE" | "VIDEO" | "PDF" = "IMAGE";
+      if (file.type.startsWith("video")) type = "VIDEO";
+      if (file.type === "application/pdf") type = "PDF";
 
       const newFile: MediaFile = {
         id,
@@ -184,27 +236,20 @@ export function MediaUploader({
       setFiles(prev => [...prev, newFile]);
       uploadFile(file, id);
     });
-  }, [completedFiles.length, files.length, maxFiles]);
-
-  const acceptConfig: Accept = {
-    'image/png': [],
-    'image/jpeg': [],
-    'image/webp': [],
-    'image/avif': [],
-    ...(acceptedTypes !== 'image' ? {
-      'video/mp4': [],
-      'video/webm': []
-    } : {})
-  };
+  }, [completedFiles.length, files.length, maxFiles, maxSizeMB]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: acceptConfig,
+    accept: getAcceptConfig(),
     maxFiles: maxFiles,
+    maxSize: maxSizeMB * 1024 * 1024,
     disabled: files.some(f => f.uploading) || completedFiles.length >= maxFiles
   });
 
-
+  const getLabel = () => {
+    const types = allowedTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(" & ");
+    return `${types} (Max ${maxSizeMB}MB)`;
+  }
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -216,20 +261,27 @@ export function MediaUploader({
           {/* Completed Files */}
           {completedFiles.map((media, idx) => (
             <div key={media.url} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
-              {media.type === "IMAGE" ? (
+              {media.type === "IMAGE" && (
                 <Image
                   src={media.url}
                   alt="media"
                   fill
                   className="object-cover"
-
                 />
-              ) : (
+              )}
+              {media.type === "VIDEO" && (
                 <video
                   src={media.url}
                   className="w-full h-full object-cover"
                   controls
                 />
+              )}
+              {media.type === "PDF" && (
+                <div className="flex flex-col items-center justify-center text-muted-foreground p-4">
+                  <FileText className="w-12 h-12 mb-2" />
+                  <span className="text-xs text-center truncate w-full px-2 text-foreground font-medium">PDF Document</span>
+                  <a href={media.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline mt-1">View</a>
+                </div>
               )}
 
               <button
@@ -250,22 +302,29 @@ export function MediaUploader({
           {/* Uploading Files */}
           {files.map((file, idx) => (
             <div key={file.id} className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
-              {file.type === "IMAGE" ? (
+              {file.type === "IMAGE" && (
                 <Image src={file.preview} alt="preview" fill className="object-cover opacity-50" />
-              ) : (
+              )}
+              {file.type === "VIDEO" && (
                 <video src={file.preview} className="w-full h-full object-cover opacity-50" />
               )}
+              {file.type === "PDF" && (
+                <div className="flex flex-col items-center justify-center text-muted-foreground p-4 opacity-50">
+                  <FileText className="w-12 h-12 mb-2" />
+                  <span className="text-xs">Uploading PDF...</span>
+                </div>
+              )}
 
-              <div className="z-10 flex flex-col items-center">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
                 {file.error ? (
                   <span className="text-destructive font-bold text-xs">Failed</span>
                 ) : (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-xs font-medium text-primary mt-1">
-                      {file.progress < 10 ? "Compressing..." : "Uploading..."}
+                  <div className="flex flex-col items-center bg-black/40 p-2 rounded-lg backdrop-blur-sm">
+                    <Loader2 className="w-6 h-6 animate-spin text-white" />
+                    <span className="text-xs font-bold text-white mt-1">
+                      {file.progress}%
                     </span>
-                  </>
+                  </div>
                 )}
               </div>
 
@@ -298,7 +357,7 @@ export function MediaUploader({
             <div className="text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Click to upload</span> or drag and drop
               <br />
-              {acceptedTypes === 'image' ? 'Images only' : 'Images & Videos'} (Max 50MB)
+              {getLabel()}
             </div>
           </CardContent>
         </Card>

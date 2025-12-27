@@ -17,8 +17,8 @@ export interface ProfileData {
   location: string | null;
   website: string | null;
   createdAt: Date;
-  isVerified: boolean;
-  isSebiVerified: boolean;
+  expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+  accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
   followersCount: number;
   followingCount: number;
   isFollowing: boolean;

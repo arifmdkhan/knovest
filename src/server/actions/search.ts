@@ -1,12 +1,16 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-
 import { getServerSession } from "@/lib/get-sessions";
+import { ApiResponse } from "@/lib/types";
 
-export async function searchGlobal(query: string) {
+export async function searchGlobal(query: string): Promise<ApiResponse<{ users: any[], courses: any[], articles: any[] }>> {
     if (!query || query.length < 2) {
-        return { users: [], courses: [], articles: [] };
+        return {
+            status: "success",
+            message: "Query too short",
+            data: { users: [], courses: [], articles: [] }
+        };
     }
 
     const session = await getServerSession();
@@ -35,8 +39,8 @@ export async function searchGlobal(query: string) {
                     name: true,
                     username: true,
                     image: true,
-                    isVerified: true,
-                    isSebiVerified: true,
+                    expertVerificationType: true,
+                    accountVerificationType: true,
                 },
             }),
 
@@ -53,8 +57,8 @@ export async function searchGlobal(query: string) {
                             name: true,
                             username: true,
                             image: true,
-                            isVerified: true,
-                            isSebiVerified: true,
+                            expertVerificationType: true,
+                            accountVerificationType: true,
                         },
                     },
                     reviews: {
@@ -88,8 +92,8 @@ export async function searchGlobal(query: string) {
                             name: true,
                             username: true,
                             image: true,
-                            isVerified: true,
-                            isSebiVerified: true,
+                            expertVerificationType: true,
+                            accountVerificationType: true,
                         },
                     },
                 },
@@ -102,9 +106,13 @@ export async function searchGlobal(query: string) {
             savedBy: undefined
         }));
 
-        return { users, courses: formattedCourses, articles };
+        return {
+            status: "success",
+            message: "Search completed",
+            data: { users, courses: formattedCourses, articles }
+        };
     } catch (error) {
         console.error("Global Search Error:", error);
-        return { users: [], courses: [], articles: [] };
+        return { status: "error", message: "Search failed" };
     }
 }

@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 
-export function CreateChatDialog({ open, onOpenChange, isVerified }: { open: boolean, onOpenChange: (o: boolean) => void, isVerified: boolean }) {
+export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open: boolean, onOpenChange: (o: boolean) => void, canCreateGroup: boolean }) {
     const { client } = useChatContext();
     const router = useRouter();
     const [query, setQuery] = useState("");
@@ -26,12 +26,12 @@ export function CreateChatDialog({ open, onOpenChange, isVerified }: { open: boo
     const [groupName, setGroupName] = useState("");
     const [mode, setMode] = useState<"direct" | "group">("direct");
 
-    // Ensure mode is reset if verification status changes or dialog opens
+    // Ensure mode is reset if permission changes or dialog opens
     useEffect(() => {
-        if (!isVerified && mode === "group") {
+        if (!canCreateGroup && mode === "group") {
             setMode("direct");
         }
-    }, [isVerified, mode]);
+    }, [canCreateGroup, mode]);
 
     const handleSearch = async (val: string) => {
         setQuery(val);
@@ -41,8 +41,10 @@ export function CreateChatDialog({ open, onOpenChange, isVerified }: { open: boo
         }
         setIsSearching(true);
         try {
-            const users = await searchUsers(val);
-            setResults(users);
+            const result = await searchUsers(val);
+            if (result.status === "success" && result.data) {
+                setResults(result.data);
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -61,7 +63,7 @@ export function CreateChatDialog({ open, onOpenChange, isVerified }: { open: boo
     };
 
     const createChannel = async () => {
-        if (selectedUsers.length === 0 && (!isVerified || mode !== "group")) return;
+        if (selectedUsers.length === 0 && (!canCreateGroup || mode !== "group")) return;
         if (mode === "group" && !groupName.trim()) {
             toast.error("Please enter a group name");
             return;
@@ -130,9 +132,9 @@ export function CreateChatDialog({ open, onOpenChange, isVerified }: { open: boo
                 </DialogHeader>
 
                 <Tabs defaultValue="direct" value={mode} onValueChange={(v) => { setMode(v as any); setSelectedUsers([]); }}>
-                    <TabsList className={`grid w-full ${isVerified ? "grid-cols-2" : "grid-cols-1"}`}>
+                    <TabsList className={`grid w-full ${canCreateGroup ? "grid-cols-2" : "grid-cols-1"}`}>
                         <TabsTrigger value="direct">Direct Message</TabsTrigger>
-                        {isVerified && <TabsTrigger value="group">New Group</TabsTrigger>}
+                        {canCreateGroup && <TabsTrigger value="group">New Group</TabsTrigger>}
                     </TabsList>
 
                     <div className="py-4 space-y-4">
@@ -203,7 +205,7 @@ export function CreateChatDialog({ open, onOpenChange, isVerified }: { open: boo
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Button onClick={createChannel} disabled={isCreating || (selectedUsers.length === 0 && (!isVerified || mode !== "group"))}>
+                            <Button onClick={createChannel} disabled={isCreating || (selectedUsers.length === 0 && (!canCreateGroup || mode !== "group"))}>
                                 {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {mode === "direct" ? "Start Chat" : "Create Group"}
                             </Button>

@@ -62,8 +62,8 @@ export default async function ArticleDetailPage({ params }: ArticleDetailPagePro
                             name={article.author.name}
                             username={article.author.username}
                             image={article.author.image}
-                            isVerified={article.author.isVerified}
-                            isSebiVerified={article.author.isSebiVerified}
+                            expertVerificationType={article.author.expertVerificationType}
+                            accountVerificationType={article.author.accountVerificationType}
                         />
                     </div>
 

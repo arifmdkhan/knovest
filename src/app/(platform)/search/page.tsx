@@ -24,7 +24,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q } = await searchParams;
     const query = q || "";
 
-    const { users, courses, articles } = await searchGlobal(query);
+    const result = await searchGlobal(query);
+    let users: any[] = [];
+    let courses: any[] = [];
+    let articles: any[] = [];
+
+    if (result.status === "success" && result.data) {
+        users = result.data.users;
+        courses = result.data.courses;
+        articles = result.data.articles;
+    }
 
     const hasResults = users.length > 0 || courses.length > 0 || articles.length > 0;
 
@@ -99,8 +108,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                                     name={user.name}
                                                     username={user.username}
                                                     image={user.image}
-                                                    isVerified={user.isVerified}
-                                                    isSebiVerified={user.isSebiVerified}
+                                                    expertVerificationType={user.expertVerificationType}
+                                                    accountVerificationType={user.accountVerificationType}
                                                 />
                                             </div>
                                         ))}
@@ -149,8 +158,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                             name={user.name}
                                             username={user.username}
                                             image={user.image}
-                                            isVerified={user.isVerified}
-                                            isSebiVerified={user.isSebiVerified}
+                                            expertVerificationType={user.expertVerificationType}
+                                            accountVerificationType={user.accountVerificationType}
                                         />
                                     </div>
                                 ))}

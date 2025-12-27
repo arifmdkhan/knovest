@@ -16,18 +16,21 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { tryCatch } from '@/helper/try-catch'
+import { UploadIntent } from '@/lib/storage/types'
+import { useState, useEffect } from 'react'
 import { CreateCourse } from '@/server/actions/courses/create-course'
 import { MediaUploader } from '@/components/handle-media/media-uploader'
 import { TextEditor } from '@/components/shared/text-editor/editor'
-
-
-
 
 export default function CourseCreate() {
 
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
-    // const { triggerConfetti } = useConfetti()
+    const [courseId, setCourseId] = useState<string>("")
+
+    useEffect(() => {
+        setCourseId(crypto.randomUUID())
+    }, [])
 
     const form = useForm<CourseSchemaType>({
         resolver: zodResolver(courseSchema) as UseFormProps<CourseSchemaType>['resolver'],
@@ -48,7 +51,7 @@ export default function CourseCreate() {
 
     function onSubmit(values: CourseSchemaType) {
         startTransition(async () => {
-            const { data: result, error } = await tryCatch(CreateCourse(values))
+            const { data: result, error } = await tryCatch(CreateCourse({ ...values, id: courseId }))
             if (error) {
                 toast.error("An unexpected error occurred.")
                 return;
@@ -198,16 +201,25 @@ export default function CourseCreate() {
                                                 <FormLabel>Thumbnail Image</FormLabel>
                                                 <FormControl>
                                                     <div className="aspect-video bg-muted rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors">
-                                                        <MediaUploader
-                                                            acceptedTypes='image'
-                                                            onChange={(files) => {
-                                                                if (files.length > 0 && files[0].key) {
-                                                                    field.onChange(files[0].key)
-                                                                } else {
-                                                                    field.onChange("")
-                                                                }
-                                                            }}
-                                                        />
+                                                        {courseId ? (
+                                                            <MediaUploader
+                                                                allowedTypes={['image']}
+                                                                maxSizeMB={2}
+                                                                intent={UploadIntent.COURSE_COVER}
+                                                                uploadParams={{ courseId }}
+                                                                onChange={(files) => {
+                                                                    if (files.length > 0 && files[0].key) {
+                                                                        field.onChange(files[0].key)
+                                                                    } else {
+                                                                        field.onChange("")
+                                                                    }
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="flex items-center justify-center h-full">
+                                                                <Loader2 className="animate-spin text-muted-foreground" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </FormControl>
                                                 <FormMessage />

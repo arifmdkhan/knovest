@@ -12,13 +12,13 @@ import {
   lessonSchema,
   lessonSchemaType,
 } from "@/lib/schema/zod-schema";
-import arcjet, {  fixedWindow } from "@/lib/arcjet";
+import arcjet, { fixedWindow } from "@/lib/arcjet";
 import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next";
 import { prisma } from "@/lib/db";
 
 const aj = arcjet
- 
+
   .withRule(
     fixedWindow({
       mode: "LIVE",
@@ -326,10 +326,11 @@ export async function deleteLesson({
     revalidatePath(`/academy/courses/${courseId}/edit`);
 
     return {
-      status: "error",
+      status: "success",
       message: "Lesson deleted successfully",
     };
-  } catch {
+  } catch (error) {
+    console.error("Delete Lesson Error:", error);
     return {
       status: "error",
       message: "Failed to delete Lesson",
@@ -402,10 +403,11 @@ export async function deleteChapter({
     revalidatePath(`/academy/courses/${courseId}/edit`);
 
     return {
-      status: "error",
+      status: "success",
       message: "Chapter deleted successfully",
     };
-  } catch {
+  } catch (error) {
+    console.error("Delete Chapter Error:", error);
     return {
       status: "error",
       message: "Failed to delete Chapter",

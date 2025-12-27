@@ -24,10 +24,11 @@ export function SavedPostsTab() {
         queryKey: ["posts", "bookmarks"],
         queryFn: async ({ pageParam }) => {
             const res = await getSavedPostsAction(pageParam as string | undefined);
-            return res as FeedPage;
+            if (res.status === "error") throw new Error(res.message);
+            return res.data as FeedPage;
         },
         getNextPageParam: (lastPage: FeedPage) => lastPage.nextCursor,
-        initialPageParam: undefined,
+        initialPageParam: undefined as string | undefined,
     });
 
     useEffect(() => {

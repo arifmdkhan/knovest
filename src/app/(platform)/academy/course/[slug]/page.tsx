@@ -82,8 +82,8 @@ export default async function SlugPage({ params }: { params: Params }) {
                                     name={course.user.name}
                                     username={course.user.username}
                                     image={course.user.image}
-                                    isVerified={course.user.isVerified}
-                                    isSebiVerified={course.user.isSebiVerified}
+                                    expertVerificationType={course.user.expertVerificationType}
+                                    accountVerificationType={course.user.accountVerificationType}
                                 />
                                 {/* Removed "Created by" text as requested */}
                             </div>

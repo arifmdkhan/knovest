@@ -24,7 +24,8 @@ const fetchUserPosts = async ({ pageParam, queryKey }: QueryFunctionContext) => 
     10,
     authorId
   );
-  return res;
+  if (res.status === "error") throw new Error(res.message);
+  return res.data;
 };
 
 export function ProfileFeed({ authorId }: { authorId: string }) {
@@ -39,11 +40,11 @@ export function ProfileFeed({ authorId }: { authorId: string }) {
   } = useInfiniteQuery({
     queryKey: ["posts", "user", authorId], // Unique key for this user's feed
     queryFn: fetchUserPosts,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: any) => lastPage?.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 
-  const posts = data?.pages.flatMap((page) => page.posts) || [];
+  const posts = data?.pages.flatMap((page: any) => page?.posts || []) || [];
 
   // Infinite Scroll Trigger
   useEffect(() => {

@@ -120,7 +120,8 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
     }
 
     const whereClause: Prisma.PostWhereInput = {
-        OR: orConditions
+        OR: orConditions,
+        deletedAt: null
     };
 
     let posts;
@@ -137,8 +138,8 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
                         name: true,
                         username: true,
                         image: true,
-                        isVerified: true,
-                        isSebiVerified: true,
+                        expertVerificationType: true,
+                        accountVerificationType: true,
                     }
                 },
                 media: true,
@@ -154,8 +155,8 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
                                 name: true,
                                 username: true,
                                 image: true,
-                                isVerified: true,
-                                isSebiVerified: true,
+                                expertVerificationType: true,
+                                accountVerificationType: true,
                             }
                         },
                         media: true,

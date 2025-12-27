@@ -7,10 +7,11 @@ import {
 
 export const ac = createAccessControl(defaultStatements);
 
+export const SUPER_ADMIN = ac.newRole({
+    ...adminAc.statements,
+});
+
 export const ADMIN = ac.newRole(adminAc.statements);
 export const USER = ac.newRole({
-    ...userAc.statements,
-});
-export const CREATOR = ac.newRole({
     ...userAc.statements,
 });

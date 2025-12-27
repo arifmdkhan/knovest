@@ -18,6 +18,8 @@ export async function creatorGetLesson(lessonId: string) {
             thumbnailKey: true,
             position: true,
             videoKey: true,
+            updatedAt: true,
+            resources: true,
         },
     });
 

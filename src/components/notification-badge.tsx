@@ -9,7 +9,7 @@ export function NotificationBadge() {
         queryKey: ["unread-notifications-count"],
         queryFn: async () => {
             const res = await getUnreadCount();
-            return res.count;
+            return res.status === "success" ? res.data?.count : 0;
         },
         refetchInterval: 30000, // Poll every 30s
         staleTime: 10000,
@@ -17,7 +17,7 @@ export function NotificationBadge() {
 
     return (
         <AnimatePresence>
-            {data && data > 0 && (
+            {data !== undefined && data > 0 && (
                 <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}

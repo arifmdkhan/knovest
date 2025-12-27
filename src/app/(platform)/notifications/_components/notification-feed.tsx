@@ -25,12 +25,12 @@ export function NotificationFeed() {
         queryFn: async ({ pageParam = 1 }) => {
             const res = await getNotifications(pageParam as number, 15);
             if (res.status === "error") throw new Error(res.message);
-            return res;
+            return res.data;
         },
         initialPageParam: 1,
-        getNextPageParam: (lastPage, allPages) => {
+        getNextPageParam: (lastPage: any, allPages: any[]) => {
             if (allPages.length >= 3) return undefined; // Max 3 pages * 15 items = 45 items
-            if (!lastPage.data || lastPage.data.length < 15) return undefined;
+            if (!lastPage?.data || lastPage.data.length < 15) return undefined;
             return allPages.length + 1;
         },
         refetchInterval: 30000,
@@ -83,7 +83,7 @@ export function NotificationFeed() {
         )
     }
 
-    const notifications = data?.pages.flatMap(page => page.data || []) || [];
+    const notifications = data?.pages.flatMap(page => page?.data || []) || [];
 
     if (notifications.length === 0) {
         return (

@@ -78,6 +78,23 @@ export function HeroSection() {
           </Link>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="mt-12 flex flex-col items-center gap-3 max-w-lg text-center"
+        >
+          <div className="h-px w-24 bg-border/50 mb-4" />
+          <p className="text-sm text-muted-foreground/80 font-medium leading-relaxed px-4">
+            Are you an expert who loves to teach and mentor about finance, trading, and investment?
+          </p>
+          <Link href="/verification">
+            <Button variant="outline" size="lg" className="h-10 px-8 rounded-full text-primary hover:text-primary hover:bg-primary/5 font-semibold text-base group transition-all duration-300 border-primary/20 hover:border-primary/50 shadow-sm shadow-primary/10 hover:shadow-primary/20 hover:scale-[1.02]">
+              Get Verified to Start <ShieldCheck className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
+            </Button>
+          </Link>
+        </motion.div>
+
         {/* HERO VISUAL: 3D Perspective Container */}
         <div className="relative w-full max-w-6xl mt-24 perspective-[2000px]">
 
@@ -123,11 +140,11 @@ export function HeroSection() {
 
               {/* Stream Footer */}
               <div className="h-20 border-t border-border/10 bg-card/80 backdrop-blur-sm p-5 flex items-center gap-4">
-              
+
                 <div className="text-left overflow-hidden">
                   <div className="text-base font-bold truncate">Nifty 50 Live Scalping Session</div>
                   <div className="text-xs text-muted-foreground truncate flex items-center gap-2">
-                    <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" isVerified={true} isSebiVerified={true} />
+                    <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
 
                   </div>
                 </div>

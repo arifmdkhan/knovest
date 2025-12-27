@@ -82,7 +82,8 @@ export const useGetPosts = (authorId?: string, type: FeedType = 'FOR_YOU', initi
                 authorId,
                 type
             );
-            return res;
+            if (res.status === "error") throw new Error(res.message);
+            return res.data as FeedPage;
         },
         initialPageParam: undefined as string | undefined,
         getNextPageParam: (lastPage: FeedPage) => lastPage.nextCursor,

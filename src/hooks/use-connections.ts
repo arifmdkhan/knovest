@@ -13,7 +13,8 @@ export const useConnections = (userId: string, type: ConnectionType, isOpen: boo
         queryKey: ["connections", userId, type],
         queryFn: async ({ pageParam }: { pageParam: unknown }) => {
             const res = await getConnectionsAction(userId, type, pageParam as string | undefined, 10);
-            return res;
+            if (res.status === "error") throw new Error(res.message);
+            return res.data as ConnectionPage;
         },
         initialPageParam: undefined as string | undefined,
         getNextPageParam: (lastPage: ConnectionPage) => lastPage.nextCursor,

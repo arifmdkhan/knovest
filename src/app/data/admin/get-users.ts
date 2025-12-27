@@ -11,8 +11,8 @@ export interface AdminUser {
     banned: boolean | null;
     createdAt: Date;
     username: string | null;
-    isVerified: boolean;
-    isSebiVerified: boolean;
+    expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+    accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
 }
 
 export interface GetAdminUsersParams {
@@ -59,8 +59,8 @@ export async function getAdminUsers({ page = 1, limit = 10, query = "" }: GetAdm
                 banned: true,
                 createdAt: true,
                 username: true,
-                isVerified: true,
-                isSebiVerified: true,
+                expertVerificationType: true,
+                accountVerificationType: true,
             },
         }),
         prisma.user.count({ where }),

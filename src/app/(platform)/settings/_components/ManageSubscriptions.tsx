@@ -26,8 +26,8 @@ interface Subscription {
         name: string;
         username: string | null;
         image: string | null;
-        isVerified: boolean;
-        isSebiVerified: boolean;
+        expertVerificationType: "SEBI" | "CERTIFIED" | "TRACK_RECORD" | null;
+        accountVerificationType: "NONE" | "OFFICIAL" | "VERIFIED_USER" | null;
     };
 }
 
@@ -71,8 +71,8 @@ export function ManageSubscriptions({ subscriptions }: ManageSubscriptionsProps)
                             name={sub.subscribedTo.name}
                             username={sub.subscribedTo.username}
                             image={sub.subscribedTo.image}
-                            isVerified={sub.subscribedTo.isVerified}
-                            isSebiVerified={sub.subscribedTo.isSebiVerified}
+                            expertVerificationType={sub.subscribedTo.expertVerificationType}
+                            accountVerificationType={sub.subscribedTo.accountVerificationType}
                         />
 
                         <AlertDialog>

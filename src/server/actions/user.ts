@@ -54,10 +54,18 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>): 
     }
 
     // SC: Sync to Stream
+    // We fetch the latest user to get verification status to ensure consistency across Stream
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { expertVerificationType: true, accountVerificationType: true }
+    });
+
     await syncStreamUser(session.user.id, {
       name: parsed.data.name,
-      // username: parsed.data.username is not available here, so we don't update it to avoid overwriting with undefined or wrong data.
-      image: parsed.data.image
+      // username: parsed.data.username is not available here
+      image: parsed.data.image,
+      expertVerificationType: currentUser?.expertVerificationType,
+      accountVerificationType: currentUser?.accountVerificationType
     });
 
     revalidatePath(`/profile/${session.user.username}`);
@@ -158,13 +166,11 @@ export async function toggleFollow(targetUserId: string): Promise<ApiResponse<{ 
 }
 
 
-export async function searchUsers(query: string) {
-  // 1. Auth Check
+export async function searchUsers(query: string): Promise<ApiResponse<any[]>> {
   const session = await getServerSession();
-  if (!session?.user) return [];
+  if (!session?.user) return { status: "error", message: "Unauthorized" };
 
-  // 2. Validate input length to prevent expensive empty queries
-  if (!query || query.length < 2) return [];
+  if (!query || query.length < 2) return { status: "success", message: "Query too short", data: [] };
 
   try {
     const users = await prisma.user.findMany({
@@ -176,62 +182,67 @@ export async function searchUsers(query: string) {
               { username: { contains: query, mode: "insensitive" } },
             ],
           },
-          // Exclude the current user from search results
           { id: { not: session.user.id } },
         ],
       },
-      take: 10, // Limit results for performance
+      take: 10,
       select: {
         id: true,
         name: true,
         username: true,
         image: true,
-        // Include badge status if you want to show verified icons in search
-        isVerified: true,
-        isSebiVerified: true,
+        expertVerificationType: true,
+        accountVerificationType: true,
       },
     });
 
-    return users;
+    return { status: "success", message: "Users found", data: users };
   } catch (error) {
     console.error("Search Users Error:", error);
-    return [];
+    return { status: "error", message: "Failed to search users" };
   }
 }
 
-export async function syncProfileImage() {
-  const session = await getServerSession();
-  if (!session?.user?.image) return;
-
+export async function syncProfileImage(): Promise<ApiResponse> {
   try {
+    const session = await getServerSession();
+    if (!session?.user?.id) return { status: "error", message: "Unauthorized" };
+
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { image: true }
     });
 
-    // Only update if DB image is missing but session has one
     if (!user?.image && session.user.image) {
       console.log(`[syncProfileImage] Syncing image for ${session.user.id}`);
       await prisma.user.update({
         where: { id: session.user.id },
         data: { image: session.user.image }
       });
-      return { success: true };
+      return { status: "success", message: "Profile image synced" };
     }
+    return { status: "success", message: "No sync needed" };
   } catch (error) {
     console.error("Sync Profile Image Error:", error);
+    return { status: "error", message: "Failed to sync profile image" };
   }
 }
 
 import { getProfileByUsername } from "@/app/data/user/get-profile";
 
-export async function getUserProfile(username: string) {
-  if (!username) return null;
-  const user = await getProfileByUsername(username);
-  return user;
+export async function getUserProfile(username: string): Promise<ApiResponse<any>> {
+  if (!username) return { status: "error", message: "Username is required" };
+  try {
+    const user = await getProfileByUsername(username);
+    if (!user) return { status: "error", message: "User not found" };
+    return { status: "success", message: "User profile found", data: user };
+  } catch (error) {
+    console.error("Get User Profile Error:", error);
+    return { status: "error", message: "Failed to fetch user profile" };
+  }
 }
 
-export async function updateAccountSettings(data: { name: string; username: string }) {
+export async function updateAccountSettings(data: { name: string; username: string }): Promise<ApiResponse> {
   try {
     const session = await getServerSession();
     if (!session?.user) {
@@ -240,37 +251,39 @@ export async function updateAccountSettings(data: { name: string; username: stri
 
     const headerStore = await headers();
 
-    // 1. Update via Better Auth (Server-side)
-    // This updates the main User table and handles unique username checks
     try {
-      const res = await auth.api.updateUser({
+      await auth.api.updateUser({
         body: {
           name: data.name,
           username: data.username,
         },
         headers: headerStore
       });
-      // better-auth might return null or user object? Docs aren't specific here but if it throws, we catch it.
     } catch (e: any) {
-      // Better Auth throws error messages we can display
       console.error("Auth Update Error:", e);
       return { status: "error", message: e.message || "Failed to update account" };
     }
 
-    // 2. Sync to Stream
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { expertVerificationType: true, accountVerificationType: true }
+    });
+
     await syncStreamUser(session.user.id, {
       name: data.name,
       username: data.username,
+      expertVerificationType: currentUser?.expertVerificationType,
+      accountVerificationType: currentUser?.accountVerificationType
     });
 
     revalidatePath("/settings");
     revalidatePath("/profile");
-    revalidatePath(`/profile/${data.username}`); // Revalidate new profile path
+    revalidatePath(`/profile/${data.username}`);
 
     return { status: "success", message: "Account updated successfully" };
 
   } catch (error) {
     console.error("Update Account Error:", error);
-    return { status: "error", message: "An unexpected error occurred" };
+    return { status: "error", message: "Failed to update account" };
   }
 }

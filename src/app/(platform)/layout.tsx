@@ -9,7 +9,8 @@ import PlatformStreamProvider from "@/components/providers/PlatformStreamProvide
 
 export default async function PlatformLayout({ children }: { children: ReactNode }) {
     const user = await requireUser();
-    const token = await getStreamToken();
+    const res = await getStreamToken();
+    const token = res.status === "success" && res.data ? res.data : "";
 
     return (
         <PlatformStreamProvider user={user} streamToken={token}>

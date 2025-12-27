@@ -2,17 +2,23 @@
 
 import { requireUser } from "@/app/data/user/require-user";
 import { prisma } from "@/lib/db";
+import { ApiResponse } from "@/lib/types";
+import { redirect } from "next/navigation";
 
-export async function getSubscriptionStatus() {
+export async function getSubscriptionStatus(): Promise<ApiResponse<boolean>> {
     try {
         const sessionUser = await requireUser();
         const user = await prisma.user.findUnique({
             where: { id: sessionUser.id },
             select: { isSubscriptionEnabled: true },
         });
-        return !!user?.isSubscriptionEnabled;
+        return {
+            status: "success",
+            message: "Subscription status fetched",
+            data: !!user?.isSubscriptionEnabled
+        };
     } catch (error) {
         console.error("Failed to get subscription status:", error);
-        return false;
+        return { status: "error", message: "Failed to fetch status" };
     }
 }

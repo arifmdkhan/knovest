@@ -2,7 +2,7 @@ import { createAuthClient } from "better-auth/react";
 import { emailOTPClient, multiSessionClient } from "better-auth/client/plugins";
 import { adminClient } from "better-auth/client/plugins";
 import { usernameClient } from "better-auth/client/plugins";
-import { ac, ADMIN, USER, CREATOR } from "./access-control";
+import { ac, ADMIN, USER, SUPER_ADMIN } from "./access-control";
 
 
 export const authClient = createAuthClient({
@@ -13,7 +13,7 @@ export const authClient = createAuthClient({
       roles: {
         ADMIN,
         USER,
-        CREATOR,
+        SUPER_ADMIN,
       },
     }),
     usernameClient(),

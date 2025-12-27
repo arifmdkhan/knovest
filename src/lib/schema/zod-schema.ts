@@ -45,6 +45,7 @@ export const courseSchema = z.object({
     .regex(/^[a-z0-9-]+$/, {
       message: "Slug must only contain lowercase alphanumeric characters and hyphens",
     }),
+  id: z.string().uuid().optional(),
   status: z.enum(CourseStatus, {
     message: "Status must be one of the valid course statuses",
   }),
@@ -68,6 +69,14 @@ export const lessonSchema = z.object({
     .optional(),
   thumbnailKey: z.string().optional(),
   videoKey: z.string().optional(),
+  resources: z
+    .array(
+      z.object({
+        name: z.string(),
+        url: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export type CourseSchemaType = z.infer<typeof courseSchema>;

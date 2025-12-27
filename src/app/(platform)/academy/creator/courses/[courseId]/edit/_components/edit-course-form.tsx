@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { courseCategories, courseLevels, courseSchema, CourseSchemaType, CourseStatus } from '@/lib/schema/zod-schema'
+import { UploadIntent } from '@/lib/storage/types'
 import { Loader2, PlusIcon, SparkleIcon } from 'lucide-react'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, UseFormProps } from "react-hook-form"
@@ -183,7 +184,10 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                             <FormControl>
                                                 <div className="aspect-video bg-muted rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors">
                                                     <MediaUploader
-                                                        acceptedTypes='image'
+                                                        allowedTypes={['image']}
+                                                        maxSizeMB={2}
+                                                        intent={UploadIntent.COURSE_COVER}
+                                                        uploadParams={{ courseId: data.id }}
                                                         onChange={(files) => {
                                                             if (files.length > 0 && files[0].key) {
                                                                 field.onChange(files[0].key)
@@ -191,7 +195,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                                                 field.onChange("")
                                                             }
                                                         }}
-                                                        existingMedia={field.value ? [{ url: constructUrl(field.value), type: "IMAGE" }] : []}
+                                                        existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, type: "IMAGE" }] : []}
                                                     />
                                                 </div>
                                             </FormControl>

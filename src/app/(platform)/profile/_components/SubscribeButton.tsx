@@ -20,8 +20,10 @@ export function SubscribeButton({ creatorId, price }: SubscribeButtonProps) {
     useEffect(() => {
         async function fetchStatus() {
             try {
-                const currentStatus = await checkSubscription(creatorId);
-                setStatus(currentStatus as "PENDING" | "ACTIVE" | "CANCELLED" | null);
+                const res = await checkSubscription(creatorId);
+                if (res.status === "success") {
+                    setStatus(res.data as "PENDING" | "ACTIVE" | "CANCELLED" | null);
+                }
             } catch (error) {
                 console.error("Failed to fetch subscription status", error);
             } finally {
@@ -34,7 +36,7 @@ export function SubscribeButton({ creatorId, price }: SubscribeButtonProps) {
     function onSubscribe() {
         startTransition(async () => {
             const res = await subscribeAction(creatorId);
-            if (res && "status" in res && res.status === "error") {
+            if (res && res.status === "error") {
                 toast.error(res.message);
             }
             // Redirect is handled by the server action

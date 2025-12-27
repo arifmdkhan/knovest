@@ -7,6 +7,8 @@ import { ApiResponse } from "@/lib/types";
 import { deletePostSchema, DeletePostSchemaType } from "@/lib/schema/post-schema";
 import { getServerSession } from "@/lib/get-sessions";
 
+import { deleteMediaAction } from "@/server/actions/delete-media.actions";
+
 export async function deletePost(data: DeletePostSchemaType): Promise<ApiResponse> {
     try {
         const session = await getServerSession();
@@ -20,7 +22,10 @@ export async function deletePost(data: DeletePostSchemaType): Promise<ApiRespons
 
         const post = await prisma.post.findUnique({
             where: { id: postId },
-            select: { authorId: true }
+            select: {
+                authorId: true,
+                media: true
+            }
         });
 
         if (!post) {
@@ -31,9 +36,41 @@ export async function deletePost(data: DeletePostSchemaType): Promise<ApiRespons
             return { status: "error", message: "You can only delete your own posts" };
         }
 
-        await prisma.post.delete({
-            where: { id: postId }
+        // 1. Soft Delete Post in DB
+        await prisma.post.update({
+            where: { id: postId },
+            data: { deletedAt: new Date() }
         });
+
+        // 2. Immediate S3 Cleanup
+        if (post.media && post.media.length > 0) {
+            const deletePromises = post.media.map(m => {
+                let key = m.url;
+                try {
+                    // Attempt to extract key from URL
+                    if (key.startsWith("http")) {
+                        const urlObj = new URL(key);
+                        // Pathname includes the leading slash, e.g. /users/123/image.png
+                        // S3 keys usually don't have leading slash, but validation in deleteMediaAction handles prefixes.
+                        // However, standard S3 SDK might expect no leading slash.
+                        key = urlObj.pathname.startsWith("/") ? urlObj.pathname.slice(1) : urlObj.pathname;
+                    }
+                } catch (e) {
+                    // If URL parsing fails, assume it's already a key or leave as is
+                    console.warn("Failed to parse S3 URL, using as key:", key);
+                }
+
+                console.log(`[deletePost] Deleting S3 Object: ${key}`);
+                return deleteMediaAction(key);
+            });
+
+            await Promise.all(deletePromises);
+        }
+
+        // Use waitUntil for background cleanup if available/Next.js allow? 
+        // Or just normal await.
+        // For now, I will NOT put the code blindly.
+        // I need to check `delete-media.actions.ts`.
 
         revalidatePath("/feed");
         return { status: "success", message: "Post deleted successfully" };

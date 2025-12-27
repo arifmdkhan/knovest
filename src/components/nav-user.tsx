@@ -64,7 +64,7 @@ export function NavUser() {
                   {user.name || user.email.split('@')[0]}
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
-                  {user.role === "ADMIN" ? "Administrator" : `${user.username}`}
+                  {user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? "Administrator" : `${user.username}`}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
@@ -112,7 +112,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator className="bg-border/50 my-1" />
-            {user.role === "ADMIN" && (
+            {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
               <>
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild className="focus:bg-orange-500/10 focus:text-orange-600 cursor-pointer">

@@ -21,7 +21,7 @@ export const useToggleSaveCourse = () => {
             // If we are on the saved courses page (if it exists or will exist)
             queryClient.invalidateQueries({ queryKey: ["saved-courses"] });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error(error.message || "Failed to save course");
         }
     });

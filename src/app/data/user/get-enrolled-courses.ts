@@ -26,8 +26,8 @@ export async function getEnrolledCourses() {
                             name: true,
                             username: true,
                             image: true,
-                            isVerified: true,
-                            isSebiVerified: true,
+                            expertVerificationType: true,
+                            accountVerificationType: true,
                         }
                     },
                     chapter: {

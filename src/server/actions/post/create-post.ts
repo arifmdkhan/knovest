@@ -15,7 +15,7 @@ export async function createPost(data: CreatePostSchemaType): Promise<ApiRespons
         const parsed = createPostSchema.safeParse(data);
         if (!parsed.success) return { status: "error", message: "Invalid post data" };
 
-        const { content, visibility, media } = parsed.data;
+        const { content, visibility, media, id } = parsed.data;
 
         if (!content?.trim() && (!media || media.length === 0)) {
             return { status: "error", message: "Post cannot be empty" };
@@ -23,6 +23,7 @@ export async function createPost(data: CreatePostSchemaType): Promise<ApiRespons
 
         const newPost = await prisma.post.create({
             data: {
+                id, // Use provided ID if available
                 content,
                 visibility,
                 authorId: session.user.id,
@@ -37,7 +38,7 @@ export async function createPost(data: CreatePostSchemaType): Promise<ApiRespons
                 }
             },
             include: {
-                author: { select: { id: true, name: true, username: true, image: true, isVerified: true, isSebiVerified: true } },
+                author: { select: { id: true, name: true, username: true, image: true, expertVerificationType: true, accountVerificationType: true } },
                 media: true,
                 _count: { select: { likes: true, comments: true } }
             }

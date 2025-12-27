@@ -9,7 +9,7 @@ export async function subscribeAction(
     creatorId: string
 ): Promise<ApiResponse | never> {
     const user = await requireUser();
-    let checkoutUrl: string;
+    let checkoutUrl: string | undefined;
 
     try {
         if (user.id === creatorId) {
@@ -20,9 +20,7 @@ export async function subscribeAction(
         }
 
         const creator = await prisma.user.findUnique({
-            where: {
-                id: creatorId,
-            },
+            where: { id: creatorId },
             select: {
                 id: true,
                 isSubscriptionEnabled: true,
@@ -49,16 +47,14 @@ export async function subscribeAction(
 
             if (existingSubscription?.status === "ACTIVE") {
                 return {
-                    status: "success",
+                    status: "success" as const,
                     message: "You are already subscribed to this user",
                 };
             }
 
             if (existingSubscription) {
                 await tx.subscription.update({
-                    where: {
-                        id: existingSubscription.id,
-                    },
+                    where: { id: existingSubscription.id },
                     data: {
                         status: "PENDING",
                         updatedAt: new Date(),
@@ -74,40 +70,29 @@ export async function subscribeAction(
                 });
             }
 
-            const checkOutPaymentUrl = `/subscription/payment?creatorId=${creator.id}`;
-
             return {
-                checkoutUrl: checkOutPaymentUrl,
+                checkoutUrl: `/subscription/payment?creatorId=${creator.id}`,
             };
         });
 
-        if ('message' in result) {
+        if ("status" in result && result.status === "success") {
             return result as ApiResponse;
         }
 
-        checkoutUrl = result.checkoutUrl as string;
-
-        // Revalidate profile pages to show updated subscriber count/status
-        // Since we don't have usernames here, we'd ideally fetch them similar to follower logic 
-        // or just rely on the redirect to payment which eventually leads back. 
-        // But for "Subscribers" count on profile to be correct for the creator:
-        // We really should revalidate the creator's profile page.
-
-        // However, this action redirects to payment, so the immediate UI update isn't on the profile page.
-        // The count update happens AFTER payment success webhook/callback updates the status to ACTIVE.
-
-        // Wait, the user said "If any user subscribe and unsubcribe then it still displaing the numbers".
-        // This implies they might be testing locally or expects immediate updates.
-        // If the subscription is PENDING, does it count? Probably not.
-
-        // Let's assume the user means `check-subscription` or a webhook handles the final state. 
-        // But if they "unsubscribe" (cancel), that should update instantly.
+        checkoutUrl = (result as { checkoutUrl: string }).checkoutUrl;
 
     } catch (error) {
         console.error("Subscribe Action Error:", error);
         return {
             status: "error",
             message: "Failed to initiate subscription",
+        };
+    }
+
+    if (!checkoutUrl) {
+        return {
+            status: "error",
+            message: "Failed to generate checkout URL",
         };
     }
 

@@ -132,8 +132,8 @@ export function UserListDialog({ isOpen, onClose, userId, type, title }: UserLis
                                                 name={user.name}
                                                 username={user.username}
                                                 image={user.image}
-                                                isVerified={user.isVerified}
-                                                isSebiVerified={user.isSebiVerified}
+                                                expertVerificationType={user.expertVerificationType}
+                                                accountVerificationType={user.accountVerificationType}
                                             />
                                             {/* Can add Follow/Unfollow button here later */}
                                         </div>

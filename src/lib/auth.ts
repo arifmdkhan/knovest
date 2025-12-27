@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 import { emailOTP, admin, username, multiSession } from "better-auth/plugins";
 import { resend } from "./email/resend";
-import { ac, ADMIN, CREATOR, USER } from "./access-control";
+import { ac, ADMIN, SUPER_ADMIN, USER } from "./access-control";
 import OtpEmail from "./email/otp-email";
 import { createNotification } from "@/server/actions/notifications";
 
@@ -18,12 +18,21 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
-      isVerified: {
-        type: "boolean",
-      },
       isSubscriptionEnabled: {
         type: "boolean",
       },
+      expertVerificationType: {
+        type: "string",
+        required: false,
+      },
+      accountVerificationType: {
+        type: "string",
+        required: false,
+      },
+      expertVerifiedAt: {
+        type: "date",
+        required: false
+      }
     },
   },
   plugins: [
@@ -41,9 +50,9 @@ export const auth = betterAuth({
       ac,
       defaultRole: "USER",
       roles: {
+        SUPER_ADMIN,
         ADMIN,
         USER,
-        CREATOR,
       },
     }),
     username(),

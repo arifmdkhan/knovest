@@ -11,7 +11,13 @@ const data = {
       title: "Admin Dashboard",
       url: "/admin",
       icon: ShieldCheck,
-    }, {
+    },
+    {
+      title: "Expert Verification",
+      url: "/admin/expert-verification",
+      icon: ShieldCheck,
+    },
+    {
       title: "Users",
       url: "/admin/users",
       icon: User,

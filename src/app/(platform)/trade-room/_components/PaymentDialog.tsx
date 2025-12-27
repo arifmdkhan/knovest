@@ -25,12 +25,12 @@ export function PaymentDialog({ open, onOpenChange, streamId, streamTitle, price
             // In a real app, this would trigger a payment gateway
             const result = await purchaseStreamAccess(streamId, price);
 
-            if (result.success) {
+            if (result.status === "success") {
                 toast.success("Access pass purchased successfully!");
                 onSuccess();
                 onOpenChange(false);
             } else {
-                toast.error(result.error || "Payment failed");
+                toast.error(result.message || "Payment failed");
             }
         } catch (error) {
             console.error("Payment error:", error);
