@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { toggleSaveSchema, ToggleSaveSchemaType } from "@/lib/schema/post-schema";
 import { getServerSession } from "@/lib/get-sessions";
 import { revalidatePath } from "next/cache";

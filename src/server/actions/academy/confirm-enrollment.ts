@@ -1,8 +1,8 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { prisma } from "@/lib/db";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { revalidatePath } from "next/cache";
 
 export async function confirmEnrollment(enrollmentId: string): Promise<ApiResponse> {
@@ -32,7 +32,7 @@ export async function confirmEnrollment(enrollmentId: string): Promise<ApiRespon
         });
 
         revalidatePath(`/academy/course/${enrollment.course.slug}`);
-          revalidatePath("/academy/enrolled");
+        revalidatePath("/academy/enrolled");
 
         return { status: "success", message: "Enrollment confirmed successfully" };
 

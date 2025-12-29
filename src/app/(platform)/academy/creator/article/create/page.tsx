@@ -43,6 +43,7 @@ import { useForm } from "react-hook-form";
 import slugify from "slugify";
 import { toast } from "sonner";
 import { UploadIntent } from "@/lib/storage/types";
+import { constructUrl } from "@/lib/construct-url";
 
 export default function WriteArticlePage() {
     const [isPending, startTransition] = useTransition();
@@ -225,6 +226,7 @@ export default function WriteArticlePage() {
                                                                         field.onChange("");
                                                                     }
                                                                 }}
+                                                                existingMedia={field.value ? [{ url: constructUrl(field.value), key: field.value, type: "IMAGE" }] : []}
                                                             />
                                                         ) : (
                                                             <div className="flex items-center justify-center h-full">

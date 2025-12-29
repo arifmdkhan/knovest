@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 import { VerificationStatus } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 // --- Fetch Applications ---
 export async function getVerificationApplications(statusFilter?: VerificationStatus): Promise<ApiResponse<any[]>> {

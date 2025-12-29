@@ -1,10 +1,10 @@
 "use server";
 
-import { requireCreator } from "@/app/data/creator/require-creator";
+import { requireCreator } from "@/server/data/creator/require-creator";
 import { prisma } from "@/lib/db";
 import { lessonSchema, lessonSchemaType } from "@/lib/schema/zod-schema";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function updateLesson(
   values: lessonSchemaType,

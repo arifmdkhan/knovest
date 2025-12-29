@@ -3,7 +3,7 @@
 import { getServerSession } from "@/lib/get-sessions";
 import { s3Client } from "@/lib/s3-client";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function deleteMediaAction(key: string): Promise<ApiResponse> {
     try {
@@ -29,7 +29,7 @@ export async function deleteMediaAction(key: string): Promise<ApiResponse> {
         }));
 
         return { status: "success", message: "Media deleted" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Delete Error:", error);
         return { status: "error", message: "Failed to delete" };
     }

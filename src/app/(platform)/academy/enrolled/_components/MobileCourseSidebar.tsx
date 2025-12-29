@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { CourseSidebar } from "./CourseSidebar";
-import { CourseSidebarDataType } from "@/app/data/course/get-course-sidebar-data";
+import { CourseSidebarDataType } from "@/server/data/course/get-course-sidebar-data";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";

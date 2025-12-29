@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function getNotifications(page: number = 1, limit: number = 20): Promise<ApiResponse<{ data: any[]; unreadCount: number }>> {
     try {
@@ -30,8 +30,17 @@ export async function getNotifications(page: number = 1, limit: number = 20): Pr
             },
         });
 
-        const groupedMap = new Map();
-        const result: any[] = [];
+        type NotificationWithActor = typeof rawNotifications[0];
+
+        interface NotificationGroup extends Omit<NotificationWithActor, 'actor'> {
+            actors: NonNullable<NotificationWithActor['actor']>[];
+            count: number;
+            isRead: boolean;
+            entityId: string | null;
+        }
+
+        const groupedMap = new Map<string, NotificationGroup>();
+        const result: NotificationGroup[] = [];
 
         for (const notif of rawNotifications) {
             const dateKey = notif.createdAt.toDateString();
@@ -41,18 +50,19 @@ export async function getNotifications(page: number = 1, limit: number = 20): Pr
 
             if (notif.entityId && (notif.type === "LIKE" || notif.type === "REPOST" || notif.type === "COMMENT")) {
                 if (!groupedMap.has(key)) {
-                    const groupItem = {
+                    const groupItem: NotificationGroup = {
                         ...notif,
                         actors: notif.actor ? [notif.actor] : [],
                         count: 1,
-                        isRead: notif.isRead
+                        isRead: notif.isRead,
+                        entityId: notif.entityId
                     };
                     groupedMap.set(key, groupItem);
                     result.push(groupItem);
                 } else {
-                    const group = groupedMap.get(key);
+                    const group = groupedMap.get(key)!;
                     if (notif.actor) {
-                        if (!group.actors.find((a: any) => a.id === notif.actor?.id)) {
+                        if (!group.actors.find((a) => a.id === notif.actor?.id)) {
                             group.actors.push(notif.actor);
                         }
                     }
@@ -63,17 +73,18 @@ export async function getNotifications(page: number = 1, limit: number = 20): Pr
                 if (notif.type === "FOLLOW") {
                     const followKey = `FOLLOW-${dateKey}`;
                     if (!groupedMap.has(followKey)) {
-                        const groupItem = {
+                        const groupItem: NotificationGroup = {
                             ...notif,
                             actors: notif.actor ? [notif.actor] : [],
                             count: 1,
-                            entityId: null
+                            entityId: null,
+                            isRead: notif.isRead
                         };
                         groupedMap.set(followKey, groupItem);
                         result.push(groupItem);
                     } else {
-                        const group = groupedMap.get(followKey);
-                        if (notif.actor && !group.actors.find((a: any) => a.id === notif.actor?.id)) {
+                        const group = groupedMap.get(followKey)!;
+                        if (notif.actor && !group.actors.find((a) => a.id === notif.actor?.id)) {
                             group.actors.push(notif.actor);
                         }
                         group.count += 1;
@@ -83,7 +94,9 @@ export async function getNotifications(page: number = 1, limit: number = 20): Pr
                     result.push({
                         ...notif,
                         actors: notif.actor ? [notif.actor] : [],
-                        count: 1
+                        count: 1,
+                        entityId: notif.entityId,
+                        isRead: notif.isRead
                     });
                 }
             }

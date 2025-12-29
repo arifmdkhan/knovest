@@ -1,6 +1,6 @@
 "use client"
 
-import { CreatorLessonType } from "@/app/data/creator/creator-get-lesson";
+import { CreatorLessonType } from "@/server/data/creator/creator-get-lesson";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,7 +113,7 @@ export function LessonForm({ data, chapterId, courseId }: LessonFormProps) {
                                                     field.onChange("")
                                                 }
                                             }}
-                                            existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${data.updatedAt.getTime()}`, type: "IMAGE" }] : []}
+                                            existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${data.updatedAt.getTime()}`, key: field.value, type: "IMAGE" }] : []}
                                             allowedTypes={["image"]}
                                             maxSizeMB={2}
                                             intent={UploadIntent.COURSE_LESSON_THUMBNAIL}
@@ -135,7 +135,7 @@ export function LessonForm({ data, chapterId, courseId }: LessonFormProps) {
                                                     field.onChange("")
                                                 }
                                             }}
-                                            existingMedia={field.value ? [{ url: constructUrl(field.value), type: "VIDEO" }] : []}
+                                            existingMedia={field.value ? [{ url: constructUrl(field.value), key: field.value, type: "VIDEO" }] : []}
                                             allowedTypes={["video"]}
                                             maxSizeMB={1024}
                                             intent={UploadIntent.COURSE_LESSON_VIDEO}

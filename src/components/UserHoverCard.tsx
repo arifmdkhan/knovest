@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 
 interface UserHoverCardProps {
     username: string;
@@ -40,41 +41,40 @@ interface UserProfileData {
 }
 
 export function UserHoverCard({ username, children }: UserHoverCardProps) {
-    const [data, setData] = useState<UserProfileData | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-
-    // New state for interactivity
     const { data: session } = authClient.useSession();
     const router = useRouter();
+    
     const [isFollowing, setIsFollowing] = useState(false);
     const [followersCount, setFollowersCount] = useState(0);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isMessaging, setIsMessaging] = useState(false);
 
+    const { data: profileData, isLoading } = useQuery({
+        queryKey: ["user-profile", username],
+        queryFn: async () => {
+            const res = await getUserProfile(username);
+            if (res.status === "error") throw new Error(res.message);
+            return res.data as UserProfileData;
+        },
+        enabled: isOpen,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+
+    // Sync local state with server data when it becomes available
     useEffect(() => {
-        if (isOpen && !data && !isLoading) {
-            setIsLoading(true);
-            getUserProfile(username)
-                .then((res) => {
-                    if (res?.status === "success" && res.data) {
-                        // @ts-ignore
-                        const profileData = res.data as UserProfileData;
-                        setData(profileData);
-                        setIsFollowing(profileData.isFollowing);
-                        setFollowersCount(profileData.followersCount);
-                    }
-                })
-                .finally(() => setIsLoading(false));
+        if (profileData) {
+            setIsFollowing(profileData.isFollowing);
+            setFollowersCount(profileData.followersCount);
         }
-    }, [isOpen, username, data, isLoading]);
+    }, [profileData]);
 
     const handleFollow = async () => {
         if (!session) {
             toast.error("Please login to follow users");
             return;
         }
-        if (isActionLoading || !data) return;
+        if (isActionLoading || !profileData) return;
 
         const prevFollowing = isFollowing;
         const prevCount = followersCount;
@@ -84,7 +84,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
         setIsActionLoading(true);
 
         try {
-            const res = await toggleFollow(data.id);
+            const res = await toggleFollow(profileData.id);
             if (res.status === "error") throw new Error(res.message);
 
             if (res.data) {
@@ -106,11 +106,11 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
             toast.error("Please login to message users");
             return;
         }
-        if (!data) return;
+        if (!profileData) return;
 
         setIsMessaging(true);
         try {
-            const res = await createDM(data.id);
+            const res = await createDM(profileData.id);
             if (res.status === "success" && res.data) {
                 router.push(`/chat/${res.data}`);
             } else {
@@ -123,7 +123,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
         }
     };
 
-    const joinDate = data?.createdAt ? new Date(data.createdAt).toLocaleDateString("en-US", {
+    const joinDate = profileData?.createdAt ? new Date(profileData.createdAt).toLocaleDateString("en-US", {
         month: "long",
         year: "numeric",
     }) : "";
@@ -145,16 +145,16 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
                         </div>
                         <div className="h-16 bg-muted animate-pulse rounded" />
                     </div>
-                ) : data ? (
+                ) : profileData ? (
                     <div className="flex justify-between space-x-4">
                         <div className="space-y-1 w-full">
                             <div className="flex justify-between items-start">
                                 <Avatar className="h-12 w-12 border border-border/50">
-                                    <AvatarImage src={data.image || ""} />
-                                    <AvatarFallback>{data.name?.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={profileData.image || ""} />
+                                    <AvatarFallback>{profileData.name?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex gap-2">
-                                    {session?.user?.id !== data.id && (
+                                    {session?.user?.id !== profileData.id && (
                                         <>
                                             <Button
                                                 size="sm"
@@ -182,42 +182,42 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
                             </div>
                             <div className="pt-2">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                    <h4 className="text-sm font-semibold">{data.name}</h4>
-                                    {data.accountVerificationType === "VERIFIED_USER" && (
+                                    <h4 className="text-sm font-semibold">{profileData.name}</h4>
+                                    {profileData.accountVerificationType === "VERIFIED_USER" && (
                                         <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500/10" />
                                     )}
-                                    {data.accountVerificationType === "OFFICIAL" && (
+                                    {profileData.accountVerificationType === "OFFICIAL" && (
                                         <ShieldCheck className="w-4 h-4 text-yellow-500 fill-yellow-500/10" />
                                     )}
 
-                                    {data.expertVerificationType === "SEBI" && (
+                                    {profileData.expertVerificationType === "SEBI" && (
                                         <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1 h-5 px-1.5 text-[10px]">
                                             <ShieldCheck className="w-3 h-3" /> SEBI RA
                                         </Badge>
                                     )}
-                                    {data.expertVerificationType === "CERTIFIED" && (
+                                    {profileData.expertVerificationType === "CERTIFIED" && (
                                         <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1 h-5 px-1.5 text-[10px]">
                                             PRO
                                         </Badge>
                                     )}
-                                    {data.expertVerificationType === "TRACK_RECORD" && (
+                                    {profileData.expertVerificationType === "TRACK_RECORD" && (
                                         <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 gap-1 h-5 px-1.5 text-[10px]">
                                             TRADER
                                         </Badge>
                                     )}
                                 </div>
-                                <p className="text-xs text-muted-foreground">@{data.username}</p>
+                                <p className="text-xs text-muted-foreground">@{profileData.username}</p>
                             </div>
 
-                            {data.bio && (
+                            {profileData.bio && (
                                 <p className="text-xs text-muted-foreground pt-1 line-clamp-3">
-                                    {data.bio}
+                                    {profileData.bio}
                                 </p>
                             )}
 
                             <div className="flex items-center gap-4 pt-3 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
-                                    <span className="font-semibold text-foreground">{data.followingCount}</span> Following
+                                    <span className="font-semibold text-foreground">{profileData.followingCount}</span> Following
                                 </div>
                                 <div className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
                                     <span className="font-semibold text-foreground">{followersCount}</span> Followers

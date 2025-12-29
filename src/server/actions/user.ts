@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { getServerSession } from "@/lib/get-sessions";
 import { createNotification } from "@/server/actions/notifications";
 import { syncStreamUser } from "@/server/actions/stream";
@@ -166,7 +166,9 @@ export async function toggleFollow(targetUserId: string): Promise<ApiResponse<{ 
 }
 
 
-export async function searchUsers(query: string): Promise<ApiResponse<any[]>> {
+import { User } from "@/generated/prisma/client";
+
+export async function searchUsers(query: string): Promise<ApiResponse<Partial<User>[]>> {
   const session = await getServerSession();
   if (!session?.user) return { status: "error", message: "Unauthorized" };
 
@@ -214,7 +216,7 @@ export async function syncProfileImage(): Promise<ApiResponse> {
     });
 
     if (!user?.image && session.user.image) {
-      console.log(`[syncProfileImage] Syncing image for ${session.user.id}`);
+      // console.log(`[syncProfileImage] Syncing image for ${session.user.id}`);
       await prisma.user.update({
         where: { id: session.user.id },
         data: { image: session.user.image }
@@ -228,7 +230,7 @@ export async function syncProfileImage(): Promise<ApiResponse> {
   }
 }
 
-import { getProfileByUsername } from "@/app/data/user/get-profile";
+import { getProfileByUsername } from "@/server/data/user/get-profile";
 
 export async function getUserProfile(username: string): Promise<ApiResponse<any>> {
   if (!username) return { status: "error", message: "Username is required" };
@@ -259,9 +261,10 @@ export async function updateAccountSettings(data: { name: string; username: stri
         },
         headers: headerStore
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Auth Update Error:", e);
-      return { status: "error", message: e.message || "Failed to update account" };
+      const message = e instanceof Error ? e.message : "Failed to update account";
+      return { status: "error", message };
     }
 
     const currentUser = await prisma.user.findUnique({

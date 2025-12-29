@@ -1,5 +1,5 @@
 import { getStreamToken } from "@/server/actions/stream";
-import { requireUser } from "../../data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { ChatProvider } from "./_components/ChatProvider";
 
 export default async function Layout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,5 @@
 
-import { PublicCourseType } from "@/app/data/course/get-all-courses";
+import { PublicCourseType } from "@/server/data/course/get-all-courses";
 import { searchGlobal } from "@/server/actions/search";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/premium-tabs";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
@@ -7,6 +7,7 @@ import { PublicCourseCard } from "../academy/course/_components/PublicCourseCard
 import { ArticleCard } from "../academy/article/_components/article-card";
 import { GlobalSearchInput } from "@/components/global-search-input";
 import { Grid, BookOpen, FileText, Search as SearchIcon, Sparkles } from "lucide-react";
+import { SearchRecommendations } from "@/components/search/search-recommendations";
 import { createMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
@@ -16,23 +17,31 @@ export const metadata: Metadata = createMetadata({
 });
 
 
+import { User, Article } from "@/generated/prisma/client";
+
 interface SearchPageProps {
     searchParams: Promise<{ q?: string }>;
 }
+
+type SearchUser = Pick<User, "id" | "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType">;
+
+type SearchArticle = Article & {
+    author: Pick<User, "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType">;
+};
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q } = await searchParams;
     const query = q || "";
 
     const result = await searchGlobal(query);
-    let users: any[] = [];
-    let courses: any[] = [];
-    let articles: any[] = [];
+    let users: SearchUser[] = [];
+    let courses: PublicCourseType[] = [];
+    let articles: SearchArticle[] = [];
 
     if (result.status === "success" && result.data) {
-        users = result.data.users;
-        courses = result.data.courses;
-        articles = result.data.articles;
+        users = result.data.users as SearchUser[];
+        courses = result.data.courses as unknown as PublicCourseType[];
+        articles = result.data.articles as SearchArticle[];
     }
 
     const hasResults = users.length > 0 || courses.length > 0 || articles.length > 0;
@@ -61,14 +70,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {/* Results Section */}
             <div className="container max-w-6xl mx-auto px-4 py-12">
                 {!query ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground animate-in fade-in-50 duration-500">
-                        <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6">
-                            <Sparkles className="w-10 h-10 text-primary/40" />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">Start exploring</h3>
-                        <p className="max-w-md mx-auto">
-                            Enter a search term above to discover creators, courses, and articles from the community.
-                        </p>
+                    <div className="py-8">
+                        <SearchRecommendations />
                     </div>
                 ) : !hasResults ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">

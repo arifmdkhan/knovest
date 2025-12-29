@@ -6,7 +6,7 @@ import { Role, AccountVerificationType } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function banUser(userId: string, reason?: string): Promise<ApiResponse> {
     await requireAdmin();

@@ -3,14 +3,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { s3Client } from "@/lib/s3-client";
 import { ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { CleanupJob } from "@/generated/prisma/client";
 
 const BATCH_SIZE = 10;
 const PUBLIC_BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES;
 const PRIVATE_BUCKET = process.env.NEXT_PRIVATE_S3_BUCKET_NAME_IMAGES;
 
 export async function GET(req: Request) {
-    // Basic security check (e.g. CRON_SECRET) logic can be added here
-    // For now, assuming Vercel Cron or simple authorized ping
+    const authHeader = req.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return new NextResponse('Unauthorized', { status: 401 });
+    }
 
     try {
         const jobs = await prisma.cleanupJob.findMany({
@@ -38,24 +41,24 @@ export async function GET(req: Request) {
     }
 }
 
-async function processJob(job: any) {
+async function processJob(job: CleanupJob) {
     const { id, entityType, entityId } = job;
-    let prefix = "";
+    const prefixes: string[] = [];
 
     // Determine Prefix Plan
     switch (entityType) {
         case "POST":
-            prefix = `posts/${entityId}/`;
+            prefixes.push(`posts/${entityId}/`);
             break;
         case "ARTICLE":
-            prefix = `articles/${entityId}/`;
+            prefixes.push(`articles/${entityId}/`);
             break;
         case "COURSE":
-            prefix = `courses/${entityId}/`;
+            prefixes.push(`courses/${entityId}/`);
             break;
-        case "USER": // Logic for User deletion if implemented?
-            prefix = `users/${entityId}/`; // and documents/users/{userId}/ ?
-            // For now, handling the known types. 
+        case "USER":
+            prefixes.push(`users/${entityId}/`);
+            prefixes.push(`documents/users/${entityId}/`);
             break;
         default:
             console.warn(`Unknown entity type for cleanup: ${entityType}`);
@@ -66,20 +69,18 @@ async function processJob(job: any) {
             return { id, status: "FAILED", reason: "Unknown Type" };
     }
 
-    if (!prefix) return { id, status: "SKIPPED" };
+    if (prefixes.length === 0) return { id, status: "SKIPPED" };
 
     try {
         // Attempt clean from both buckets to be thorough
-        await deletePrefixFromBucket(PUBLIC_BUCKET, prefix);
+        for (const prefix of prefixes) {
+            await deletePrefixFromBucket(PUBLIC_BUCKET, prefix);
 
-        // Only verify/attempt private if it makes sense, but safe to try
-        if (PRIVATE_BUCKET) {
-            await deletePrefixFromBucket(PRIVATE_BUCKET, prefix);
+            // Only verify/attempt private if it makes sense, but safe to try
+            if (PRIVATE_BUCKET) {
+                await deletePrefixFromBucket(PRIVATE_BUCKET, prefix);
+            }
         }
-
-        // Special case for User documents? "documents/users/{userId}/"
-        // If entityType is USER, we might need multiple prefixes.
-        // For now, implemented types (Article, Course, Post) use single root prefix.
 
         await prisma.cleanupJob.update({
             where: { id },

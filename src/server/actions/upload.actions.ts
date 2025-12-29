@@ -6,7 +6,7 @@ import { UploadIntent } from "@/lib/storage/types";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function getPresignedUploadUrlAction(
     intent: UploadIntent,
@@ -32,9 +32,10 @@ export async function getPresignedUploadUrlAction(
     try {
         const { url, tempKey } = await StorageService.getPresignedUploadUrl(intent, params, contentType, size);
         return { status: "success", message: "URL generated", data: { url, tempKey } };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Presign Error:", error);
-        return { status: "error", message: error.message || "Failed to generate URL" };
+        const message = error instanceof Error ? error.message : "Failed to generate URL";
+        return { status: "error", message };
     }
 }
 
@@ -78,8 +79,9 @@ export async function confirmUploadAction(
         }
 
         return { status: "success", message: "Upload confirmed", data: { key: finalKey } };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Confirm Error:", error);
-        return { status: "error", message: error.message || "Failed to confirm upload" };
+        const message = error instanceof Error ? error.message : "Failed to confirm upload";
+        return { status: "error", message };
     }
 }

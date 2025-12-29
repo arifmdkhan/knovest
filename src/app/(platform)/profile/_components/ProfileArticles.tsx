@@ -1,4 +1,4 @@
-import { getPublishedArticles } from "@/app/data/article/get-published-articles";
+import { getPublishedArticles } from "@/server/data/article/get-published-articles";
 import { ArticleCard } from "../../academy/article/_components/article-card";
 import { FileText } from "lucide-react";
 

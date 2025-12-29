@@ -1,8 +1,8 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { prisma } from "@/lib/db";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { revalidatePath } from "next/cache";
 import { deleteMediaAction } from "@/server/actions/delete-media.actions";
 
@@ -21,14 +21,22 @@ export async function DeleteArticle(articleId: string): Promise<ApiResponse> {
             return { status: "error", message: "Article not found or unauthorized." };
         }
 
-        // 1. Soft Delete Article in DB
-        await prisma.article.update({
-            where: { id: articleId },
-            data: {
-                deletedAt: new Date(),
-                status: "ARCHIVED"
-            }
-        });
+        // 1. Check if already ARCHIVED -> Hard Delete
+        if (existingArticle.status === "ARCHIVED") {
+            await prisma.article.delete({
+                where: { id: articleId }
+            });
+            return { status: "success", message: "Article permanently deleted." };
+        } else {
+            // 2. Soft Delete (Archive)
+            await prisma.article.update({
+                where: { id: articleId },
+                data: {
+                    deletedAt: new Date(),
+                    status: "ARCHIVED"
+                }
+            });
+        }
 
         // 2. Immediate S3 Cleanup
         if (existingArticle.thumbnailKey) {

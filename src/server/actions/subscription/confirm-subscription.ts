@@ -1,8 +1,8 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { prisma } from "@/lib/db";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function confirmSubscription(creatorId: string): Promise<ApiResponse> {
     try {

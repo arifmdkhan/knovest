@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react'
 import { CreateCourse } from '@/server/actions/courses/create-course'
 import { MediaUploader } from '@/components/handle-media/media-uploader'
 import { TextEditor } from '@/components/shared/text-editor/editor'
+import { constructUrl } from '@/lib/construct-url'
 
 export default function CourseCreate() {
 
@@ -214,6 +215,7 @@ export default function CourseCreate() {
                                                                         field.onChange("")
                                                                     }
                                                                 }}
+                                                                existingMedia={field.value ? [{ url: constructUrl(field.value), key: field.value, type: "IMAGE" }] : []}
                                                             />
                                                         ) : (
                                                             <div className="flex items-center justify-center h-full">

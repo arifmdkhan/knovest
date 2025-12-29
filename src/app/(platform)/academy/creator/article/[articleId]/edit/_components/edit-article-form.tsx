@@ -212,7 +212,7 @@ export function EditArticleForm({ article }: { article: Article }) {
                                                             uploadParams={{ articleId: article.id }}
                                                             existingMedia={
                                                                 field.value
-                                                                    ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, type: "IMAGE" }]
+                                                                    ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, key: field.value, type: "IMAGE" }]
                                                                     : []
                                                             }
                                                             onChange={(files) => {

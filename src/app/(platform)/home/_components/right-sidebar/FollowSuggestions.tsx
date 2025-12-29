@@ -41,7 +41,13 @@ export function FollowSuggestionsSkeleton() {
 }
 
 export function FollowSuggestions({ users }: { users: Suggestion[] }) {
-  if (users.length === 0) return null;
+  if (users.length === 0) {
+    return (
+      <Card className="bg-card border border-border/60 rounded-xl p-4 shadow-sm h-full flex items-center justify-center text-muted-foreground text-sm min-h-[300px]">
+        No suggestions available
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card border border-border/60 rounded-xl p-4 shadow-sm hover:shadow-md">

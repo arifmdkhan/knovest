@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { compressImage } from "@/lib/image-compression";
 import { constructUrl } from "@/lib/construct-url";
-
+import { useMediaUpload } from "@/hooks/use-media-upload";
+import { UploadIntent } from "@/lib/storage/types";
+import { useChunkedUpload } from "@/hooks/use-chunked-upload";
 
 // --- Types ---
 interface MediaFile {
@@ -25,24 +27,18 @@ interface MediaFile {
   progress: number;
   uploading: boolean;
   error: boolean;
-  key?: string;
+  key?: string; // Add this definition if missing or implicit
   type: "IMAGE" | "VIDEO" | "PDF";
 }
 
 export interface UploadedMedia {
   url: string;
   name?: string;
-  key?: string; // Needed for deletion
+  key?: string;
   type: "IMAGE" | "VIDEO" | "PDF";
 }
 
 export type MediaType = "image" | "video" | "pdf";
-
-import { useMediaUpload } from "@/hooks/use-media-upload";
-import { UploadIntent } from "@/lib/storage/types";
-import { deleteMediaAction } from "@/server/actions/delete-media.actions"; // Import Action
-
-// ... Types ...
 
 interface MediaUploaderProps {
   onChange: (files: UploadedMedia[]) => void;
@@ -51,86 +47,137 @@ interface MediaUploaderProps {
   existingMedia?: UploadedMedia[];
   className?: string;
   maxSizeMB?: number;
-  intent?: UploadIntent; // New Prop
-  uploadParams?: Record<string, string>; // New Prop
+  intent?: UploadIntent;
+  uploadParams?: Record<string, string>;
+  lessonId?: string;
 }
+
+const EMPTY_ARRAY: UploadedMedia[] = [];
 
 export function MediaUploader({
   onChange,
   maxFiles = 1,
   allowedTypes = ["image"],
-  existingMedia = [],
+  existingMedia = EMPTY_ARRAY,
   className,
   maxSizeMB = 5,
-  intent = UploadIntent.POST_MEDIA, // Default
-  uploadParams = {}
+  intent = UploadIntent.POST_MEDIA,
+  uploadParams = {},
+  lessonId
 }: MediaUploaderProps) {
 
+  // --- State ---
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [completedFiles, setCompletedFiles] = useState<UploadedMedia[]>(existingMedia);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  // Use Hook for the "Active" file being uploaded (handling one at a time internally for simplicity, or parallel)
-  // Since useMediaUpload is simple, we can wrap it per file or call it. 
-  // Let's call the logic directly from the component mapping, as the hook maintains state for ONE upload at a time usually.
-  // We can instantiate the hook logic or better, create a helper inside:
+  // Sync prop changes (if parent updates existingMedia externally)
+  useEffect(() => {
+    // Deep compare or at least length/key check to avoid loop
+    if (existingMedia === completedFiles) return;
 
+    // Simple check: if lengths differ or if content differs (using JSON stringify for simple media objects is mostly fine)
+    // A better check:
+    const isSame = existingMedia.length === completedFiles.length &&
+      existingMedia.every((m, i) => m.url === completedFiles[i].url && m.key === completedFiles[i].key);
+
+    if (!isSame) {
+      setCompletedFiles(existingMedia);
+    }
+  }, [existingMedia, completedFiles]);
+
+  // --- Hooks ---
   const { uploadFile: startUpload, progress: uploadProgress } = useMediaUpload({
     intent,
-    // callbacks handled per file below
+  });
+
+  // Ensure referential stability for callback
+  const handleUploadError = useCallback((err: string) => {
+    toast.error(err);
+  }, []);
+
+  const { uploadFile: startChunkedUpload, progress: chunkProgress } = useChunkedUpload({
+    lessonId: lessonId || uploadParams.lessonId || "",
+    onUploadError: handleUploadError
   });
 
   // Sync hook progress to the active uploading file
-  // Note: This assumes one file uploads at a time or they share progress (limitation of current hook usage)
   useEffect(() => {
-    setFiles(prev => prev.map(f => f.uploading ? { ...f, progress: uploadProgress } : f));
-  }, [uploadProgress]);
+    // Optimization: Skip if no files are currently being tracked/uploaded
+    if (files.length === 0) return;
+
+    const progress = intent === UploadIntent.COURSE_LESSON_VIDEO ? chunkProgress : uploadProgress;
+
+    setFiles(prev => {
+      // Prevent state update if progress hasn't effectively changed to avoid loop
+      // (Assuming simple primitive check is enough, but map always creates new ref)
+      // Let's only map if we find an uploading file
+      const hasUploading = prev.some(f => f.uploading);
+      if (!hasUploading) return prev;
+
+      return prev.map(f => f.uploading ? { ...f, progress } : f);
+    });
+  }, [uploadProgress, chunkProgress, intent, files.length]);
 
   // --- Upload Logic ---
   const uploadFile = async (file: File, id: string) => {
     try {
+      // Logic for Lesson Video (Chunked)
+      if (intent === UploadIntent.COURSE_LESSON_VIDEO) {
+        if (!uploadParams.lessonId && !lessonId) {
+          toast.error("Missing lessonId for video upload");
+          setFiles(prev => prev.filter(f => f.id !== id));
+          return;
+        }
+
+        const uploadedKey = await startChunkedUpload(file);
+
+        // Success handling for video 
+        setFiles(prev => prev.filter(f => f.id !== id));
+        const newMedia: UploadedMedia = {
+          url: "",
+          key: uploadedKey || "pending-processing",
+          name: file.name,
+          type: "VIDEO"
+        };
+
+        // Update Local and Parent
+        const updated = [...completedFiles, newMedia];
+        setCompletedFiles(updated);
+        onChange(updated);
+        return;
+      }
+
+      // Logic for Regular Uploads
       let fileToUpload = file;
       const isImage = file.type.startsWith("image");
 
-      // 1. Compress (only if image)
       if (isImage) {
         fileToUpload = await compressImage(file);
       }
 
-      // Update Params if POST_MEDIA and no postId, we might need one.
-      // Assuming parent provides valid uploadParams.
-
-      setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 0 } : f)); // Reset to 0
-
-      // 2. Upload via Hook
-      // We need to capture progress. The hook exposes 'progress' state but it's shared.
-      // For accurate per-file progress with this hook structure, we ideally need the hook to support a callback.
-      // Assuming we've structured the hook to update its state, we can try to sync it, but it's tricky with multiple files.
-      // Since we are likely uploading one large video at a time, we'll try to use the hook's progress for the *active* upload.
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 0 } : f));
 
       const key = await startUpload(fileToUpload, uploadParams);
 
-      // 4. Success
+      // Success
       setFiles(prev => prev.filter(f => f.id !== id));
 
       const isPdf = fileToUpload.type === "application/pdf";
       const newMedia: UploadedMedia = {
-        url: constructUrl(key), // Convert Key to URL for Display
+        url: constructUrl(key),
         key,
         name: fileToUpload.name,
         type: isImage ? "IMAGE" : isPdf ? "PDF" : "VIDEO"
       };
 
-      // Cache busting for images to ensure updates show immediately
       if (isImage) {
         newMedia.url = `${newMedia.url}?t=${Date.now()}`;
       }
 
-      setCompletedFiles(prev => {
-        const updated = [...prev, newMedia];
-        setTimeout(() => onChange(updated), 0);
-        return updated;
-      });
+      const updated = [...completedFiles, newMedia];
+      setCompletedFiles(updated);
+      onChange(updated);
 
       toast.success("Uploaded successfully");
 
@@ -141,7 +188,7 @@ export function MediaUploader({
     }
   };
 
-  // --- Remove Handler (Integrated with DELETE API) ---
+  // --- Remove Handler ---
   const removeFile = async (index: number, isUploading = false) => {
     if (isUploading) {
       setFiles(prev => prev.filter((_, i) => i !== index));
@@ -149,30 +196,31 @@ export function MediaUploader({
     }
 
     const fileToRemove = completedFiles[index];
+    const uniqueId = fileToRemove.url || fileToRemove.key || String(index);
+    setIsDeleting(uniqueId);
 
     if (fileToRemove.key) {
       try {
-        setIsDeleting(fileToRemove.url);
-        // Use Server Action
-        const res = await deleteMediaAction(fileToRemove.key);
+        const { deleteMediaAction } = await import("@/server/actions/delete-media.actions");
+        await deleteMediaAction(fileToRemove.key);
 
-        if (res.status === "error") throw new Error(res.message || "Failed to delete");
-        toast.success("File removed");
+        // Success: Remove from UI
+        const updated = completedFiles.filter((_, i) => i !== index);
+        setCompletedFiles(updated);
+        onChange(updated);
       } catch (error) {
-        console.error(error);
-        toast.error("Failed to remove file");
-        setIsDeleting(null);
-        return;
+        console.error("Failed to delete file from S3", error);
+        toast.error("Failed to delete file from server");
       } finally {
         setIsDeleting(null);
       }
+    } else {
+      // No key, just remove local ref
+      const updated = completedFiles.filter((_, i) => i !== index);
+      setCompletedFiles(updated);
+      onChange(updated);
+      setIsDeleting(null);
     }
-
-    setCompletedFiles(prev => {
-      const updated = prev.filter((_, i) => i !== index);
-      setTimeout(() => onChange(updated), 0);
-      return updated;
-    });
   };
 
   // --- Configuration ---
@@ -206,13 +254,17 @@ export function MediaUploader({
       });
     }
 
+    // Access current state via direct dependency or functional update if needed, 
+    // but here we are inside component scope, need to be careful with stale closures in callbacks.
+    // However, Dropzone calls this fresh. We need current 'completedFiles' and 'files' length.
+    // We should rely on the closure values which are updated by 'onDrop' dependency array.
+
     if (completedFiles.length + files.length + acceptedFiles.length > maxFiles) {
       toast.error(`Maximum ${maxFiles} files allowed`);
       return;
     }
 
     acceptedFiles.forEach(file => {
-      // Manual Size Check
       if (file.size > maxSizeMB * 1024 * 1024) {
         toast.error(`File ${file.name} exceeds ${maxSizeMB}MB limit`);
         return;
@@ -226,7 +278,7 @@ export function MediaUploader({
       const newFile: MediaFile = {
         id,
         file,
-        preview: URL.createObjectURL(file),
+        preview: URL.createObjectURL(file), // Note: Need cleanup
         progress: 0,
         uploading: true,
         error: false,
@@ -236,7 +288,8 @@ export function MediaUploader({
       setFiles(prev => [...prev, newFile]);
       uploadFile(file, id);
     });
-  }, [completedFiles.length, files.length, maxFiles, maxSizeMB]);
+  }, [completedFiles, files, maxFiles, maxSizeMB, intent, uploadParams, lessonId]);
+  // Added dependencies to ensure closure is fresh.
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -260,7 +313,7 @@ export function MediaUploader({
 
           {/* Completed Files */}
           {completedFiles.map((media, idx) => (
-            <div key={media.url} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
+            <div key={media.url || media.key || idx} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
               {media.type === "IMAGE" && (
                 <Image
                   src={media.url}
@@ -270,11 +323,10 @@ export function MediaUploader({
                 />
               )}
               {media.type === "VIDEO" && (
-                <video
-                  src={media.url}
-                  className="w-full h-full object-cover"
-                  controls
-                />
+                <div className="flex flex-col items-center justify-center p-4 bg-black/5">
+                  <UploadCloud className="w-10 h-10 text-muted-foreground mb-2" />
+                  <p className="text-xs text-muted-foreground font-medium">Video Uploaded</p>
+                </div>
               )}
               {media.type === "PDF" && (
                 <div className="flex flex-col items-center justify-center text-muted-foreground p-4">
@@ -287,15 +339,22 @@ export function MediaUploader({
               <button
                 type="button"
                 onClick={() => removeFile(idx)}
-                disabled={isDeleting === media.url}
-                className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive disabled:opacity-100 disabled:cursor-wait z-10"
+                disabled={isDeleting === (media.url || media.key || String(idx))}
+                className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive disabled:opacity-100 disabled:cursor-not-allowed z-20"
               >
-                {isDeleting === media.url ? (
+                {isDeleting === (media.url || media.key || String(idx)) ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <X className="w-4 h-4" />
                 )}
               </button>
+
+              {/* Deletion Overlay */}
+              {isDeleting === (media.url || media.key || String(idx)) && (
+                <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center rounded-lg backdrop-blur-[1px]">
+                  <Loader2 className="w-8 h-8 animate-spin text-white/80" />
+                </div>
+              )}
             </div>
           ))}
 

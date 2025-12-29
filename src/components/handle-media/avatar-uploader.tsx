@@ -67,8 +67,12 @@ export function AvatarUploader({
     };
 
     const handleUpload = async (fileBlob: Blob) => {
-        const file = new File([fileBlob], "avatar.jpg", { type: "image/jpeg" });
-        await uploadFile(file, uploadParams);
+        // Create a temporary file
+        const tempFile = new File([fileBlob], "avatar.png", { type: "image/png" });
+        // Compress and convert to WebP using our utility
+        const compressedFile = await compressImage(tempFile);
+
+        await uploadFile(compressedFile, uploadParams);
     };
 
     return (

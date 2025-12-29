@@ -1,5 +1,5 @@
-import { creatorGetCourses } from "@/app/data/creator/creator-get-courses";
-import { getCreatorArticles } from "@/app/data/creator/get-creator-articles";
+import { creatorGetCourses } from "@/server/data/creator/creator-get-courses";
+import { getCreatorArticles } from "@/server/data/creator/get-creator-articles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

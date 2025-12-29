@@ -1,21 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Users, ShieldCheck, TrendingUp, CheckCircle2 } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { ArrowRight, Play, Users, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { useRef } from "react";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 
 export function HeroSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-  const y2 = useTransform(scrollY, [0, 500], [0, -150]);
+
 
   return (
-    <section ref={containerRef} className="relative w-full min-h-screen pt-32 pb-20 flex flex-col items-center justify-center overflow-hidden bg-background">
+    <section className="relative w-full min-h-screen pt-32 pb-20 flex flex-col items-center justify-center overflow-hidden bg-background">
 
       {/* BACKGROUND: Dynamic Gradient & Grid */}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
@@ -28,7 +24,7 @@ export function HeroSection() {
 
         {/* TRUST BADGE */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary mb-8 backdrop-blur-sm shadow-sm hover:bg-primary/10 transition-colors cursor-default"
@@ -37,7 +33,6 @@ export function HeroSection() {
           <span className="font-sans text-xs font-semibold tracking-wide uppercase">Home to Top Financial Experts</span>
         </motion.div>
 
-        {/* HEADLINE */}
         {/* HEADLINE */}
         <h1
           className="text-4xl md:text-7xl font-bold tracking-tight max-w-5xl mb-8 leading-[1.1] md:leading-[1.05] animate-fade-in-up"
@@ -48,7 +43,6 @@ export function HeroSection() {
           </span>
         </h1>
 
-        {/* SUBHEAD */}
         {/* SUBHEAD */}
         <p
           className="text-lg md:text-2xl text-muted-foreground max-w-3xl mb-12 font-light leading-relaxed animate-fade-in-up delay-100"
@@ -100,9 +94,9 @@ export function HeroSection() {
 
 
           <motion.div
-            initial={{ opacity: 0, rotateX: 20, y: 100 }}
+            initial={{ opacity: 0, rotateX: 20, y: 50 }}
             animate={{ opacity: 1, rotateX: 0, y: 0 }}
-            transition={{ duration: 1, delay: 0.4, type: "spring", bounce: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.1, type: "spring", bounce: 0.1 }}
             className="relative w-full aspect-video md:aspect-21/9 rounded-2xl border border-border/50 bg-card/50 shadow-2xl overflow-hidden backdrop-blur-sm group flex flex-col md:flex-row ring-1 ring-white/10 translate-z-0"
           >
             {/* LEFT: Live Stream Area */}
@@ -144,7 +138,7 @@ export function HeroSection() {
                 <div className="text-left overflow-hidden">
                   <div className="text-base font-bold truncate">Nifty 50 Live Scalping Session</div>
                   <div className="text-xs text-muted-foreground truncate flex items-center gap-2">
-                    <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
+                    <UserAvatarWithInfo image={null} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
 
                   </div>
                 </div>

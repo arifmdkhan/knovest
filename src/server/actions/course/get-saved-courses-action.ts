@@ -1,7 +1,7 @@
 "use server";
 
-import { getSavedCourses } from "@/app/data/course/get-saved-courses";
-import { ApiResponse } from "@/lib/types";
+import { getSavedCourses } from "@/server/data/course/get-saved-courses";
+import { ApiResponse } from "@/types/api";
 
 export async function getSavedCoursesAction(cursor?: string, limit = 10): Promise<ApiResponse<{ courses: any[]; nextCursor: string | undefined }>> {
     try {

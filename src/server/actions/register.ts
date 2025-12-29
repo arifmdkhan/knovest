@@ -1,15 +1,39 @@
 "use server";
 
+import "server-only";
 import { prisma } from "@/lib/db";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { getServerSession } from "@/lib/get-sessions";
 import { syncStreamUser } from "@/server/actions/stream";
+import arcjet, { detectBot, slidingWindow, request } from "@arcjet/next";
 
 
 // --- Action: Check Username Availability ---
 export async function checkUsernameAvailability(username: string): Promise<ApiResponse<boolean>> {
   try {
+    const aj = arcjet({
+      key: process.env.ARCJET_KEY!,
+      rules: [
+        detectBot({
+          mode: "LIVE",
+          allow: ["CATEGORY:SEARCH_ENGINE"],
+        }),
+        slidingWindow({
+          mode: "LIVE",
+          interval: "1m",
+          max: 15,
+        })
+      ]
+    });
+
+    const req = await request();
+    const decision = await aj.protect(req);
+
+    if (decision.isDenied()) {
+      return { status: "error", message: "Too many requests. Please try again later." };
+    }
+
     const isValidFormat = /^[a-zA-Z0-9_]+$/.test(username);
     if (!isValidFormat) {
       return { status: "error", message: "Username can only contain letters, numbers, and underscores" };

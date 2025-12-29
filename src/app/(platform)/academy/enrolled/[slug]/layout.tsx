@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { CourseSidebar } from "../_components/CourseSidebar";
 import { MobileCourseSidebar } from "../_components/MobileCourseSidebar";
-import { getCourseSidebarData } from "@/app/data/course/get-course-sidebar-data";
+import { getCourseSidebarData } from "@/server/data/course/get-course-sidebar-data";
 
 interface CourseLayoutProps {
     params: Promise<{ slug: string }>

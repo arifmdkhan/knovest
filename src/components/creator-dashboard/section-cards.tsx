@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { creatorGetDashboardStats } from "@/app/data/creator/creator-get-dashboard-stats";
+import { creatorGetDashboardStats } from "@/server/data/creator/creator-get-dashboard-stats";
 
 
 export async function SectionCards() {

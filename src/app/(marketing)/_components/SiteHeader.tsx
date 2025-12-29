@@ -8,7 +8,8 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useScrollPosition } from "@/hooks/use-scroll-position";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useScrolled } from "@/hooks/use-scrolled";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { authClient } from "@/lib/auth-client";
 import useSignOut from "@/hooks/use-signout";
@@ -26,12 +27,11 @@ import React from "react";
 
 
 export function SiteHeader() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const handleSignout = useSignOut();
 
 
-  const scrollPosition = useScrollPosition();
-  const scrolled = scrollPosition > 20;
+  const scrolled = useScrolled(20);
 
   return (
     <header
@@ -195,7 +195,12 @@ export function SiteHeader() {
 
         {/* Desktop Auth Actions */}
         <div className="hidden lg:flex items-center gap-3">
-          {session ? (
+          {isPending ? (
+            <>
+              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-9 w-24 rounded-full" />
+            </>
+          ) : session ? (
             <>
               <Button className="mr-2" onClick={handleSignout}>Logout</Button>
               <Link href="/home">

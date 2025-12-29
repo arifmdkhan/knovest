@@ -1,4 +1,4 @@
-import { PutObjectCommand, CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "@/lib/s3-client";
 import { BucketType, UPLOAD_CONFIGS, UploadIntent } from "./types";
@@ -91,15 +91,101 @@ export class StorageService {
     }
 
     /**
+     * Initiates a multipart upload.
+     */
+    static async createMultipartUpload(
+        intent: UploadIntent,
+        params: Record<string, string>,
+        contentType: string
+    ): Promise<{ uploadId: string; key: string }> {
+        const config = UPLOAD_CONFIGS[intent];
+        if (!config) throw new Error("Invalid Upload Intent");
+
+        // Use standard KeyFactory
+        // Note: For video lessons, we can use a simpler or specific key pattern if needed, 
+        // but KeyFactory.getPayload handles standard logic.
+        const ext = contentType.split("/")[1] || "mp4";
+        const key = KeyFactory.getPayload(intent, params, ext);
+        const bucket = this.getBucketName(config.bucket);
+
+        const command = new CreateMultipartUploadCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: contentType,
+        });
+
+        const { UploadId } = await s3Client.send(command);
+        if (!UploadId) throw new Error("Failed to initiate multipart upload");
+
+        return { uploadId: UploadId, key };
+    }
+
+    /**
+     * Generates a presigned URL for a specific part of a multipart upload.
+     */
+    static async getPresignedPartUrl(
+        intent: UploadIntent,
+        key: string,
+        uploadId: string,
+        partNumber: number
+    ): Promise<string> {
+        const config = UPLOAD_CONFIGS[intent];
+        if (!config) throw new Error("Invalid Upload Intent");
+
+        const bucket = this.getBucketName(config.bucket);
+
+        const command = new UploadPartCommand({
+            Bucket: bucket,
+            Key: key,
+            UploadId: uploadId,
+            PartNumber: partNumber,
+        });
+
+        return getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour per part
+    }
+
+    /**
+     * Completes a multipart upload.
+     */
+    static async completeMultipartUpload(
+        intent: UploadIntent,
+        key: string,
+        uploadId: string,
+        parts: { ETag: string; PartNumber: number }[]
+    ): Promise<void> {
+        const config = UPLOAD_CONFIGS[intent];
+        if (!config) throw new Error("Invalid Upload Intent");
+        const bucket = this.getBucketName(config.bucket);
+
+        const command = new CompleteMultipartUploadCommand({
+            Bucket: bucket,
+            Key: key,
+            UploadId: uploadId,
+            MultipartUpload: { Parts: parts },
+        });
+
+        await s3Client.send(command);
+    }
+
+    /**
+     * Generates a presigned URL for GET (download/playback) of a private object.
+     */
+    /**
      * Generates a presigned URL for GET (download/playback) of a private object.
      */
     static async getPlaybackUrl(key: string): Promise<string> {
+        return this.getPresignedDownloadUrl(key, 3600);
+    }
+
+    /**
+     * Generates a presigned URL with custom expiration.
+     */
+    static async getPresignedDownloadUrl(key: string, expiresIn: number): Promise<string> {
         const bucket = this.getBucketName(BucketType.PRIVATE);
         const command = new GetObjectCommand({
             Bucket: bucket,
             Key: key,
         });
-        // 1 Hour expiry
-        return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        return getSignedUrl(s3Client, command, { expiresIn });
     }
 }

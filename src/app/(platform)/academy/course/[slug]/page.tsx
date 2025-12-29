@@ -1,4 +1,4 @@
-import { getIndividualCourse } from '@/app/data/course/get-course';
+import { getIndividualCourse } from '@/server/data/course/get-course';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,16 +6,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Separator } from '@/components/ui/separator';
 import { CheckIcon, ChevronDown, Clock, BarChart, BookOpen, PlayCircle, Star, Share2, Globe, MessageSquare, ArrowLeft } from 'lucide-react';
 import Image from 'next/image'
-import { checkIfCourseBought } from '@/app/data/user/user-is-enrolled';
+import { checkIfCourseBought } from '@/server/data/user/user-is-enrolled';
 import Link from 'next/link';
 import { EnrollmentButton } from './_components/EnrollmentButton';
 import { cn } from '@/lib/utils';
 import { ExpandableDescription } from '../_components/expandable-description';
 import { UserAvatarWithInfo } from '@/components/UserAvatarWithInfo';
-import { getCourseReviews } from '@/app/data/review/get-course-reviews';
+import { getCourseReviews } from '@/server/data/review/get-course-reviews';
 import { ReviewForm } from '../_components/review-form';
 import { ReviewList } from '../_components/review-list';
-import { requireUser } from '@/app/data/user/require-user';
+import { requireUser } from '@/server/data/user/require-user';
 import { CourseActions } from './_components/course-actions';
 
 type Params = Promise<{ slug: string }>

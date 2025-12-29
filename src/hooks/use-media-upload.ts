@@ -76,11 +76,12 @@ export function useMediaUpload({ intent, onUploadComplete, onUploadError }: UseM
 
             return confirmRes.data.key;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Upload Error:", error);
-            toast.error(error.message || "Upload failed");
+            const message = error instanceof Error ? error.message : "Upload failed";
+            toast.error(message);
             if (onUploadError) {
-                onUploadError(error);
+                onUploadError(error instanceof Error ? error : new Error(message));
             }
             throw error;
         } finally {

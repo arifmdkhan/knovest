@@ -1,7 +1,7 @@
 "use server";
 
-import { getFeedPosts, FeedType } from "@/app/data/post/get-posts";
-import { ApiResponse } from "@/lib/types";
+import { getFeedPosts, FeedType } from "@/server/data/post/get-posts";
+import { ApiResponse } from "@/types/api";
 import { FeedPost } from "@/types/post";
 
 export async function getFeedPostsAction(

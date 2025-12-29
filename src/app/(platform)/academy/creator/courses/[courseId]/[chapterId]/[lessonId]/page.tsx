@@ -1,4 +1,4 @@
-import { creatorGetLesson } from "@/app/data/creator/creator-get-lesson";
+import { creatorGetLesson } from "@/server/data/creator/creator-get-lesson";
 import { LessonForm } from "./_components/lesson-form";
 
 

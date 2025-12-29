@@ -4,10 +4,10 @@ import { FollowSuggestionsSkeleton } from "./_components/right-sidebar/FollowSug
 import { FeedTabs } from "./_components/FeedTabs";
 import { createMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
-import { getFeedPosts } from "@/app/data/post/get-posts";
+import { getFeedPosts } from "@/server/data/post/get-posts";
 import { getServerSession } from "@/lib/get-sessions";
 import { FeedSkeleton } from "./_components/Feed";
-import { getRecentPublicCourse } from "@/app/data/course/get-recent-course";
+import { getRecentPublicCourse } from "@/server/data/course/get-recent-course";
 import { PublicCourseCard, PublicCourseCardSkeleton } from "@/app/(platform)/academy/course/_components/PublicCourseCard";
 
 export const metadata: Metadata = createMetadata({
@@ -26,7 +26,7 @@ async function RecentCourseFetcher({ userId }: { userId: string }) {
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-lg px-1 mt-2">Fresh from Academy</h3>
-      <PublicCourseCard data={course} />
+      <PublicCourseCard data={course} priority={true} />
     </div>
   );
 }

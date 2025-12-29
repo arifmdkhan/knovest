@@ -1,4 +1,6 @@
 
+export const dynamic = "force-dynamic";
+
 import { getVerificationApplications } from "@/server/actions/admin-verification.actions";
 import { ApplicationsList } from "./_components/applications-list";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

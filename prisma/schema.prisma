@@ -354,6 +354,20 @@ model Lesson {
   chapter                  Chapter                  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   enrolledCourseProgresses EnrolledCourseProgress[]
   resources                LessonResource[]
+
+  // Video State
+  videoStatus   VideoStatus @default(WAITING_UPLOAD)
+  videoDuration Int?
+  videoProgress Int         @default(0)
+  videoError    String?
+}
+
+enum VideoStatus {
+  WAITING_UPLOAD
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
 }
 
 model LessonResource {

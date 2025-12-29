@@ -1,10 +1,10 @@
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { SubscriptionSettings } from "../_components/SubscriptionSettings";
 import { ManageSubscriptions } from "../_components/ManageSubscriptions";
-import { getMySubscriptions } from "@/app/data/subscription/get-my-subscriptions";
+import { getMySubscriptions } from "@/server/data/subscription/get-my-subscriptions";
 
 export default async function SubscriptionSettingsPage() {
     const sessionUser = await requireUser();

@@ -2,14 +2,16 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ReactNode } from "react";
-import { requireUser } from "../data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { ActiveCallProvider } from "@/components/providers/ActiveCallProvider";
 import { getStreamToken } from "@/server/actions/stream";
 import PlatformStreamProvider from "@/components/providers/PlatformStreamProvider";
 
 export default async function PlatformLayout({ children }: { children: ReactNode }) {
-    const user = await requireUser();
-    const res = await getStreamToken();
+    const [user, res] = await Promise.all([
+        requireUser(),
+        getStreamToken()
+    ]);
     const token = res.status === "success" && res.data ? res.data : "";
 
     return (

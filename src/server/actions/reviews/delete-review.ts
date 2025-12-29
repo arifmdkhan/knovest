@@ -1,9 +1,9 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function deleteReview(reviewId: string, courseId: string): Promise<ApiResponse> {
     const user = await requireUser();

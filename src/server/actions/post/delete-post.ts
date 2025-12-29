@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { deletePostSchema, DeletePostSchemaType } from "@/lib/schema/post-schema";
 import { getServerSession } from "@/lib/get-sessions";
 

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { UsersTable } from "./_components/users-table";
-import { getAdminUsers } from "@/app/data/admin/get-users";
+import { getAdminUsers } from "@/server/data/admin/get-users";
 import { UsersTableSkeleton } from "./_components/users-table-skeleton";
 import { SyncStreamUsersButton } from "./_components/sync-stream-users-button";
 

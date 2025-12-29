@@ -5,7 +5,7 @@ import { StreamChat } from "stream-chat";
 import { StreamClient } from "@stream-io/node-sdk";
 import { getServerSession } from "@/lib/get-sessions";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function getStreamToken(): Promise<ApiResponse<string>> {
     try {
@@ -23,9 +23,12 @@ export async function getStreamToken(): Promise<ApiResponse<string>> {
 
         const token = serverClient.createToken(session.user.id);
         return { status: "success", message: "Token generated", data: token };
-    } catch (error) {
+    } catch (error: any) {
+        if (error.digest === 'DYNAMIC_SERVER_USAGE') {
+            throw error;
+        }
         console.error("Get Stream Token Error:", error);
-        return { status: "error", message: "Failed to generate token" };
+        return { status: "error", message: "Failed to get token" };
     }
 }
 
@@ -256,9 +259,9 @@ export async function addSubscriberToGroup(channelId: string, userId: string) {
 
     // Directly add the member without checking if the caller is a member
     // This is safe because it's only called from the server-side confirmSubscription action
-    console.log(`[addSubscriberToGroup] Adding ${userId} to ${channelId}`);
+    // console.log(`[addSubscriberToGroup] Adding ${userId} to ${channelId}`);
     await channel.addMembers([userId]);
-    console.log(`[addSubscriberToGroup] Added ${userId} to ${channelId}`);
+    // console.log(`[addSubscriberToGroup] Added ${userId} to ${channelId}`);
 
     return { success: true };
 }
@@ -306,7 +309,7 @@ export async function syncStreamUser(
         if (data.expertVerificationType !== undefined) updateData.expertVerificationType = data.expertVerificationType;
         if (data.accountVerificationType !== undefined) updateData.accountVerificationType = data.accountVerificationType;
 
-        console.log(`[syncStreamUser] Syncing user ${userId} to Stream`, updateData);
+        // console.log(`[syncStreamUser] Syncing user ${userId} to Stream`, updateData);
         await serverClient.upsertUser(updateData);
         return { status: "success", message: "User synced" };
     } catch (error) {
@@ -325,7 +328,7 @@ export async function restoreStreamUsers(userIds: string[]): Promise<ApiResponse
             process.env.STREAM_API_SECRET!
         );
 
-        console.log(`[restoreStreamUsers] Restoring users:`, userIds);
+        // console.log(`[restoreStreamUsers] Restoring users:`, userIds);
         await serverClient.restoreUsers(userIds);
         return { status: "success", message: "Users restored" };
     } catch (error) {
@@ -375,7 +378,7 @@ export async function syncAllUsersToStream(): Promise<ApiResponse<{ count: numbe
                 accountVerificationType: u.accountVerificationType || undefined,
             }));
 
-            console.log(`[syncAllUsersToStream] Syncing batch ${page + 1} (${users.length} users)`);
+            // console.log(`[syncAllUsersToStream] Syncing batch ${page + 1} (${users.length} users)`);
             await serverClient.upsertUsers(usersToSync);
 
             processedCount += users.length;

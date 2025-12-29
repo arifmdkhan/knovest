@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 import { revalidatePath } from "next/cache";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function purchaseStreamAccess(streamId: string, price: number): Promise<ApiResponse> {
     try {
@@ -129,11 +129,19 @@ export async function revokeStreamAccess(streamId: string, userId: string): Prom
     }
 }
 
+export interface StreamAccessUser {
+    id: string;
+    name: string | null;
+    image: string | null;
+    username: string | null;
+    type: "paid" | "manual";
+}
+
 export async function getStreamAccessDetails(
     streamId: string,
     manualUserIds: string[],
     page: number = 1
-): Promise<ApiResponse<{ paidUsers: any[]; manualUsers: any[]; hasMorePaid: boolean }>> {
+): Promise<ApiResponse<{ paidUsers: StreamAccessUser[]; manualUsers: StreamAccessUser[]; hasMorePaid: boolean }>> {
     const session = await getServerSession();
     if (!session?.user) return { status: "error", message: "Unauthorized" };
 
@@ -159,7 +167,7 @@ export async function getStreamAccessDetails(
             type: "paid" as const
         }));
 
-        let manualUsers: any[] = [];
+        let manualUsers: StreamAccessUser[] = [];
         if (page === 1 && manualUserIds.length > 0) {
             const manualDbUsers = await prisma.user.findMany({
                 where: { id: { in: manualUserIds } }

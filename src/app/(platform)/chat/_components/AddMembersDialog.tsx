@@ -48,8 +48,9 @@ export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDial
         try {
             const result = await searchUsers(val);
             if (result.status === "success" && result.data) {
-                const newUsers = result.data.filter((u: SearchedUser) => !existingMembers.includes(u.id));
-                setResults(newUsers as SearchedUser[]);
+                const data = result.data as unknown as SearchedUser[];
+                const newUsers = data.filter((u) => !existingMembers.includes(u.id));
+                setResults(newUsers);
             } else {
                 setResults([]);
             }

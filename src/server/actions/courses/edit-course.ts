@@ -1,9 +1,9 @@
 "use server";
 
-import { requireCreator } from "@/app/data/creator/require-creator";
+import { requireCreator } from "@/server/data/creator/require-creator";
 
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import {
   chapterSchema,
   chapterSchemaType,

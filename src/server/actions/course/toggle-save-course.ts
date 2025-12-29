@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { toggleSaveCourseSchema, ToggleSaveCourseSchemaType } from "@/lib/schema/zod-schema";
 import { getServerSession } from "@/lib/get-sessions";
 import { revalidatePath } from "next/cache";

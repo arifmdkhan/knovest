@@ -55,7 +55,7 @@ export function CommunityFeatures() {
                                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
                                         <div className="flex gap-3">
                                             <div>
-                                                <UserAvatarWithInfo image={'./profile2.jpeg'} name="Kunal Verma" username="vermakunal" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
+                                                <UserAvatarWithInfo image={null} name="Kunal Verma" username="vermakunal" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
 
                                             </div>
                                             <p className="text-sm text-muted-foreground">• 2m ago</p>

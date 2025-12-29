@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { creatorGetCourse } from '@/app/data/creator/creator-get-course'
+import { creatorGetCourse } from '@/server/data/creator/creator-get-course'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import EditCourseForm from './_components/edit-course-form'

@@ -1,10 +1,13 @@
-import { FeatureBento } from "./FeaturesBento";
 import { HeroSection } from "./HeroSection";
 // import { SiteFooter } from "./SiteFooter"; // Removed: In Layout
 // import { SiteHeader } from "./SiteHeader"; // Removed: In Layout
-import { TestimonialsSection } from "./TestimonialsSection";
-import { CommunityFeatures } from "./CommunityFeatures";
 import { ArrowRight } from "lucide-react";
+import dynamic from "next/dynamic";
+import { LazyLoad } from "@/components/LazyLoad";
+
+const FeatureBento = dynamic(() => import("./FeaturesBento").then((mod) => mod.FeatureBento));
+const CommunityFeatures = dynamic(() => import("./CommunityFeatures").then((mod) => mod.CommunityFeatures));
+const TestimonialsSection = dynamic(() => import("./TestimonialsSection").then((mod) => mod.TestimonialsSection));
 
 export default function MarketingPage() {
   return (
@@ -13,11 +16,17 @@ export default function MarketingPage() {
 
       {/* <StatsSection /> */}
 
-      <CommunityFeatures />
+      <LazyLoad placeholderClassName="min-h-[800px]">
+        <CommunityFeatures />
+      </LazyLoad>
 
-      <FeatureBento />
+      <LazyLoad placeholderClassName="min-h-[800px]">
+        <FeatureBento />
+      </LazyLoad>
 
-      <TestimonialsSection />
+      <LazyLoad placeholderClassName="min-h-[600px]">
+        <TestimonialsSection />
+      </LazyLoad>
 
       {/* Call To Action Section */}
       <section className="py-32 relative overflow-hidden">

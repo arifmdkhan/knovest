@@ -1,4 +1,4 @@
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { ReactNode } from "react";
 
 export default async function VerificationLayout({ children }: { children: ReactNode }) {

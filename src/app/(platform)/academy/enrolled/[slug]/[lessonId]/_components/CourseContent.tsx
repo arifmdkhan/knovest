@@ -1,7 +1,7 @@
 'use client'
 
 import { ExpandableDescription } from "@/app/(platform)/academy/course/_components/expandable-description";
-import { LessonContentType } from "@/app/data/course/get-lesson-content";
+import { LessonContentType } from "@/server/data/course/get-lesson-content";
 import { Button } from "@/components/ui/button";
 
 import { BookIcon, CheckCircle, FileText, LayoutDashboard, Share2 } from "lucide-react";
@@ -13,6 +13,11 @@ import { toggleLessonCompletion } from "@/server/actions/course-progress";
 import { useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+import { HLSPlayer } from "@/components/player/hls-player";
+import { SecureVideoPlayer } from "@/components/player/secure-video-player";
+import { VideoStatus } from "@/generated/prisma/client";
+
 
 interface CourseContentProps {
   data: LessonContentType & { isCompleted: boolean };
@@ -54,14 +59,15 @@ function MarkCompleteButton({ lessonId, isCompleted }: { lessonId: string, isCom
   );
 }
 
-function VideoPlayer({ thumbnailKey, videoKey, videoUrl }: {
+function VideoPlayer({ thumbnailKey, videoKey, videoUrl, videoStatus, courseId, lessonId }: {
   thumbnailKey: string;
   videoKey: string;
   videoUrl?: string;
+  videoStatus?: VideoStatus | null;
+  courseId: string;
+  lessonId: string;
 }) {
-  // Use signed URL if available, otherwise fallback to constructUrl (legacy/public)
-  const source = videoUrl || constructUrl(videoKey);
-  const thumbnailUrl = constructUrl(thumbnailKey)
+  const thumbnailUrl = constructUrl(thumbnailKey);
 
   if (!videoKey) {
     return (
@@ -72,15 +78,42 @@ function VideoPlayer({ thumbnailKey, videoKey, videoUrl }: {
     )
   }
 
-  return (
-    <div className="aspect-video bg-black rounded-xl relative overflow-hidden shadow-lg ring-1 ring-border/10">
-      <video
-        src={source}
-        className="w-full h-full object-cover"
-        controls
+  if (videoStatus === "PROCESSING" || videoStatus === "WAITING_UPLOAD") {
+    return (
+      <div className="aspect-video bg-black rounded-xl flex flex-col items-center justify-center border border-border/50">
+        <Loader2 className="size-10 text-white/50 mx-auto mb-4 animate-spin" />
+        <p className="text-white/80 font-medium">Video is processing...</p>
+        <p className="text-white/50 text-sm">Please check back later.</p>
+      </div>
+    )
+  }
+
+  if (videoStatus === "FAILED") {
+    return (
+      <div className="aspect-video bg-red-950/20 rounded-xl flex flex-col items-center justify-center border border-red-900/50">
+        <p className="text-red-500 font-medium">Video failed to process.</p>
+      </div>
+    )
+  }
+
+  // READY (HLS)
+  if (videoStatus === "READY" && videoUrl) {
+    return (
+      <HLSPlayer
+        src={videoUrl}
         poster={thumbnailUrl}
+        className="rounded-xl shadow-lg ring-1 ring-border/10"
       />
-    </div>
+    )
+  }
+
+  // Fallback (Legacy/Raw) or Secure Proxy
+  return (
+    <SecureVideoPlayer
+      courseId={courseId}
+      lessonId={lessonId}
+      poster={thumbnailUrl}
+    />
   )
 }
 
@@ -93,7 +126,10 @@ export function CourseContent({ data }: CourseContentProps) {
         <VideoPlayer
           thumbnailKey={data.thumbnailKey ?? ''}
           videoKey={data.videoKey ?? ''}
-          videoUrl={data.videoUrl} // Pass pre-signed URL
+          videoUrl={data.videoUrl}
+          videoStatus={data.videoStatus}
+          courseId={data.chapter.courseId}
+          lessonId={data.id}
         />
 
         {/* Action Bar */}

@@ -1,3 +1,8 @@
+export interface StreamAccessData {
+    isPaid: boolean;
+    price: number;
+}
+
 export type CustomCallData = {
     title?: string;
     description?: string;
@@ -7,3 +12,5 @@ export type CustomCallData = {
     isPaid?: boolean;
     price?: number;
 }
+
+export type CustomCallDataWithAccess = CustomCallData;

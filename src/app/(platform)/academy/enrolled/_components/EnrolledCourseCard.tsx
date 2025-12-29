@@ -1,4 +1,4 @@
-import { PublicCourseType } from "@/app/data/course/get-all-courses";
+import { PublicCourseType } from "@/server/data/course/get-all-courses";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import Link from "next/link";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { cn } from "@/lib/utils";
 
-import { EnrolledCourseWithProgress } from "@/app/data/user/get-enrolled-courses";
+import { EnrolledCourseWithProgress } from "@/server/data/user/get-enrolled-courses";
 import { Progress } from "@/components/ui/progress";
 
 interface EnrolledCourseCardProps {

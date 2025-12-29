@@ -25,7 +25,7 @@ import { EditProfileDialog } from "./EditProfileDialog";
 import { SubscribeButton } from "./SubscribeButton";
 import { UserListDialog } from "./UserListDialog";
 
-import { ProfileData } from "@/lib/types";
+import { ProfileData } from "@/types/user";
 
 interface ProfileHeaderProps {
   profile: ProfileData;
@@ -106,8 +106,8 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
     <div className="w-full bg-card border-b border-border/50 pb-6">
       {/* Banner */}
-      <div className="h-32 md:h-48 bg-gradient-to-r from-primary/10 to-primary/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
+      <div className="h-32 md:h-48 bg-linear-to-r from-primary/10 to-primary/5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/10 mask-[linear-gradient(0deg,transparent,black)]" />
       </div>
 
       <div className="container max-w-4xl mx-auto px-4">

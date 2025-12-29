@@ -1,4 +1,4 @@
-import { getPublishedArticles } from "@/app/data/article/get-published-articles";
+import { getPublishedArticles } from "@/server/data/article/get-published-articles";
 import { ArticleCard } from "./_components/article-card";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";

@@ -1,11 +1,11 @@
 "use server";
 
-import { requireCreator } from "@/app/data/creator/require-creator";
+import { requireCreator } from "@/server/data/creator/require-creator";
 import arcjet, { fixedWindow } from "@/lib/arcjet";
 
 import { prisma } from "@/lib/db";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { request } from "@arcjet/next";
 import { revalidatePath } from "next/cache";
 import { deleteMediaAction } from "@/server/actions/delete-media.actions";

@@ -1,7 +1,7 @@
 "use server";
 
-import { getUserConnections, ConnectionType } from "@/app/data/user/get-connections";
-import { ApiResponse } from "@/lib/types";
+import { getUserConnections, ConnectionType } from "@/server/data/user/get-connections";
+import { ApiResponse } from "@/types/api";
 
 export async function getConnectionsAction(
     userId: string,

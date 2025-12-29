@@ -1,6 +1,6 @@
 'use client'
 
-import { CourseSidebarDataType } from "@/app/data/course/get-course-sidebar-data";
+import { CourseSidebarDataType } from "@/server/data/course/get-course-sidebar-data";
 import { ChevronDown, PlayCircle, Trophy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

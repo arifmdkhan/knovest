@@ -64,7 +64,7 @@ export function FeatureBento() {
                   <div className="absolute bottom-4 right-4 w-32 h-24 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg overflow-hidden">
                     <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src="/avatars/01.png" />
+                        <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kunal" />
                         <AvatarFallback>KV</AvatarFallback>
                       </Avatar>
                     </div>
@@ -153,7 +153,7 @@ export function FeatureBento() {
 
                 <div className="flex items-center gap-2 mb-6">
 
-                  <UserAvatarWithInfo image={'./profile1.jpeg'} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
+                  <UserAvatarWithInfo image={null} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
                 </div>
 
                 <div className="mt-auto flex items-center justify-between">

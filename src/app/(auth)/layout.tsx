@@ -1,6 +1,5 @@
 
 import Link from "next/link";
-import { Users } from "lucide-react";
 import { getServerSession } from "@/lib/get-sessions";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";

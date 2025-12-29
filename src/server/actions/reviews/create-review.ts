@@ -1,10 +1,10 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 const createReviewSchema = z.object({
     courseId: z.string(),

@@ -1,4 +1,4 @@
-import { getAllCourses } from '@/app/data/course/get-all-courses'
+import { getAllCourses } from '@/server/data/course/get-all-courses'
 import React, { Suspense } from 'react'
 import { PublicCourseCard, PublicCourseCardSkeleton } from './_components/PublicCourseCard'
 import { CategoryFilter } from './_components/category-filter'

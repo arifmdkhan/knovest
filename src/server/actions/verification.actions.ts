@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { VerificationStatus } from "../../generated/prisma/enums";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 // --- Types ---
 

@@ -1,7 +1,7 @@
 "use server";
 
-import { getSavedPosts } from "@/app/data/post/get-saved-posts";
-import { ApiResponse } from "@/lib/types";
+import { getSavedPosts } from "@/server/data/post/get-saved-posts";
+import { ApiResponse } from "@/types/api";
 import { FeedPost } from "@/types/post";
 
 export async function getSavedPostsAction(cursor?: string, limit = 10): Promise<ApiResponse<{ posts: FeedPost[]; nextCursor?: string | undefined }>> {

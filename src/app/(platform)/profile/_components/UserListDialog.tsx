@@ -11,7 +11,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { Loader2 } from "lucide-react";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { useConnections } from "@/hooks/use-connections";
-import { ConnectionType } from "@/app/data/user/get-connections";
+import { ConnectionType } from "@/server/data/user/get-connections";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 

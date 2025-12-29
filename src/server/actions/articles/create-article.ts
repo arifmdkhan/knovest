@@ -1,10 +1,10 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user"; // Assuming this exists or I will use a similar auth check
+import { requireUser } from "@/server/data/user/require-user"; // Assuming this exists or I will use a similar auth check
 import arcjet, { fixedWindow } from "@/lib/arcjet";
 import { prisma } from "@/lib/db";
 import { articleSchema, ArticleSchemaType } from "@/lib/schema/article-schema";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { request } from "@arcjet/next";
 import { revalidatePath } from "next/cache";
 

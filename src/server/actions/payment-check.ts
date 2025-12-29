@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
 export async function hasUserPaidForStream(streamId: string, userId: string): Promise<ApiResponse<boolean>> {
     try {

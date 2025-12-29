@@ -1,55 +1,27 @@
-"use client";
-
-import { useState } from "react";
-import { PublicCourseType } from "@/app/data/course/get-all-courses";
+import { PublicCourseType } from "@/server/data/course/get-all-courses";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { constructUrl } from "@/lib/construct-url";
-import { BarChart, Clock, Star, Bookmark } from "lucide-react";
+import { BarChart, Clock, Star } from "lucide-react";
 import Link from "next/link";
 import { SafeImage } from "@/components/ui/safe-image";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
-import { useToggleSaveCourse } from "@/hooks/use-course";
-import { authClient } from "@/lib/auth-client";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { SaveCourseButton } from "./SaveCourseButton";
 
 interface PublicCourseCardProps {
-    data: PublicCourseType & { isSaved?: boolean } // Adding isSaved explicitly to TS check if not inferred
+    data: PublicCourseType & { isSaved?: boolean };
+    priority?: boolean;
 }
 
-export function PublicCourseCard({ data }: PublicCourseCardProps) {
+export function PublicCourseCard({ data, priority = false }: PublicCourseCardProps) {
     const thumbnailUrl = constructUrl(data.fileKey)
-    const { data: session } = authClient.useSession();
-    const { mutate: toggleSave, isPending: isSaving } = useToggleSaveCourse();
-    const [isSaved, setIsSaved] = useState(!!data.isSaved);
 
     const totalReviews = data.reviews.length;
     const averageRating =
         totalReviews > 0
             ? data.reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews
             : 0;
-
-    const handleSave = () => {
-        if (!session) {
-            toast.error("Please login to save courses");
-            return;
-        }
-
-        const previousState = isSaved;
-        setIsSaved(!isSaved);
-
-        toggleSave({ courseId: data.id }, {
-            onSuccess: (resData) => {
-                setIsSaved(!!resData.saved);
-            },
-            onError: () => {
-                setIsSaved(previousState);
-            }
-        });
-    };
 
     return (
         <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:border-primary/20 flex flex-col h-full p-0 relative">
@@ -63,6 +35,8 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     src={thumbnailUrl}
                     alt={data.title}
+                    priority={priority}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -148,22 +122,10 @@ export function PublicCourseCard({ data }: PublicCourseCardProps) {
                     </div>
 
                     <div className="flex items-center gap-2 relative z-20">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={isSaving}
-                            className={cn(
-                                "rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8 transition-colors",
-                                isSaved && "text-primary hover:text-primary/90"
-                            )}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSave();
-                            }}
-                        >
-                            <Bookmark className={cn("size-4", isSaved && "fill-current")} />
-                        </Button>
+                        <SaveCourseButton
+                            courseId={data.id}
+                            initialIsSaved={!!data.isSaved}
+                        />
                     </div>
                 </div>
             </CardFooter>

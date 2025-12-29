@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ConnectionUser } from "@/app/data/user/get-connections"; // Reusing this interface or define local if simpler, but reusing is consistent
+import { useState, useMemo } from "react";
+import { ConnectionUser } from "@/server/data/user/get-connections";
 import { Globe, Lock, Users, Loader2, Send, UserStar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -143,10 +143,14 @@ export function PostComposer() {
     }
   };
 
+  const uploadParams = useMemo(() => ({ postId }), [postId]);
+  const allowedTypes = useMemo<("image" | "video")[]>(() => ["image", "video"], []);
+
   if (!session) return null;
 
   return (
     <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm relative z-10">
+      {/* ... (rest of the component structure remains same, just updating MediaUploader usage) */}
       <div className="flex gap-4">
         <Link href={`/profile/${session.user.username}`}>
           <Avatar className="w-10 h-10">
@@ -154,8 +158,8 @@ export function PostComposer() {
             <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
           </Avatar>
         </Link>
-
         <div className="flex-1 space-y-4 relative">
+          {/* ... top section ... */}
           <div className="flex justify-between items-center">
             <Link href={`/profile/${session.user.username}`}>
               <span className="font-semibold text-sm">{session.user.name}</span></Link>
@@ -166,7 +170,7 @@ export function PostComposer() {
               <SelectContent>
                 <SelectItem value="PUBLIC"><div className="flex items-center"><Globe className="w-3 h-3 mr-2" /> Public</div></SelectItem>
                 <SelectItem value="FOLLOWERS"><div className="flex items-center"><Users className="w-3 h-3 mr-2" /> Followers</div></SelectItem>
-                {/* @ts-ignore - isSubscriptionEnabled is added via auth config */}
+                {/* @ts-ignore */}
                 {session.user.isSubscriptionEnabled && (
                   <SelectItem value="SUBSCRIBER"><div className="flex items-center"><UserStar className="w-3 h-3 mr-2 text-purple-500" /> Subscribers</div></SelectItem>
                 )}
@@ -181,13 +185,11 @@ export function PostComposer() {
               className="min-h-20 border-none resize-none p-2 focus-visible:ring-0 text-base bg-transparent shadow-none placeholder:text-muted-foreground/70"
               value={content}
               onChange={handleContentChange}
-              onKeyDown={(e) => {
-                // Allow navigation if we implemented it, for now just basic text
-              }}
             />
 
             {showMentions && mentionResults.length > 0 && (
               <div className="absolute top-full left-0 mt-2 w-64 bg-popover text-popover-foreground border border-border rounded-md shadow-md z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                {/* ... Mentions List ... */}
                 <div className="p-1">
                   <div className="text-xs font-semibold text-muted-foreground px-2 py-1.5">Suggested Users</div>
                   {mentionResults.map(user => (
@@ -214,11 +216,12 @@ export function PostComposer() {
           <MediaUploader
             key={uploaderKey}
             onChange={setMedia}
+            existingMedia={media}
             maxFiles={4}
-            allowedTypes={["image", "video"]}
+            allowedTypes={allowedTypes}
             maxSizeMB={30}
             intent={UploadIntent.POST_MEDIA}
-            uploadParams={{ postId }}
+            uploadParams={uploadParams}
           />
 
           <div className="flex justify-end pt-2 border-t border-border/50">

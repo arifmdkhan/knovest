@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { CreatorCourseSingularType } from '@/app/data/creator/creator-get-course'
+import { CreatorCourseSingularType } from '@/server/data/creator/creator-get-course'
 import { tryCatch } from '@/helper/try-catch'
 import { editCourse } from '@/server/actions/courses/edit-course'
 import { TextEditor } from '@/components/shared/text-editor/editor'
@@ -195,7 +195,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                                                 field.onChange("")
                                                             }
                                                         }}
-                                                        existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, type: "IMAGE" }] : []}
+                                                        existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, key: field.value, type: "IMAGE" }] : []}
                                                     />
                                                 </div>
                                             </FormControl>

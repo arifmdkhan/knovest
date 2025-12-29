@@ -68,7 +68,7 @@ export const auth = betterAuth({
               type: "SYSTEM",
               message: `${user.name} Welcome to Consensus! ❤️`
             });
-          } catch (e) {
+          } catch (e: unknown) {
             console.error("Failed to create welcome notification:", e);
           }
         },
@@ -107,7 +107,7 @@ export const auth = betterAuth({
       //best jwe(most secure , large size)
     },
   },
-  trustedOrigins: ["http://192.168.1.12:3000"],
+  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
 });
 
 async function generateUniqueUsername(baseName: string) {

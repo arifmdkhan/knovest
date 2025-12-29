@@ -13,10 +13,12 @@ interface GlobalSearchInputProps {
     className?: string;
 }
 
+import { User, Course, Article } from "@/generated/prisma/client";
+
 interface SearchResults {
-    users: any[];
-    courses: any[];
-    articles: any[];
+    users: Partial<User>[];
+    courses: (Partial<Course> & { isSaved?: boolean })[];
+    articles: Partial<Article>[];
 }
 
 export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
@@ -151,7 +153,7 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
                             {results.users.length > 0 && (
                                 <div className="py-2">
                                     <h3 className="px-4 text-xs font-semibold text-muted-foreground mb-2">People</h3>
-                                    {results.users.map((user: any) => (
+                                    {results.users.map((user) => (
                                         <Link
                                             key={user.id}
                                             href={`/profile/${user.username}`}
@@ -174,7 +176,7 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
                             {results.courses.length > 0 && (
                                 <div className="py-2 border-t">
                                     <h3 className="px-4 text-xs font-semibold text-muted-foreground mb-2 mt-2">Courses</h3>
-                                    {results.courses.map((course: any) => (
+                                    {results.courses.map((course) => (
                                         <Link
                                             key={course.id}
                                             href={`/academy/course/${course.slug}`}
@@ -193,7 +195,7 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
                             {results.articles.length > 0 && (
                                 <div className="py-2 border-t">
                                     <h3 className="px-4 text-xs font-semibold text-muted-foreground mb-2 mt-2">Articles</h3>
-                                    {results.articles.map((article: any) => (
+                                    {results.articles.map((article) => (
                                         <Link
                                             key={article.id}
                                             href={`/academy/article/${article.slug}`} // Assuming article link

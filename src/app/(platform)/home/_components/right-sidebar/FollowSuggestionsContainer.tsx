@@ -1,4 +1,4 @@
-import { getFollowSuggestions } from "@/app/data/user/get-follow-suggestions";
+import { getFollowSuggestions } from "@/server/data/user/get-follow-suggestions";
 import { FollowSuggestions } from "./FollowSuggestions";
 
 export async function FollowSuggestionsContainer() {

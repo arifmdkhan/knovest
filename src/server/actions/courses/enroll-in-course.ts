@@ -1,10 +1,10 @@
 "use server";
 
-import { requireUser } from "@/app/data/user/require-user";
+import { requireUser } from "@/server/data/user/require-user";
 import arcjet, { fixedWindow } from "@/lib/arcjet";
 import { prisma } from "@/lib/db";
 
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { request } from "@arcjet/next";
 import { redirect } from "next/navigation";
 

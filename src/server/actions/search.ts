@@ -2,9 +2,11 @@
 
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 
-export async function searchGlobal(query: string): Promise<ApiResponse<{ users: any[], courses: any[], articles: any[] }>> {
+import { User, Course, Article } from "@/generated/prisma/client";
+
+export async function searchGlobal(query: string): Promise<ApiResponse<{ users: Partial<User>[], courses: (Partial<Course> & { isSaved: boolean })[], articles: Partial<Article>[] }>> {
     if (!query || query.length < 2) {
         return {
             status: "success",
@@ -16,7 +18,7 @@ export async function searchGlobal(query: string): Promise<ApiResponse<{ users: 
     const session = await getServerSession();
     const currentUserId = session?.user?.id;
 
-    console.log(`[searchGlobal] Searching for: "${query}"`);
+
 
     try {
         const [users, coursesData, articles] = await Promise.all([

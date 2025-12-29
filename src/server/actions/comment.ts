@@ -5,7 +5,7 @@ import { getServerSession } from "@/lib/get-sessions";
 import { z } from "zod";
 
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/lib/types";
+import { ApiResponse } from "@/types/api";
 import { createNotification } from "@/server/actions/notifications";
 
 const createCommentSchema = z.object({

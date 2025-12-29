@@ -4,12 +4,14 @@ import { BookOpen, FileText, Grid } from "lucide-react";
 import { ProfileFeed } from "../_components/ProfileFeed";
 import { ProfileCourses } from "../_components/ProfileCourses";
 import { ProfileArticles } from "../_components/ProfileArticles";
-import { getProfileByUsername } from "@/app/data/user/get-profile";
+import { getProfileByUsername } from "@/server/data/user/get-profile";
 import { ProfileHeader } from "../_components/ProfileHeader";
 import { createMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 
-export const metadata:Metadata = createMetadata({
+import { ProfileData } from "@/types/user";
+
+export const metadata: Metadata = createMetadata({
   title: "User Profile",
   description: "User profile page",
 });
@@ -26,7 +28,7 @@ export default async function ProfilePage({ params }: PageProps) {
 
   return (
     <div className="w-full min-h-screen pb-20">
-      <ProfileHeader profile={profile as any} />
+      <ProfileHeader profile={profile as unknown as ProfileData} />
 
       <div className="container max-w-4xl mx-auto px-4 mt-6">
         <Tabs defaultValue="posts" className="w-full">
