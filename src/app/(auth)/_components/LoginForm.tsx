@@ -24,7 +24,6 @@ import { Separator } from "@/components/ui/separator";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { checkUserExists } from "@/server/actions/check-user-exist";
 
-// Zod Schema for Email
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
@@ -76,7 +75,7 @@ export function LoginForm() {
             }
           }
         });
-      } catch (error) {
+      } catch {
         toast.error("An unexpected error occurred");
       }
     });

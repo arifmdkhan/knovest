@@ -1,8 +1,6 @@
 "use server";
 
 import { requireCreator } from "@/server/data/creator/require-creator";
-
-
 import { ApiResponse } from "@/types/api";
 import {
   chapterSchema,
@@ -18,7 +16,6 @@ import { request } from "@arcjet/next";
 import { prisma } from "@/lib/db";
 
 const aj = arcjet
-
   .withRule(
     fixedWindow({
       mode: "LIVE",

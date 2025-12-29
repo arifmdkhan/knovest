@@ -1,18 +1,17 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, TrendingUp, CheckCircle2, MoreVertical, Send, Search, Repeat2, Crown } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, TrendingUp, MoreVertical, Send, Search, Repeat2, Crown, Award } from "lucide-react";
 
 export function CommunityFeatures() {
     return (
         <section className="py-24 bg-background relative overflow-hidden">
             {/* Background Elements */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[32px_32px]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[60px] -z-10 translate-z-0" />
 
             <div className="container px-4 md:px-6 relative z-10">
@@ -54,10 +53,32 @@ export function CommunityFeatures() {
                                 <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-xl transform group-hover:scale-[1.02] transition-transform duration-500">
                                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
                                         <div className="flex gap-3">
-                                            <div>
-                                                <UserAvatarWithInfo image={null} name="Kunal Verma" username="vermakunal" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
+
+                                            <Avatar >
+
+                                                <AvatarFallback>RS</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col min-w-0">
+                                                <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                                    <span className="font-semibold text-sm group-hover:underline decoration-primary underline-offset-2 truncate">
+                                                        Rahul Sharma
+                                                    </span>
+
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 rounded-lg bg-blue-500/10 text-[7px] font-bold text-blue-600 border-blue-200 flex items-center gap-0.5"
+                                                    >
+                                                        <Award className="w-2.5 h-2.5" /> PRO
+                                                    </Badge>
+
+
+
+                                                </div>
+                                                <span className="text-muted-foreground text-xs">@rahulsharma</span>
 
                                             </div>
+
+
                                             <p className="text-sm text-muted-foreground">• 2m ago</p>
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
@@ -149,7 +170,7 @@ export function CommunityFeatures() {
                                         </div>
                                         <div className="flex-1 overflow-y-auto">
                                             {[
-                                                { name: "Subscription Group", msg: "KV: Watch 26,200...", time: "2m", active: true, avatar: "SG", color: "bg-primary" },
+                                                { name: "SG(@kunalverma)", msg: "KV: Watch 26,200...", time: "2m", active: true, avatar: "SG", color: "bg-primary" },
                                                 { name: "Crypto Whales", msg: "BTC pumping! 🚀", time: "5m", active: false, avatar: "CW", color: "bg-orange-500" },
                                                 { name: "Arif Md Khan", msg: "Hey", time: "1h", active: false, avatar: "AK", color: "bg-blue-500" },
                                                 { name: "Support", msg: "Ticket #1234 resolved", time: "2h", active: false, avatar: "SP", color: "bg-green-500" },
@@ -182,7 +203,7 @@ export function CommunityFeatures() {
 
                                                     {/* Row 1: Text + Badge */}
                                                     <div className="flex items-center gap-2">
-                                                        <div className="font-bold text-xs">Subscription Group</div>
+                                                        <div className="font-bold text-xs">SG(@kunalverma)</div>
                                                         <Badge
                                                             variant="outline"
                                                             className="text-[10px] h-4 px-1.5 rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 font-medium border-yellow-500/20 flex items-center gap-1"

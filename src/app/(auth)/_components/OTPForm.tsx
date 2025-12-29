@@ -35,7 +35,7 @@ export function OTPForm() {
 
   // Lazy initialization for timer
   const [timeLeft, setTimeLeft] = useState(() => {
-    if (typeof window === 'undefined' || !email) return 30; // Default to 30s so button starts disabled
+    if (typeof window === 'undefined' || !email) return 30;
     const lastResend = localStorage.getItem(`otp_last_resend_${email}`);
 
     if (lastResend) {
@@ -43,10 +43,6 @@ export function OTPForm() {
       const diffInSeconds = Math.floor((Date.now() - lastTime) / 1000);
       if (diffInSeconds < 30) return 30 - diffInSeconds;
     }
-
-    // If no timer exists, we want to START one (Strict Mode logic)
-    // We can't write to localStorage in render, so we return 30 
-    // and rely on a simpler effect to sync the timestamp if missing.
     return 30;
   });
 
@@ -75,24 +71,20 @@ export function OTPForm() {
     if (!email) return;
 
     startTransition(async () => {
-      // 1. Verify OTP (Logs user in if successful)
       await authClient.signIn.emailOtp({
         email,
         otp,
         fetchOptions: {
           onSuccess: async () => {
-            // 2. Check for pending registration data
             const pendingReg = sessionStorage.getItem("pending_reg");
             if (pendingReg) {
               const data = JSON.parse(pendingReg);
-              // 3. Update the profile with Name/Username
               await updateProfileAfterLogin({
                 name: data.name,
                 username: data.username
               });
               sessionStorage.removeItem("pending_reg");
             }
-            // Clear OTP tracking on success
             localStorage.removeItem(`otp_attempts_${email}`);
             localStorage.removeItem(`otp_last_resend_${email}`);
 

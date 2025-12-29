@@ -4,15 +4,13 @@ import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowRight, User, Mail, AtSign } from "lucide-react";
+import { Loader2, User, Mail, AtSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-
 import { authClient } from "@/lib/auth-client";
 import { checkUsernameAvailability } from "@/server/actions/register";
 import { usernameSchema } from "@/lib/validations/auth";
@@ -37,21 +35,17 @@ export function RegisterForm() {
   const onSubmit = (data: RegisterInput) => {
     startTransition(async () => {
       try {
-        // 1. Check Username
         const check = await checkUsernameAvailability(data.username);
         if (check.status === 'error') {
           form.setError("username", { message: check.message });
           toast.error(check.message);
           return;
         }
-
-        // 2. Send OTP
-        const res = await authClient.emailOtp.sendVerificationOtp({
+        await authClient.emailOtp.sendVerificationOtp({
           email: data.email,
-          type: "sign-in", // This initiates the flow
+          type: "sign-in",
           fetchOptions: {
             onSuccess: () => {
-              // Store details to apply after verification
               sessionStorage.setItem("pending_reg", JSON.stringify(data));
               toast.success("Verification code sent");
               router.push(`/verify-request?email=${encodeURIComponent(data.email)}`);
@@ -61,7 +55,7 @@ export function RegisterForm() {
             }
           }
         });
-      } catch (error) {
+      } catch {
         toast.error("An error occurred");
       }
     });

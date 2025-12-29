@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function HeroSection() {
 
@@ -15,7 +16,7 @@ export function HeroSection() {
 
       {/* BACKGROUND: Dynamic Gradient & Grid */}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px]"></div>
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[60px] translate-z-0"></div>
         <div className="absolute right-0 bottom-0 -z-10 h-[400px] w-[400px] rounded-full bg-blue-500/10 opacity-20 blur-[60px] translate-z-0"></div>
       </div>
@@ -111,7 +112,7 @@ export function HeroSection() {
 
               {/* Abstract Chart/Stream Content */}
               <div className="flex-1 flex items-center justify-center bg-linear-to-br from-muted/30 to-muted/10 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:16px_16px] opacity-50"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[16px_16px] opacity-50"></div>
 
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center animate-pulse ring-4 ring-primary/5">
                   <Play className="w-10 h-10 text-primary fill-primary ml-1" />
@@ -138,7 +139,29 @@ export function HeroSection() {
                 <div className="text-left overflow-hidden">
                   <div className="text-base font-bold truncate">Nifty 50 Live Scalping Session</div>
                   <div className="text-xs text-muted-foreground truncate flex items-center gap-2">
-                    <UserAvatarWithInfo image={null} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
+                    <Avatar >
+
+                      <AvatarFallback>PM</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                        <span className="font-semibold text-sm group-hover:underline decoration-primary underline-offset-2 truncate">
+                          Prashant Mehta
+                        </span>
+
+                        <Badge
+                          variant="outline"
+                          className="h-4 px-1 rounded-lg bg-green-500/10 text-[7px] font-bold text-green-600 border-green-200 flex items-center gap-0.5"
+                        >
+                          <ShieldCheck className="w-2.5 h-2.5" /> SEBI
+                        </Badge>
+
+
+
+                      </div>
+                      <span className="text-muted-foreground text-xs">@prashant</span>
+
+                    </div>
 
                   </div>
                 </div>

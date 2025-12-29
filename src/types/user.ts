@@ -16,4 +16,22 @@ export interface ProfileData {
     subscriptionPrice: number;
     subscribersCount?: number;
     expertise?: string[];
+    verificationApplication?: {
+        sebiRegNumber: string | null;
+        sebiLicenseType: string | null;
+        sebiExpiry: Date | null;
+        sebiCertUrl: string | null;
+        sebiRegName: string | null;
+        certifications: {
+            name: string;
+            issuingAuthority: string | null;
+            certUrl: string | null;
+            completionYear: number | null;
+        }[];
+        brokerPnls: {
+            brokerName: string;
+            pnlLink: string;
+            fileUrl: string | null;
+        }[];
+    } | null;
 }

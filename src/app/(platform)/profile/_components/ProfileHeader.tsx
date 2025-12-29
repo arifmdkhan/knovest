@@ -8,11 +8,7 @@ import {
   MapPin,
   Link as LinkIcon,
   Calendar,
-  CheckCircle2,
-  ShieldCheck,
-  Award,
-  TrendingUp,
-  BadgeCheck,
+  ShieldCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -24,6 +20,10 @@ import { authClient } from "@/lib/auth-client";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { SubscribeButton } from "./SubscribeButton";
 import { UserListDialog } from "./UserListDialog";
+
+import { VerificationDetailsModal } from "./VerificationDetailsModal";
+import { VerificationBadge } from "@/components/ui/verification-badge";
+import { ProfileActionsMenu } from "./ProfileActionsMenu";
 
 import { ProfileData } from "@/types/user";
 
@@ -40,6 +40,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const [followersCount, setFollowersCount] = useState(profile.followersCount);
   const [isLoading, setIsLoading] = useState(false);
   const [isMessaging, setIsMessaging] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   const [activeList, setActiveList] = useState<{
     type: "FOLLOWERS" | "FOLLOWING" | "SUBSCRIBERS";
@@ -108,6 +109,9 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       {/* Banner */}
       <div className="h-32 md:h-48 bg-linear-to-r from-primary/10 to-primary/5 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/10 mask-[linear-gradient(0deg,transparent,black)]" />
+        <div className="absolute top-4 right-4 z-20">
+          <ProfileActionsMenu username={profile.username || ""} isCurrentUser={isCurrentUser} />
+        </div>
       </div>
 
       <div className="container max-w-4xl mx-auto px-4">
@@ -125,7 +129,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           {/* Added w-fit and ml-auto */}
           <div className="flex flex-col gap-3 items-end lg:items-start lg:flex-row w-fit ml-auto mr-5 mt-[-35px]  md:mt-18 lg:mt-0">
             {isCurrentUser ? (
-              <div className="self-end md:self-auto">
+              <div className="self-end md:self-auto flex items-center gap-2">
                 <EditProfileDialog profile={profile} />
               </div>
             ) : (
@@ -162,6 +166,8 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                 >
                   {isLoading ? "..." : isFollowing ? "Following" : "Follow"}
                 </Button>
+
+
               </>
             )}
           </div>
@@ -176,32 +182,68 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
               </h1>
 
               {/* --- ACCOUNT VERIFICATION --- */}
-              {profile.accountVerificationType === "VERIFIED_USER" && (
-                <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-500/10" />
-              )}
-              {profile.accountVerificationType === "OFFICIAL" && (
-                <BadgeCheck className="w-5 h-5 text-yellow-500 fill-yellow-500/10" />
-              )}
+              <VerificationBadge accountType={profile.accountVerificationType} className="w-5 h-5" />
 
               {/* --- EXPERT VERIFICATION --- */}
               {profile.expertVerificationType === "SEBI" && (
-                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1 h-6">
-                  <ShieldCheck className="w-4 h-4" /> SEBI RA
-                </Badge>
+                <div
+                  className="flex items-center gap-2 cursor-pointer group"
+                  onClick={() => setIsVerificationModalOpen(true)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <VerificationBadge
+                    expertType="SEBI"
+                    className="h-6 group-hover:bg-green-500/20 transition-colors"
+                    iconClassName="w-4 h-4"
+                  />
+
+                </div>
               )}
               {profile.expertVerificationType === "CERTIFIED" && (
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1 h-6">
-                  <Award className="w-4 h-4" /> PRO
-                </Badge>
+                <div
+                  onClick={() => setIsVerificationModalOpen(true)}
+                  className="cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                >
+                  <VerificationBadge
+                    expertType="CERTIFIED"
+                    className="h-6 group-hover:bg-blue-500/20 transition-colors"
+                    iconClassName="w-4 h-4"
+                  />
+                </div>
               )}
               {profile.expertVerificationType === "TRACK_RECORD" && (
-                <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 gap-1 h-6">
-                  <TrendingUp className="w-4 h-4" /> TRADER
-                </Badge>
+                <div
+                  onClick={() => setIsVerificationModalOpen(true)}
+                  className="cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                >
+                  <VerificationBadge
+                    expertType="TRACK_RECORD"
+                    className="h-6 group-hover:bg-purple-500/20 transition-colors"
+                    iconClassName="w-4 h-4"
+                  />
+                </div>
               )}
 
             </div>
             <p className="text-muted-foreground">@{profile.username}</p>
+
+            {/* SEBI Registration Number Display */}
+            {profile.expertVerificationType === "SEBI" && profile.verificationApplication?.sebiRegNumber && (
+              <div
+                className="flex items-center gap-1.5 mt-2 w-fit px-3 py-1 bg-green-500/5 border border-green-500/20 rounded-full cursor-pointer hover:bg-green-500/10 transition-colors"
+                onClick={() => setIsVerificationModalOpen(true)}
+              >
+                <ShieldCheck className="w-3 h-3 text-green-600/80" />
+                <span className="text-xs font-mono font-medium text-green-700/80 dark:text-green-400">
+                  SEBI RN: {profile.verificationApplication.sebiRegNumber}
+                </span>
+              </div>
+            )}
           </div>
 
           {profile.bio && (
@@ -288,6 +330,12 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           title={activeList.title}
         />
       )}
+
+      <VerificationDetailsModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        profile={profile}
+      />
     </div>
   );
 }

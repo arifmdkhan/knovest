@@ -3,16 +3,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
-import { Users, Star, TrendingUp, Mic, Monitor } from "lucide-react";
-import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
+import { Users, Star, TrendingUp, Mic, Monitor, ShieldCheck } from "lucide-react";
+
 
 export function FeatureBento() {
   return (
     <section className="py-24 bg-background relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px]" />
       <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-[120px] -z-10" />
       <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-blue-500/5 rounded-full blur-[120px] -z-10" />
 
@@ -64,7 +64,7 @@ export function FeatureBento() {
                   <div className="absolute bottom-4 right-4 w-32 h-24 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg overflow-hidden">
                     <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kunal" />
+                        {/* <AvatarImage src="./public/avatars/01.png" /> */}
                         <AvatarFallback>KV</AvatarFallback>
                       </Avatar>
                     </div>
@@ -85,7 +85,7 @@ export function FeatureBento() {
                 </div>
 
                 {/* Chat Overlay (Right Side) */}
-                <div className="w-64 bg-zinc-900/90 border-l border-zinc-800 flex flex-col hidden md:flex">
+                <div className="w-64 bg-zinc-900/90 border-l border-zinc-800 flex flex-col md:flex">
                   <div className="p-3 border-b border-zinc-800 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                     Live Chat
                   </div>
@@ -153,7 +153,29 @@ export function FeatureBento() {
 
                 <div className="flex items-center gap-2 mb-6">
 
-                  <UserAvatarWithInfo image={null} name="Prashant Mehta" username="prashant" expertVerificationType="SEBI" accountVerificationType="VERIFIED_USER" />
+                  <Avatar >
+
+                    <AvatarFallback>PM</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                      <span className="font-semibold text-sm group-hover:underline decoration-primary underline-offset-2 truncate">
+                        Prashant Mehta
+                      </span>
+
+                      <Badge
+                        variant="outline"
+                        className="h-4 px-1 rounded-lg bg-green-500/10 text-[7px] font-bold text-green-600 border-green-200 flex items-center gap-0.5"
+                      >
+                        <ShieldCheck className="w-2.5 h-2.5" /> SEBI
+                      </Badge>
+
+
+
+                    </div>
+                    <span className="text-muted-foreground text-xs">@prashant</span>
+
+                  </div>
                 </div>
 
                 <div className="mt-auto flex items-center justify-between">

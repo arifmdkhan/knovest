@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { VerificationBadge } from "./ui/verification-badge";
 
 interface UserHoverCardProps {
     username: string;
@@ -44,7 +45,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
     const [isOpen, setIsOpen] = useState(false);
     const { data: session } = authClient.useSession();
     const router = useRouter();
-    
+
     const [isFollowing, setIsFollowing] = useState(false);
     const [followersCount, setFollowersCount] = useState(0);
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -183,28 +184,8 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
                             <div className="pt-2">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <h4 className="text-sm font-semibold">{profileData.name}</h4>
-                                    {profileData.accountVerificationType === "VERIFIED_USER" && (
-                                        <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500/10" />
-                                    )}
-                                    {profileData.accountVerificationType === "OFFICIAL" && (
-                                        <ShieldCheck className="w-4 h-4 text-yellow-500 fill-yellow-500/10" />
-                                    )}
-
-                                    {profileData.expertVerificationType === "SEBI" && (
-                                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 gap-1 h-5 px-1.5 text-[10px]">
-                                            <ShieldCheck className="w-3 h-3" /> SEBI RA
-                                        </Badge>
-                                    )}
-                                    {profileData.expertVerificationType === "CERTIFIED" && (
-                                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1 h-5 px-1.5 text-[10px]">
-                                            PRO
-                                        </Badge>
-                                    )}
-                                    {profileData.expertVerificationType === "TRACK_RECORD" && (
-                                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 gap-1 h-5 px-1.5 text-[10px]">
-                                            TRADER
-                                        </Badge>
-                                    )}
+                                    <VerificationBadge accountType={profileData.accountVerificationType} className="w-4 h-4" />
+                                    <VerificationBadge expertType={profileData.expertVerificationType} />
                                 </div>
                                 <p className="text-xs text-muted-foreground">@{profileData.username}</p>
                             </div>

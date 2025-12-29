@@ -24,6 +24,30 @@ export const getProfileByUsername = cache(async (username: string) => {
                 where: { followerId: currentUserId },
                 select: { followerId: true }
             } : false,
+            verificationApplication: {
+                select: {
+                    sebiRegNumber: true,
+                    sebiLicenseType: true,
+                    sebiExpiry: true,
+                    sebiCertUrl: true,
+                    sebiRegName: true,
+                    certifications: {
+                        select: {
+                            name: true,
+                            issuingAuthority: true,
+                            certUrl: true,
+                            completionYear: true
+                        }
+                    },
+                    brokerPnls: {
+                        select: {
+                            brokerName: true,
+                            pnlLink: true,
+                            fileUrl: true
+                        }
+                    }
+                }
+            }
         }
     });
 

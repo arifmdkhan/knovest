@@ -1,12 +1,14 @@
 import { Metadata } from "next";
-
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { OTPForm } from "../_components/OTPForm";
+import { createMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-    title: "Verify Email | CONSENSUS",
-};
+
+export const metadata: Metadata = createMetadata({
+  title: "Verify Email",
+  description: "Verify your email using OTP",
+});
 
 export default function VerifyRequestPage() {
     return (
