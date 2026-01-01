@@ -1,11 +1,11 @@
 
-import { PublicCourseType } from "@/server/data/course/get-all-courses";
-import { searchGlobal } from "@/server/actions/search";
+import { PublicCourseType } from "@/features/courses/queries/get-all-courses";
+import { searchGlobal } from "@/features/search/actions/search.action";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/premium-tabs";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { PublicCourseCard } from "../academy/course/_components/PublicCourseCard";
-import { ArticleCard } from "../academy/article/_components/article-card";
-import { GlobalSearchInput } from "@/components/global-search-input";
+import { ArticleCard } from "../academy/article/_components/ArticleCard";
+import { GlobalSearchInput } from "@/components/GlobalSearchInput";
 import { Grid, BookOpen, FileText, Search as SearchIcon, Sparkles } from "lucide-react";
 import { SearchRecommendations } from "@/components/search/search-recommendations";
 import { createMetadata } from "@/lib/metadata";

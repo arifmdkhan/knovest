@@ -1,6 +1,6 @@
 
-import { creatorGetCourses } from '@/server/data/creator/creator-get-courses';
-import { EmptyState } from '@/components/empty-state';
+import { creatorGetCourses } from '@/features/creator/queries/creator-get-courses';
+import { EmptyState } from "@/components/EmptyState";
 import CreatorCourseCard, { CreatorCourseCardSkeleton } from './creator-course-card';
 
 

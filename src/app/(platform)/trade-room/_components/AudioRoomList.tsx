@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { deleteStream } from "@/server/actions/stream";
+import { deleteStream } from "@/features/media/actions/stream.action";
 import { CreateAudioRoomDialog } from "./CreateAudioRoomDialog";
 import {
     AlertDialog,
@@ -68,6 +68,35 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
 
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
+
+    // Store manually fetched user data to ensure valid usernames/badges
+    const [creatorsData, setCreatorsData] = useState<Record<string, any>>({});
+
+    // Fetch creator details from Chat Client to ensure fresh data (username, badges)
+    useEffect(() => {
+        if (!chatClient || calls.length === 0) return;
+
+        const fetchCreators = async () => {
+            const creatorIds = Array.from(new Set(calls.map(c => (c.state.createdBy as any)?.id).filter(Boolean)));
+            // Only fetch what we don't have
+            const missingIds = creatorIds.filter(id => !creatorsData[id]);
+
+            if (missingIds.length === 0) return;
+
+            try {
+                const { users } = await chatClient.queryUsers({ id: { $in: missingIds } });
+                setCreatorsData(prev => {
+                    const next = { ...prev };
+                    users.forEach(u => next[u.id] = u);
+                    return next;
+                });
+            } catch (err) {
+                console.error("Failed to fetch audio room creators", err);
+            }
+        };
+
+        fetchCreators();
+    }, [calls, chatClient]);
 
     useEffect(() => {
         if (!client || !chatClient || (type !== 'my-rooms' && isLoadingGroups)) return;
@@ -166,7 +195,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
 
     const handleDelete = async (call: Call) => {
         try {
-            await deleteStream(call.type, call.id); // Reusing deleteStream action
+            await deleteStream({ type: call.type, id: call.id }); // Reusing deleteStream action
             toast.success("Audio room deleted successfully");
             setCalls((prev) => prev.filter((c) => c.id !== call.id));
         } catch (error) {
@@ -274,12 +303,21 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                                 </div>
 
                                 <div className="flex items-center justify-between pt-1">
-                                    <UserAvatarWithInfo
-                                        name={call.state.createdBy?.name || "Unknown"}
-                                        username={(call.state.createdBy?.custom?.username as string) || "user"}
-                                        image={call.state.createdBy?.image || null}
-                                        avatarClassName="h-8 w-8"
-                                    />
+                                    {(() => {
+                                        const creatorId = (call.state.createdBy as any)?.id;
+                                        const creator = (creatorId && creatorsData[creatorId]) || call.state.createdBy;
+
+                                        return (
+                                            <UserAvatarWithInfo
+                                                name={creator?.name || "Unknown"}
+                                                username={creator?.username || creator?.custom?.username || "user"}
+                                                image={creator?.image || null}
+                                                expertVerificationType={creator?.expertVerificationType || creator?.custom?.expertVerificationType}
+                                                accountVerificationType={creator?.accountVerificationType || creator?.custom?.accountVerificationType}
+                                                avatarClassName="h-8 w-8 ring-2 ring-white dark:ring-zinc-800"
+                                            />
+                                        );
+                                    })()}
                                 </div>
                             </CardHeader>
 

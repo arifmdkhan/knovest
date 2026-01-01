@@ -1,7 +1,8 @@
+
 "use client"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { courseCategories, courseLevels, courseSchema, CourseSchemaType, CourseStatus } from '@/lib/schema/zod-schema'
+import { courseSchema, CourseSchemaType, courseCategories, courseLevels, CourseStatus } from "@/features/courses/schemas";
 import { UploadIntent } from '@/lib/storage/types'
 import { Loader2, PlusIcon, SparkleIcon } from 'lucide-react'
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -14,9 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { CreatorCourseSingularType } from '@/server/data/creator/creator-get-course'
+import { CreatorCourseSingularType } from '@/features/creator/queries/creator-get-course'
 import { tryCatch } from '@/helper/try-catch'
-import { editCourse } from '@/server/actions/courses/edit-course'
+import { editCourse } from '@/features/courses/actions/edit-course'
 import { TextEditor } from '@/components/shared/text-editor/editor'
 
 import { MediaUploader } from '@/components/handle-media/media-uploader'
@@ -195,7 +196,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                                                 field.onChange("")
                                                             }
                                                         }}
-                                                        existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, key: field.value, type: "IMAGE" }] : []}
+                                                        existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t = ${Date.now()} `, key: field.value, type: "IMAGE" }] : []}
                                                     />
                                                 </div>
                                             </FormControl>
@@ -211,7 +212,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                 <CardTitle className="text-xl">Settings</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 gap-4">
                                     <FormField
                                         control={form.control}
                                         name='category'

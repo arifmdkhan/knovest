@@ -12,10 +12,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {  Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useTransition } from "react";
-import { DeleteArticle } from "@/server/actions/articles/delete-article";
+import { DeleteArticle } from "@/features/articles/actions/delete-article";
 import { tryCatch } from "@/helper/try-catch";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";

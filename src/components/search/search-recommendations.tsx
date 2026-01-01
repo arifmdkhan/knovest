@@ -1,7 +1,7 @@
-import { getSearchRecommendations } from "@/server/data/search/get-search-recommendations";
+import { getSearchRecommendations } from "@/features/search/queries/get-search-recommendations";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { PublicCourseCard } from "@/app/(platform)/academy/course/_components/PublicCourseCard";
-import { ArticleCard } from "@/app/(platform)/academy/article/_components/article-card";
+import { ArticleCard } from "@/app/(platform)/academy/article/_components/ArticleCard";
 import { Sparkles, Grid, BookOpen, FileText } from "lucide-react";
 
 export async function SearchRecommendations() {

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { saveApplicationDraft } from "@/server/actions/verification.actions";
+import { saveApplicationDraft } from "@/features/verification/actions/verification.action";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";

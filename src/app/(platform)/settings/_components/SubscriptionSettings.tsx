@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { updateSubscriptionSettings } from "@/server/actions/subscription/update-subscription-settings";
+import { updateSubscriptionSettings } from "@/features/subscriptions/actions/update-subscription-settings.action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@/generated/prisma/client";
 import { Loader2 } from "lucide-react";

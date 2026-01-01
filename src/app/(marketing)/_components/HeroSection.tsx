@@ -5,7 +5,7 @@ import { ArrowRight, Play, Users, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function HeroSection() {

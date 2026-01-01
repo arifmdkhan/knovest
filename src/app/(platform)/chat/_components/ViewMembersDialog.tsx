@@ -27,7 +27,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { toggleModeratorRole } from "@/server/actions/stream";
+import { toggleModeratorRole } from "@/features/media/actions/stream.action";
 
 interface ViewMembersDialogProps {
     open: boolean;
@@ -65,7 +65,7 @@ export function ViewMembersDialog({ open, onOpenChange, channel }: ViewMembersDi
         setActionUserId(userId);
         setIsUpdating(true);
         try {
-            await toggleModeratorRole(channel.id!, userId, !isModerator);
+            await toggleModeratorRole({ channelId: channel.id!, userId, isModerator: !isModerator });
 
             if (isModerator) {
                 toast.success("Moderator privileges removed");

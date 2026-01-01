@@ -1,12 +1,13 @@
 
+
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { tryCatch } from '@/helper/try-catch'
 
-import {   lessonSchema, lessonSchemaType } from '@/lib/schema/zod-schema'
-import { createLesson } from '@/server/actions/courses/edit-course'
+import { lessonSchema, lessonSchemaType } from "@/features/courses/schemas";
+import { createLesson } from '@/features/courses/actions/edit-course'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus } from 'lucide-react'
 import React, { useState, useTransition } from 'react'

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SafeImage } from "@/components/ui/safe-image";
-// import { MediaModal } from "@/components/media-modal";
-
+// import { MediaModal } from "@/components/MediaModal";
+// import { ShareDialog } from "@/components/ShareDialog";
 import {
   MoreHorizontal,
   Heart,
@@ -48,12 +48,12 @@ import { FeedPost } from "@/types/post";
 import { formatShortDistanceToNow } from "@/helper/date-formate";
 import dynamic from "next/dynamic";
 
-const ShareDialog = dynamic(() => import("@/components/share-dialog").then(mod => mod.ShareDialog), {
+const ShareDialog = dynamic(() => import("@/components/ShareDialog").then(mod => mod.ShareDialog), {
   ssr: false,
   loading: () => null
 });
 
-const MediaModal = dynamic(() => import("@/components/media-modal").then(mod => mod.MediaModal), {
+const MediaModal = dynamic(() => import("@/components/MediaModal").then(mod => mod.MediaModal), {
   ssr: false,
   loading: () => null
 });

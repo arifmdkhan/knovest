@@ -33,9 +33,9 @@
 │   │   │   └── trade-room/     # Live Streaming / Trading Floor
 │   │   ├── api/                # API Routes & Webhooks
 │   │   │   ├── auth/           # Better Auth
-│   │   │   ├── upload/         # (Legacy/Optional)
-│   │   │   ├── webhooks/
-│   │   │   └── ...
+│   │   │   ├── courses/
+│   │   │   ├── cron/
+│   │   │   └── webhooks/
 │   │   ├── globals.css         # Global Styles
 │   │   ├── layout.tsx          # Root Layout
 │   │   └── providers.tsx       # Global Providers
@@ -44,39 +44,55 @@
 │   │   ├── audio-room/         # Audio Room specific components
 │   │   ├── creator-dashboard/  # Creator tools
 │   │   ├── handle-media/       # Upload components (MediaUploader)
+│   │   ├── player/             # Video Player Components
 │   │   ├── providers/          # Context Providers
-│   │   ├── shared/             # Shared utilities (EmptyState, etc)
+│   │   ├── search/             # Search Components
+│   │   ├── shared/             # Shared utilities
 │   │   ├── ui/                 # Shadcn UI primitives
+│   │   ├── ConsensusLogo.tsx
 │   │   ├── UserAvatarWithInfo.tsx
-│   │   ├── UserHoverCard.tsx
 │   │   └── ...
 │   │
-│   ├── env/                    # Environment Vars
+│   ├── features/               # Feature-Based Architecture (Business Logic)
+│   │   ├── admin/
+│   │   ├── articles/
+│   │   ├── auth/
+│   │   ├── comments/
+│   │   ├── courses/            # Course/Lesson Actions & Queries
+│   │   ├── creator/
+│   │   ├── media/              # Media/Upload/Stream Actions
+│   │   ├── notifications/
+│   │   ├── posts/              # Feed/Post Logic
+│   │   ├── reviews/
+│   │   ├── search/
+│   │   ├── subscriptions/      # Billing/Subscription Logic
+│   │   ├── user/
+│   │   └── verification/
+│   │       ├── actions/        # Server Actions
+│   │       ├── queries/        # Data Fetching
+│   │       ├── schemas.ts      # Zod Schemas (Colocated)
+│   │       └── types.ts        # Feature Types (Colocated)
+│   │
+│   ├── generated/              # Generated Types (Prisma)
+│   │   └── prisma/
+│   │
+│   ├── helper/                 # Helper Functions
 │   │
 │   ├── hooks/                  # Custom React Hooks
-│   │   ├── use-media-upload.ts
+│   │   ├── use-course.ts
+│   │   ├── use-post.ts
 │   │   └── ...
 │   │
 │   ├── lib/                    # Configuration & Utilities
 │   │   ├── auth.ts
 │   │   ├── db.ts               # Prisma Client
 │   │   ├── s3-client.ts
+│   │   ├── email/              # Email templates/logic
 │   │   └── ...
 │   │
-│   ├── server/                 # Server-Side Logic
-│   │   ├── actions/            # Server Actions (Mutations)
-│   │   │   ├── academy/
-│   │   │   ├── articles/
-│   │   │   ├── course/
-│   │   │   ├── post/
-│   │   │   ├── stream.ts       # Stream IO actions
-│   │   │   ├── upload.actions.ts
-│   │   │   ├── user.ts
-│   │   │   └── ...
-│   │   ├── dal/                # Data Access Layer (Optional/Mixed)
-│   │   └── ...
+│   ├── styles/                 # Extra CSS
 │   │
-│   └── types/                  # TypeScript Definitions
+│   └── types/                  # Global TypeScript Definitions
 │       └── ...
 │
 ├── .env.example

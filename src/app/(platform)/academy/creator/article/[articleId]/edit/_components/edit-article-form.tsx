@@ -29,12 +29,8 @@ import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { UploadIntent } from "@/lib/storage/types";
 import { TextEditor } from "@/components/shared/text-editor/editor";
 import { tryCatch } from "@/helper/try-catch";
-import {
-    articleCategories,
-    articleSchema,
-    ArticleSchemaType,
-} from "@/lib/schema/article-schema";
-import { UpdateArticle } from "@/server/actions/articles/update-article";
+import { articleCategories, articleSchema, ArticleSchemaType } from "@/features/articles/schemas";
+import { UpdateArticle } from "@/features/articles/actions/update-article";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Save, SparkleIcon } from "lucide-react";
 import Link from "next/link";

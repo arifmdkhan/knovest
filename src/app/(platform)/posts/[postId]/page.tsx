@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { CreateCommentForm } from "../../home/_components/comments/components/create-comment-form";
 import { CommentList } from "../../home/_components/comments/components/comment-list";
-import { getPost } from "@/server/data/post/get-post";
+import { getPost } from "@/features/posts/queries/get-post";
 
 interface PageProps {
   params: Promise<{ postId: string }>;

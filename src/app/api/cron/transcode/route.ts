@@ -7,9 +7,15 @@ export const maxDuration = 300; // 5 minutes (Vercel Pro) - locally this can be 
 export async function GET(req: Request) {
     try {
         // 1. Authenticate Cron (Optional key check)
+        // 1. Authenticate Cron
+        // Prefer Header (Vercel Cron standard)
+        const authHeader = req.headers.get('authorization');
         const { searchParams } = new URL(req.url);
         const key = searchParams.get("key");
-        if (process.env.CRON_SECRET && key !== process.env.CRON_SECRET) {
+
+        const isAuthorized = (authHeader === `Bearer ${process.env.CRON_SECRET}`) || (key === process.env.CRON_SECRET);
+
+        if (process.env.CRON_SECRET && !isAuthorized) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 

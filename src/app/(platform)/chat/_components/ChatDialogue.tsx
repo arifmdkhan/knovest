@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Check, Loader2, Search, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { searchUsers } from "@/server/actions/user";
+import { searchUsers } from "@/features/user/user.action";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
@@ -41,7 +41,11 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
         }
         setIsSearching(true);
         try {
-            const result = await searchUsers(val);
+            // The instruction implies passing 'query' as an object property.
+            // Assuming 'debouncedSearch' is intended to be 'val' for this specific change,
+            // or that 'debouncedSearch' would be defined elsewhere.
+            // For faithfulness to the instruction's snippet, we use 'val' as the query value.
+            const result = await searchUsers({ query: val });
             if (result.status === "success" && result.data) {
                 setResults(result.data);
             }

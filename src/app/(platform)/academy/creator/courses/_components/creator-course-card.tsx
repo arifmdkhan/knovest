@@ -1,4 +1,4 @@
-import { CreatorGetCourseType } from '@/server/data/creator/creator-get-courses';
+import { CreatorGetCourseType } from '@/features/creator/queries/creator-get-courses';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';

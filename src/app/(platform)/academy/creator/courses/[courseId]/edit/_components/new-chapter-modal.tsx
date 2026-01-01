@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { tryCatch } from '@/helper/try-catch'
-import { chapterSchema, chapterSchemaType } from '@/lib/schema/zod-schema'
-import { createChapter } from '@/server/actions/courses/edit-course'
+import { chapterSchema, chapterSchemaType } from "@/features/courses/schemas";
+import { createChapter } from '@/features/courses/actions/edit-course'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus } from 'lucide-react'

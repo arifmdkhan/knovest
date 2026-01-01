@@ -1,5 +1,5 @@
-import { getPublishedArticles } from "@/server/data/article/get-published-articles";
-import { ArticleCard } from "../../academy/article/_components/article-card";
+import { getPublishedArticles } from "@/features/articles/queries/get-published-articles";
+import { ArticleCard } from "../../academy/article/_components/ArticleCard";
 import { FileText } from "lucide-react";
 
 export async function ProfileArticles({ authorId }: { authorId: string }) {

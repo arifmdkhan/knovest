@@ -1,4 +1,4 @@
-import { getServerSession } from "@/lib/get-sessions";
+import { requireUser } from "@/features/user/queries/require-user";
 import { prisma } from "@/lib/db";
 import { StorageService } from "@/lib/storage/storage-service";
 import { NextRequest, NextResponse } from "next/server";
@@ -13,9 +13,15 @@ interface Params {
 export async function GET(req: NextRequest, { params }: Params) {
     try {
         const { courseId, lessonId } = await params;
-        const session = await getServerSession();
+        // 1. Authorization
+        let user;
+        try {
+            user = await requireUser();
+        } catch (e) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
 
-        if (!session?.user?.id) {
+        if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
@@ -25,11 +31,11 @@ export async function GET(req: NextRequest, { params }: Params) {
             where: {
                 id: courseId,
                 OR: [
-                    { userId: session.user.id }, // Is Author
+                    { userId: user.id }, // Is Author
                     {
                         enrollment: {
                             some: {
-                                userId: session.user.id,
+                                userId: user.id,
                                 status: "Active"
                             }
                         }

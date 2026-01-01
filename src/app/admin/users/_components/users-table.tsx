@@ -22,8 +22,8 @@ import { MoreHorizontal, Shield, Ban, CheckCircle, Search, ChevronLeft, ChevronR
 
 import { Badge } from "@/components/ui/badge";
 import { Role, AccountVerificationType } from "@/generated/prisma/client";
-import { banUser, unbanUser, updateUserRole, revokeUserSessions, removeUser, updateAccountVerification } from "@/server/actions/admin";
-import { restoreStreamUsers } from "@/server/actions/stream";
+import { banUser, unbanUser, updateUserRole, revokeUserSessions, removeUser, updateAccountVerification } from "@/features/admin/admin.action";
+import { restoreStreamUsers } from "@/features/media/actions/stream.action";
 import { toast } from "sonner";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -150,7 +150,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
 
     const handleRestoreStreamUser = async (userId: string) => {
         setIsLoading(userId);
-        const res = await restoreStreamUsers([userId]);
+        const res = await restoreStreamUsers({ userIds: [userId] });
         setIsLoading(null);
         if (res.status === "success") {
             toast.success("Stream user restored successfully");

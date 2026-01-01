@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
-import { saveApplicationDraft, submitApplication } from "@/server/actions/verification.actions";
+import { saveApplicationDraft, submitApplication } from "@/features/verification/actions/verification.action";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 

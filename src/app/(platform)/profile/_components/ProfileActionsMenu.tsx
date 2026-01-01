@@ -10,7 +10,7 @@ import {
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Share2, Flag } from "lucide-react";
-import { ShareDialog } from "@/components/share-dialog";
+import { ShareDialog } from "@/components/ShareDialog";
 
 interface ProfileActionsMenuProps {
     username: string;

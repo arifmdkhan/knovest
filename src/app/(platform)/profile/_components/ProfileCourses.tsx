@@ -1,4 +1,4 @@
-import { getAllCourses } from "@/server/data/course/get-all-courses";
+import { getAllCourses } from "@/features/courses/queries/get-all-courses";
 import { PublicCourseCard } from "../../academy/course/_components/PublicCourseCard";
 import { BookOpen } from "lucide-react";
 

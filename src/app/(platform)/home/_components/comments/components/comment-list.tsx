@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommentItem, Comment } from "./comment-item";
 
-import { getComments } from "@/server/actions/comment";
+import { getComments } from "@/features/comments/actions/comment.action";
 
 interface CommentListProps {
   postId: string;

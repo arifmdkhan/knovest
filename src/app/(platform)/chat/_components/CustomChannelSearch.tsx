@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { searchUsers } from "@/server/actions/user";
+import { searchUsers } from "@/features/user/user.action";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "stream-chat-react";
 import { useRouter } from "next/navigation";
@@ -45,7 +45,7 @@ export function CustomChannelSearch() {
             }
             setIsSearching(true);
             try {
-                const result = await searchUsers(debouncedQuery);
+                const result = await searchUsers({ query: debouncedQuery });
                 if (result.status === "success" && result.data) {
                     const filtered = result.data.filter((u) => u.id !== client.userID);
                     setResults(filtered as SearchedUser[]);

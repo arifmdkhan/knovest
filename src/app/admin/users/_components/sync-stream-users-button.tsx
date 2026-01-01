@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
-import { syncAllUsersToStream } from "@/server/actions/stream";
+import { syncAllUsersToStream } from "@/features/media/actions/stream.action";
 import { cn } from "@/lib/utils";
 
 export function SyncStreamUsersButton({ className }: { className?: string }) {
@@ -14,7 +14,7 @@ export function SyncStreamUsersButton({ className }: { className?: string }) {
         setIsLoading(true);
         try {
             toast.info("Starting Stream user sync...");
-            const res = await syncAllUsersToStream();
+            const res = await syncAllUsersToStream({});
             if (res.status === "success") {
                 toast.success(`Successfully synced ${res.data?.count} users to Stream.`);
             } else {

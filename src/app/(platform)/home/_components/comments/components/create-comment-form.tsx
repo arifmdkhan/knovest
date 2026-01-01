@@ -10,7 +10,7 @@ interface FeedPage {
 import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea"; // Or Input if single line preference
-import { createComment } from "@/server/actions/comment"; // Use server action wrapper if preferred for types
+import { createComment } from "@/features/comments/actions/comment.action"; // Use server action wrapper if preferred for types
 import { toast } from "sonner";
 
 interface CreateCommentFormProps {

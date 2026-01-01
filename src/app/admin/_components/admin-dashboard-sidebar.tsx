@@ -1,7 +1,7 @@
 "use client"
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/NavMain";
+import { NavUser } from "@/components/NavUser";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarRail } from "@/components/ui/sidebar"
 import { ShieldCheck, User } from "lucide-react"
 

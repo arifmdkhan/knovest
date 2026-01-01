@@ -1,14 +1,14 @@
 
 export const dynamic = "force-dynamic";
 
-import { getVerificationApplications } from "@/server/actions/admin-verification.actions";
+import { getVerificationApplications } from "@/features/admin/verification.action";
 import { ApplicationsList } from "./_components/applications-list";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
 
 export default async function ExpertVerificationAdminPage() {
-    const res = await getVerificationApplications();
+    const res = await getVerificationApplications({});
 
     if (res.status === "error") {
         return (

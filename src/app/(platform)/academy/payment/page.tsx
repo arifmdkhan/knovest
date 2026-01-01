@@ -6,7 +6,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { toast } from "sonner";
-import { confirmEnrollment } from "@/server/actions/academy/confirm-enrollment";
+import { confirmEnrollment } from "@/features/courses/actions/confirm-enrollment";
 
 function PaymentContent() {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -27,10 +27,10 @@ function PaymentContent() {
 
         try {
             const res = await confirmEnrollment(enrollmentId);
-            
+
             if (res.status === "success") {
                 toast.success("Payment successful! You are now enrolled.");
-                 router.push("/academy/enrolled");  // Or redirect to the course page if we had the slug
+                router.push("/academy/enrolled");  // Or redirect to the course page if we had the slug
             } else {
                 toast.error(res.message);
             }

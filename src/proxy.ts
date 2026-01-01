@@ -18,6 +18,15 @@ const aj = arcjet({
   ],
 });
 
+// Define security headers
+const securityHeaders = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(self), microphone=(self), geolocation=()",
+};
+
 async function proxy(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   if (!sessionCookie) {
@@ -35,8 +44,14 @@ export const config = {
 };
 
 export default createMiddleware(aj, async (request: NextRequest) => {
-  if (request.nextUrl.pathname.startsWith("/admin")) {
-    return proxy(request);
-  }
-  return NextResponse.next();
+  const response = request.nextUrl.pathname.startsWith("/admin")
+    ? await proxy(request)
+    : NextResponse.next();
+
+  // Apply security headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  return response;
 });

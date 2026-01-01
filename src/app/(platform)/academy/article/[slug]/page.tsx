@@ -1,4 +1,4 @@
-import { getArticleBySlug } from "@/server/data/article/get-article-by-slug";
+import { getArticleBySlug } from "@/features/articles/queries/get-article-by-slug";
 import { AuthorBioCard } from "../_components/AuthorBioCard";
 import { ShareSection } from "../_components/ShareSection";
 import { RelatedArticles } from "../_components/RelatedArticles";

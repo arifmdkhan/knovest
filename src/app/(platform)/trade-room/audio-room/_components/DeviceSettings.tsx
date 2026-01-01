@@ -5,6 +5,7 @@ import { Call } from "@stream-io/video-react-sdk";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMediaDevices } from "@/hooks/use-media-devices";
 
 interface DeviceSettingsProps {
     open: boolean;
@@ -13,29 +14,15 @@ interface DeviceSettingsProps {
 }
 
 export const DeviceSettings = ({ open, onOpenChange, call }: DeviceSettingsProps) => {
-    const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+    const { audioInputs: devices, refreshDevices, requestPermissions } = useMediaDevices();
     const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        if (!open) return;
-        const loadDevices = async () => {
-            try {
-                // Ensure listDevices returns an array
-                const devs = await call.microphone.listDevices();
-                if (Array.isArray(devs)) {
-                    setDevices(devs);
-                } else {
-                    console.warn("listDevices did not return an array:", devs);
-                    setDevices([]);
-                }
-                const current = call.microphone.state.selectedDevice;
-                if (current) setSelectedDeviceId(current);
-            } catch (e) {
-                console.error("Failed to list devices", e);
-                setDevices([]);
-            }
-        };
-        loadDevices();
+        if (open) {
+            refreshDevices();
+            const current = call.microphone.state.selectedDevice;
+            if (current) setSelectedDeviceId(current);
+        }
     }, [open, call]);
 
     const handleDeviceChange = async (deviceId: string) => {
@@ -57,7 +44,19 @@ export const DeviceSettings = ({ open, onOpenChange, call }: DeviceSettingsProps
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-400">Microphone Input</label>
                         <div className="space-y-2">
-                            {devices.length === 0 && <p className="text-sm text-zinc-500 italic">No devices found.</p>}
+                            {devices.length === 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-sm text-zinc-500 italic">No devices found.</p>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full text-xs h-8 border-white/10 hover:bg-white/5 text-zinc-300"
+                                        onClick={() => requestPermissions()}
+                                    >
+                                        Enable Microphone Access
+                                    </Button>
+                                </div>
+                            )}
                             {devices.map((device) => (
                                 <button
                                     key={device.deviceId}

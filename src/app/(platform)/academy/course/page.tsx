@@ -1,7 +1,7 @@
-import { getAllCourses } from '@/server/data/course/get-all-courses'
+import { getAllCourses } from '@/features/courses/queries/get-all-courses'
 import React, { Suspense } from 'react'
 import { PublicCourseCard, PublicCourseCardSkeleton } from './_components/PublicCourseCard'
-import { CategoryFilter } from './_components/category-filter'
+import { CategoryFilter } from "./_components/CategoryFilter";
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 

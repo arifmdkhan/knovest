@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "@/lib/s3-client";
-import { requireUser } from "@/server/data/user/require-user";
+import { requireUser } from "@/features/user/queries/require-user";
 
 export async function GET(
     req: Request,

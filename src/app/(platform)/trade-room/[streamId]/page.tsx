@@ -11,7 +11,7 @@ import { useTradeRoomContext } from "../_components/TradeRoomContext";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { CustomCallData } from "@/types/stream";
-import { hasUserPaidForStream } from "@/server/actions/payment-check";
+import { hasUserPaidForStream } from "@/features/media/actions/check-stream-access.action";
 
 interface StreamPageProps {
     params: Promise<{ streamId: string }>;
@@ -166,7 +166,8 @@ export default function StreamPage({ params }: StreamPageProps) {
 
                 // 3. Paid Stream Logic - CHECK LAST (if no specific permission)
                 if (customData.isPaid) {
-                    const hasPaid = await hasUserPaidForStream(streamId, currentUserId);
+                    const paymentCheck = await hasUserPaidForStream(streamId, currentUserId);
+                    const hasPaid = paymentCheck.status === 'success' && !!paymentCheck.data;
 
                     if (hasPaid) {
                         if (isMounted && !call) setCall(callObj);

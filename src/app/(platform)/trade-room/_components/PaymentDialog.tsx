@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { purchaseStreamAccess } from "@/server/actions/stream-access";
+import { purchaseStreamAccess } from "@/features/media/actions/stream-access.action";
 
 interface PaymentDialogProps {
     open: boolean;

@@ -8,7 +8,7 @@ import { useInView } from "react-intersection-observer";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { FeedPost } from "@/types/post";
 
-import { getFeedPostsAction } from "@/server/actions/post/get-feed-posts-action";
+import { getFeedPostsAction } from "@/features/posts/actions/get-feed-posts-action";
 
 
 // Fetcher function updated to accept authorId

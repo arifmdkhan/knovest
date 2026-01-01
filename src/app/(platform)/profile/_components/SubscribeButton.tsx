@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { checkSubscription } from "@/server/actions/subscription/check-subscription";
-import { subscribeAction } from "@/server/actions/subscription/subscribe";
+import { checkSubscription } from "@/features/subscriptions/actions/check-subscription.action";
+import { subscribeAction } from "@/features/subscriptions/actions/subscribe.action";
 import { Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";

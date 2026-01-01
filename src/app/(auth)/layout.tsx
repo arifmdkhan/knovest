@@ -1,8 +1,7 @@
-
 import Link from "next/link";
 import { getServerSession } from "@/lib/get-sessions";
 import { redirect } from "next/navigation";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/BrandLogo";
 export default async function AuthLayout({
   children,
 }: {

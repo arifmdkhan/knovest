@@ -17,6 +17,7 @@ import { ParticipantMenu, SpeakerMenu } from "../_components/ParticipantMenu";
 import { DeviceSettings } from "../_components/DeviceSettings";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CustomCallData } from "@/types/stream";
+import { useMediaDevices } from "@/hooks/use-media-devices";
 
 // Main Room Content
 const ActiveRoom = ({ call }: { call: Call }) => {
@@ -485,7 +486,9 @@ const ActiveRoom = ({ call }: { call: Call }) => {
 
 const MicControl = ({ call }: { call: Call }) => {
     const { useMicrophoneState } = useCallStateHooks();
-    const { status: micStatus, devices: audioDevices } = useMicrophoneState();
+    const { status: micStatus } = useMicrophoneState();
+    // Use manual device enumeration
+    const { audioInputs: audioDevices, refreshDevices, requestPermissions } = useMediaDevices();
 
     const toggleMic = async () => {
         try {
@@ -515,6 +518,7 @@ const MicControl = ({ call }: { call: Call }) => {
                         variant={micStatus === 'enabled' ? "secondary" : "destructive"}
                         className={cn("rounded-r-full rounded-l-none h-9 px-2 transition-colors",
                             micStatus === 'enabled' ? "bg-white dark:bg-zinc-200 text-zinc-900 hover:bg-zinc-100" : "bg-red-600 text-white hover:bg-red-700")}
+                        onClick={() => refreshDevices()}
                     >
                         <ChevronDown className="h-3 w-3" />
                     </Button>
@@ -522,7 +526,19 @@ const MicControl = ({ call }: { call: Call }) => {
                 <PopoverContent className="w-64 p-1 bg-background border-border text-foreground shadow-2xl z-50" align="end" side="top">
                     <div className="text-[10px] font-bold text-muted-foreground px-2 py-2 uppercase tracking-widest">Microphone Input</div>
                     <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                        {audioDevices.length === 0 && <div className="px-2 py-3 text-center text-sm text-disabled italic">No devices found</div>}
+                        {audioDevices.length === 0 && (
+                            <div className="p-2 space-y-2">
+                                <div className="text-center text-sm text-muted-foreground italic">No devices found</div>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full text-xs h-7 border-border hover:bg-muted"
+                                    onClick={() => requestPermissions()}
+                                >
+                                    Check Permissions
+                                </Button>
+                            </div>
+                        )}
                         {audioDevices.map(d => (
                             <button
                                 key={d.deviceId}

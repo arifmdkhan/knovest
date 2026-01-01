@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { approveApplication, rejectApplication, resetApplication, requestAdditionalInfo } from "@/server/actions/admin-verification.actions";
+import { approveApplication, rejectApplication, resetApplication, requestAdditionalInfo } from "@/features/admin/verification.action";
 import { VerificationApplication, VerificationCertification, VerificationBrokerPnl } from "@/generated/prisma/client";
 import { RotateCcw, MessageSquare } from "lucide-react"; // Import icon for reset/request info
 
@@ -57,7 +57,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
         if (!selectedApp) return;
         setIsProcessing(true);
         try {
-            const res = await approveApplication(selectedApp.id);
+            const res = await approveApplication({ applicationId: selectedApp.id });
             if (res.status === "success") {
                 toast.success("Application Approved");
                 // Optimistic update
@@ -83,7 +83,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
         }
         setIsProcessing(true);
         try {
-            const res = await rejectApplication(selectedApp.id, rejectReason);
+            const res = await rejectApplication({ applicationId: selectedApp.id, reason: rejectReason });
             if (res.status === "success") {
                 toast.success("Application Rejected");
                 setApplications(prev => prev.map(app =>
@@ -108,7 +108,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
 
         setIsProcessing(true);
         try {
-            const res = await resetApplication(selectedApp.id);
+            const res = await resetApplication({ applicationId: selectedApp.id });
             if (res.status === "success") {
                 toast.success("Application Reset to Pending");
                 setApplications(prev => prev.map(app =>
@@ -136,7 +136,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
         }
         setIsProcessing(true);
         try {
-            const res = await requestAdditionalInfo(selectedApp.id, infoReason);
+            const res = await requestAdditionalInfo({ applicationId: selectedApp.id, notes: infoReason });
             if (res.status === "success") {
                 toast.success("Additional info requested");
                 setApplications(prev => prev.map(app =>

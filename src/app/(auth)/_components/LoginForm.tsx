@@ -1,10 +1,10 @@
 "use client";
 
-import { useTransition, useState } from "react"; 
+import { useTransition, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowRight, Mail } from "lucide-react"; 
+import { Loader2, ArrowRight, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { Separator } from "@/components/ui/separator";
 import { IconBrandGoogle } from "@tabler/icons-react";
-import { checkUserExists } from "@/server/actions/check-user-exist";
+import { checkUserExists } from "@/features/user/check-user-exist.action";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -33,7 +33,7 @@ type LoginInput = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false); 
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -44,7 +44,7 @@ export function LoginForm() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/home', 
+        callbackURL: '/home',
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to connect to Google";
@@ -124,16 +124,16 @@ export function LoginForm() {
         </form>
 
         <div className="flex items-center gap-4 py-4">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground uppercase">Or</span>
-            <Separator className="flex-1" />
+          <Separator className="flex-1" />
+          <span className="text-xs text-muted-foreground uppercase">Or</span>
+          <Separator className="flex-1" />
         </div>
 
         <div className="flex items-center justify-center">
           <Button
             disabled={isGoogleLoading || isPending}
             onClick={signInWithGoogle}
-            variant="outline" 
+            variant="outline"
             type="button"
             className="w-full"
           >

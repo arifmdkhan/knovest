@@ -1,10 +1,10 @@
 import { useInfiniteQuery, useMutation, useQueryClient, InfiniteData } from "@tanstack/react-query";
-import { createPost } from "@/server/actions/post/create-post";
-import { deletePost } from "@/server/actions/post/delete-post";
-import { toggleLike } from "@/server/actions/post/toggle-like";
-import { toggleSave } from "@/server/actions/post/toggle-save";
-import { toggleRepost } from "@/server/actions/post/toggle-repost";
-import { CreatePostSchemaType, DeletePostSchemaType, ToggleLikeSchemaType, ToggleSaveSchemaType, ToggleRepostSchemaType } from "@/lib/schema/post-schema";
+import { createPost } from "@/features/posts/actions/create-post";
+import { deletePost } from "@/features/posts/actions/delete-post";
+import { toggleLike } from "@/features/posts/actions/toggle-like";
+import { toggleSave } from "@/features/posts/actions/toggle-save";
+import { toggleRepost } from "@/features/posts/actions/toggle-repost";
+import { CreatePostSchemaType, DeletePostSchemaType, ToggleLikeSchemaType, ToggleSaveSchemaType, ToggleRepostSchemaType } from "@/features/posts/schemas";
 import { toast } from "sonner";
 import { FeedPost } from "@/types/post";
 export type FeedType = 'FOR_YOU' | 'FOLLOWING' | 'SUBSCRIBED';
@@ -14,7 +14,7 @@ interface FeedPage {
     nextCursor?: string | null;
 }
 
-import { getFeedPostsAction } from "@/server/actions/post/get-feed-posts-action";
+import { getFeedPostsAction } from "@/features/posts/actions/get-feed-posts-action";
 
 export const useToggleRepost = () => {
     const queryClient = useQueryClient();

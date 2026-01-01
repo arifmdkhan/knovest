@@ -3,7 +3,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
-import { cancelSubscription } from "@/server/actions/subscription/cancel-subscription";
+import { getSubscriptionStatus } from "@/features/subscriptions/actions/get-subscription-status.action";
+import { cancelSubscription } from "@/features/subscriptions/actions/cancel-subscription.action";
 import { toast } from "sonner";
 import { useState, useTransition } from "react";
 import { Loader2, AlertCircle } from "lucide-react";

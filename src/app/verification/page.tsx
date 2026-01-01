@@ -3,7 +3,7 @@
 import { authClient } from "@/lib/auth-client";
 import { useState, useEffect } from "react";
 import { VerificationStatus } from "../../generated/prisma/enums";
-import { getVerificationStatus } from "@/server/actions/verification.actions";
+import { saveApplicationDraft, submitApplication, getVerificationStatus } from "@/features/verification/actions/verification.action";
 import { StepIdentity } from "./components/step-identity";
 import { StepSebi } from "./components/step-sebi";
 import { StepCertifications } from "./components/step-certifications";

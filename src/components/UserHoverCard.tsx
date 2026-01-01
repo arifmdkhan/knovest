@@ -9,8 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MessageCircle, UserPlus, Check, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getUserProfile, toggleFollow } from "@/server/actions/user";
-import { createDM } from "@/server/actions/stream";
+import { getUserProfile, toggleFollow } from "@/features/user/user.action";
+import { createDM } from "@/features/media/actions/stream.action";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
     const { data: profileData, isLoading } = useQuery({
         queryKey: ["user-profile", username],
         queryFn: async () => {
-            const res = await getUserProfile(username);
+            const res = await getUserProfile({ username: username.replace('@', '') });
             if (res.status === "error") throw new Error(res.message);
             return res.data as UserProfileData;
         },
@@ -85,7 +85,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
         setIsActionLoading(true);
 
         try {
-            const res = await toggleFollow(profileData.id);
+            const res = await toggleFollow({ targetUserId: profileData.id });
             if (res.status === "error") throw new Error(res.message);
 
             if (res.data) {
@@ -111,7 +111,7 @@ export function UserHoverCard({ username, children }: UserHoverCardProps) {
 
         setIsMessaging(true);
         try {
-            const res = await createDM(profileData.id);
+            const res = await createDM({ targetUserId: profileData.id });
             if (res.status === "success" && res.data) {
                 router.push(`/chat/${res.data}`);
             } else {

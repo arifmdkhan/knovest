@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { checkUsernameAvailability } from "@/server/actions/register";
+import { checkUsernameAvailability } from "@/features/auth/actions/register.action";
 
 // Define minimal User type to avoid Prisma import issues
 interface User {
@@ -118,7 +118,7 @@ export function AccountForm({ user }: AccountFormProps) {
         startTransition(async () => {
             try {
                 // Use our wrapper action to ensure Stream sync
-                const { updateAccountSettings } = await import("@/server/actions/user");
+                const { updateAccountSettings } = await import("@/features/user/user.action");
                 const res = await updateAccountSettings({
                     name: data.name,
                     username: data.username,

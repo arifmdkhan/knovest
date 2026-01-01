@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ConnectionUser } from "@/server/data/user/get-connections";
+import { ConnectionUser } from "@/features/user/queries/get-connections";
 import { Globe, Lock, Users, Loader2, Send, UserStar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -107,9 +107,9 @@ export function PostComposer() {
           if (searchTimeout) clearTimeout(searchTimeout);
           const timeout = setTimeout(async () => {
             if (query.length > 0) {
-              const { searchUsers } = await import("@/server/actions/user");
+              const { searchUsers } = await import("@/features/user/user.action");
               // searchUsers returns correct shape matching ConnectionUser mostly
-              const res = await searchUsers(query);
+              const res = await searchUsers({ query: mentionQuery || "" });
               if (res.status === "success" && res.data) {
                 setMentionResults(res.data as ConnectionUser[]);
               } else {

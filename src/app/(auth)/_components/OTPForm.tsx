@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 import { authClient } from "@/lib/auth-client";
-import { updateProfileAfterLogin } from "@/server/actions/register";
+import { updateProfileAfterLogin } from "@/features/auth/actions/register.action";
 
 export function OTPForm() {
   const router = useRouter();

@@ -2,7 +2,7 @@
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { tryCatch } from '@/helper/try-catch'
-import { deleteChapter } from '@/server/actions/courses/edit-course'
+import { deleteChapter } from '@/features/courses/actions/edit-course'
 
 import { Trash2 } from 'lucide-react'
 import React, { useState, useTransition } from 'react'
@@ -12,18 +12,18 @@ import { toast } from 'sonner'
 export default function DeleteChapter({
     chapterId,
     courseId,
-    
+
 }: {
     chapterId: string;
     courseId: string;
-    
+
 }) {
     const [open, setOpen] = useState(false)
     const [pending, startTransition] = useTransition()
 
     async function onSubmit() {
         startTransition(async () => {
-            const { data: result, error } = await tryCatch(deleteChapter({ chapterId, courseId}))
+            const { data: result, error } = await tryCatch(deleteChapter({ chapterId, courseId }))
             if (error) {
                 toast.error('An unexpected error occurred. Please try again')
                 return;

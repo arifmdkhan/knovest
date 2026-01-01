@@ -5,7 +5,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { Loader2 } from "lucide-react";
-import { enrollCourse } from "@/server/actions/academy/enroll-course";
+import { enrollCourse } from "@/features/courses/actions/enroll-course";
 
 
 export function EnrollmentButton({ courseId }: { courseId: string }) {

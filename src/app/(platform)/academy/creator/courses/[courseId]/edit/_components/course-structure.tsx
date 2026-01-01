@@ -1,6 +1,6 @@
 "use client"
 
-import { CreatorCourseSingularType } from '@/server/data/creator/creator-get-course';
+import { CreatorCourseSingularType } from '@/features/creator/queries/creator-get-course';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -19,7 +19,7 @@ import NewChapterModal from './new-chapter-modal';
 import NewLessonModal from './new-lesson-modal';
 import DeleteLesson from './delete-lesson';
 import DeleteChapter from './delete-chapter.tsx';
-import { reorderChapters, reorderLessons } from '@/server/actions/courses/edit-course';
+import { reorderChapters, reorderLessons } from '@/features/courses/actions/edit-course';
 
 interface CourseStructureProps {
     data: CreatorCourseSingularType

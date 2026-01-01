@@ -5,13 +5,15 @@ import {
     StreamCall,
     StreamTheme,
     SpeakerLayout,
-    CallControls,
     useCallStateHooks,
     ParticipantView
 } from "@stream-io/video-react-sdk";
 import React, { useEffect, useState } from "react";
 import { useChatContext, Channel, MessageList, MessageInput, Window, Thread } from "stream-chat-react";
 import { ManageAccessDialog } from "./ManageAccessDialog";
+import { StreamControls } from "./StreamControls";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MediaDeviceSettings } from "./MediaDeviceSettings";
 import { Loader2, MessageSquare, X, Link, Users, Share2, Shield, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -51,6 +53,7 @@ function LivestreamContent({ call }: { call: Call }) {
     const participants = useParticipants();
     const [isBackstage, setIsBackstage] = useState(backstage);
     const [showManageAccess, setShowManageAccess] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     const checkCustomData = (data: Record<string, unknown> | undefined): CustomCallData => {
         return (data || {}) as CustomCallData;
@@ -173,7 +176,6 @@ function LivestreamContent({ call }: { call: Call }) {
                             />
                         ) : (
                             <SpeakerLayout
-                                {...({ participants: uniqueParticipants } as any)}
                                 participantsBarPosition="top"
                             />
                         )}
@@ -238,9 +240,17 @@ function LivestreamContent({ call }: { call: Call }) {
                                 <div className="h-6 w-px bg-white/20 mx-1"></div>
 
                                 <div className="flex gap-2 shrink-0 items-center">
-                                    <div className="dark [&_.str-video__call-controls__button]:bg-zinc-800 [&_.str-video__call-controls__button]:hover:bg-zinc-700 [&_.str-video__call-controls__button]:text-zinc-200 [&_.str-video__call-controls__button]:border-none [&_.str-video__call-controls__button]:rounded-full [&_.str-video__call-controls__button]:h-10 [&_.str-video__call-controls__button]:w-10 [&_.str-video__call-controls__button]:p-2.5">
-                                        <CallControls onLeave={handleLeave} />
-                                    </div>
+                                    <StreamControls call={call} onLeave={handleLeave} />
+
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        className="rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-none shrink-0 h-10 w-10 transition-colors"
+                                        onClick={() => setShowSettings(true)}
+                                        title="Audio & Video Settings"
+                                    >
+                                        <Settings2 className="h-4.5 w-4.5" />
+                                    </Button>
 
                                     <Button
                                         variant="secondary"
@@ -334,6 +344,15 @@ function LivestreamContent({ call }: { call: Call }) {
                 onOpenChange={setShowManageAccess}
                 call={call}
             />
+
+            <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800 text-white">
+                    <DialogHeader>
+                        <DialogTitle>Audio & Video Settings</DialogTitle>
+                    </DialogHeader>
+                    <MediaDeviceSettings />
+                </DialogContent>
+            </Dialog>
         </StreamTheme>
     );
 }

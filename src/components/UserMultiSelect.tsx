@@ -4,7 +4,7 @@ import * as React from "react";
 import { Check, Search, X } from "lucide-react";
 import { useChatContext } from "stream-chat-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { searchUsers } from "@/server/actions/user";
+import { searchUsers } from "@/features/user/user.action";
 import { Button } from "@/components/ui/button";
 import {
     Command,
@@ -76,10 +76,10 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
             try {
                 // Use server action for reliable user search (Postgres)
                 // This ensures we get username, verification badges, etc. correctly
-                const res = await searchUsers(debouncedQuery);
+                const result = await searchUsers({ query: debouncedQuery });
 
-                if (res.status === "success" && res.data) {
-                    setUsers(res.data.map((u: any) => ({
+                if (result.status === "success" && result.data) {
+                    setUsers(result.data.map((u: any) => ({
                         id: u.id,
                         name: u.name,
                         image: u.image || undefined,

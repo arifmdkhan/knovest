@@ -4,7 +4,7 @@ import { BookOpen, FileText, Grid } from "lucide-react";
 import { ProfileFeed } from "../_components/ProfileFeed";
 import { ProfileCourses } from "../_components/ProfileCourses";
 import { ProfileArticles } from "../_components/ProfileArticles";
-import { getProfileByUsername } from "@/server/data/user/get-profile";
+import { getProfileByUsername } from "@/features/user/queries/get-profile";
 import { ProfileHeader } from "../_components/ProfileHeader";
 import { createMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";

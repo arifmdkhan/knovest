@@ -6,7 +6,7 @@ import {
     initiateMultipartUploadAction,
     getMultipartUploadUrlsAction,
     completeMultipartUploadAction
-} from "@/server/actions/video-upload.actions";
+} from "@/features/media/actions/video-upload.action";
 
 interface UseChunkedUploadOptions {
     lessonId: string;
@@ -30,12 +30,12 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
 
         try {
             // 1. Initiate
-            const initRes = await initiateMultipartUploadAction(
+            const initRes = await initiateMultipartUploadAction({
                 lessonId,
-                file.name,
-                file.type,
-                file.size
-            );
+                fileName: file.name,
+                contentType: file.type,
+                size: file.size
+            });
 
             if (initRes.status === "error" || !initRes.data) {
                 throw new Error(initRes.message);
@@ -56,7 +56,7 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
                 const chunk = file.slice(start, end);
 
                 // Get URL
-                const urlRes = await getMultipartUploadUrlsAction(lessonId, uploadId, key, [partNumber]);
+                const urlRes = await getMultipartUploadUrlsAction({ lessonId, uploadId, key, partNumbers: [partNumber] });
                 if (urlRes.status === "error" || !urlRes.data?.parts[0]) throw new Error("Failed to get part URL");
 
                 const url = urlRes.data.parts[0].url;
@@ -105,12 +105,12 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
             uploadedParts.sort((a, b) => a.PartNumber - b.PartNumber);
 
             // 3. Complete
-            const completeRes = await completeMultipartUploadAction(
+            const completeRes = await completeMultipartUploadAction({
                 lessonId,
                 uploadId,
                 key,
-                uploadedParts
-            );
+                parts: uploadedParts
+            });
 
             if (completeRes.status === "error") throw new Error(completeRes.message);
 

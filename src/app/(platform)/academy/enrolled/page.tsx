@@ -1,9 +1,10 @@
-import { EmptyState } from "@/components/empty-state"
+import { EmptyState } from "@/components/EmptyState";
 import Link from "next/link"
 import { EnrolledCourseCard } from "./_components/EnrolledCourseCard"
 import { PublicCourseCard } from "../course/_components/PublicCourseCard"
-import { getEnrolledCourses } from "@/server/data/user/get-enrolled-courses"
-import { getAllCourses } from "@/server/data/course/get-all-courses"
+import { getEnrolledCourses } from "@/features/user/queries/get-enrolled-courses"
+import { getAllCourses } from "@/features/courses/queries/get-all-courses"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, GraduationCap, LayoutGrid } from "lucide-react"
 

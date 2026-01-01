@@ -1,8 +1,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { toggleSaveCourse } from "@/server/actions/course/toggle-save-course";
-import { ToggleSaveCourseSchemaType } from "@/lib/schema/zod-schema";
+import { toggleSaveCourse } from "@/features/courses/actions/toggle-save-course";
+import { ToggleSaveCourseSchemaType } from "@/features/courses/schemas";
 
 export const useToggleSaveCourse = () => {
     const queryClient = useQueryClient();

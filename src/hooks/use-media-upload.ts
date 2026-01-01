@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { UploadIntent } from "@/lib/storage/types";
-import { getPresignedUploadUrlAction, confirmUploadAction } from "@/server/actions/upload.actions";
+import { getPresignedUploadUrlAction, confirmUploadAction } from "@/features/media/actions/upload.action";
 
 interface UseMediaUploadOptions {
     intent: UploadIntent;
@@ -23,7 +23,7 @@ export function useMediaUpload({ intent, onUploadComplete, onUploadError }: UseM
 
         try {
             // 1. Get Presigned URL
-            const presignRes = await getPresignedUploadUrlAction(intent, params, file.type, file.size);
+            const presignRes = await getPresignedUploadUrlAction({ intent, params, contentType: file.type, size: file.size });
 
             if (presignRes.status === "error" || !presignRes.data?.url || !presignRes.data?.tempKey) {
                 throw new Error(presignRes.message || "Failed to initiate upload");
@@ -63,7 +63,7 @@ export function useMediaUpload({ intent, onUploadComplete, onUploadError }: UseM
             setProgress(90);
 
             // 3. Confirm Upload
-            const confirmRes = await confirmUploadAction(tempKey, intent, params);
+            const confirmRes = await confirmUploadAction({ tempKey, intent, params });
 
             if (confirmRes.status === "error" || !confirmRes.data?.key) {
                 throw new Error(confirmRes.message || "Failed to confirm upload");

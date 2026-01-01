@@ -1,6 +1,6 @@
 "use client"
 
-import { CreatorLessonType } from "@/server/data/creator/creator-get-lesson";
+import { CreatorLessonType } from "@/features/creator/queries/creator-get-lesson";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { tryCatch } from "@/helper/try-catch";
 import { cn } from "@/lib/utils";
-import { lessonSchema, lessonSchemaType } from "@/lib/schema/zod-schema";
+import { lessonSchema, lessonSchemaType } from "@/features/courses/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { TextEditor } from "@/components/shared/text-editor/editor";
-import { updateLesson } from "@/server/actions/courses/update-lesson";
+import { updateLesson } from "@/features/courses/actions/update-lesson";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { constructUrl } from "@/lib/construct-url";
 import { UploadIntent } from "@/lib/storage/types";

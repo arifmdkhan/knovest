@@ -11,7 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { deleteStream } from "@/server/actions/stream";
+import { deleteStream } from "@/features/media/actions/stream.action";
 import { CreateStreamDialog } from "./CreateStreamDialog";
 import {
     AlertDialog,
@@ -25,7 +25,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { hasUserPaidForStream } from "@/server/actions/payment-check";
+import { hasUserPaidForStream } from "@/features/media/actions/check-stream-access.action";
 
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { useTradeRoomContext } from "./TradeRoomContext";
@@ -234,7 +234,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
     const handleDelete = async (call: Call) => {
         try {
-            await deleteStream(call.type, call.id);
+            await deleteStream({ type: call.type, id: call.id });
             toast.success("Stream deleted successfully");
             setCalls((prev) => prev.filter((c) => c.id !== call.id));
         } catch (error) {

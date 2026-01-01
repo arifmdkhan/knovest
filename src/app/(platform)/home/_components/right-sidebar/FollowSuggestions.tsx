@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { toggleFollow } from "@/server/actions/user";
+import { toggleFollow } from "@/features/user/user.action";
 import { toast } from "sonner";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,11 +71,11 @@ function SuggestionItem({ user }: { user: Suggestion }) {
     setIsFollowing(true);
 
     try {
-      const res = await toggleFollow(user.id);
-      if (res.status === "error") throw new Error(res.message);
+      const result = await toggleFollow({ targetUserId: user.id });
+      if (result.status === "error") throw new Error(result.message);
 
-      if (res.data) {
-        setIsFollowing(res.data.isFollowing);
+      if (result.data) {
+        setIsFollowing(result.data.isFollowing);
       }
     } catch (error) {
       setIsFollowing(false); // Revert

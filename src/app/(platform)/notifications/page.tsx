@@ -1,12 +1,12 @@
 import { Suspense } from "react";
-import { NotificationFeed } from "./_components/notification-feed";
+import { NotificationFeed } from "./_components/NotificationFeed";
 import { Loader2, Bell } from "lucide-react";
 import { Metadata } from "next";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = createMetadata({
-  title: "Notifications",
-  description: "View your latest notifications",
+    title: "Notifications",
+    description: "View your latest notifications",
 });
 
 export default function NotificationsPage() {

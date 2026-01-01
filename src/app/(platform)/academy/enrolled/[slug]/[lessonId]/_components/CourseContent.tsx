@@ -1,7 +1,7 @@
 'use client'
 
-import { ExpandableDescription } from "@/app/(platform)/academy/course/_components/expandable-description";
-import { LessonContentType } from "@/server/data/course/get-lesson-content";
+import { ExpandableDescription } from "@/app/(platform)/academy/course/_components/ExpandableDescription";
+import { LessonContentType } from "@/features/courses/queries/get-lesson-content";
 import { Button } from "@/components/ui/button";
 
 import { BookIcon, CheckCircle, FileText, LayoutDashboard, Share2 } from "lucide-react";
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { constructUrl } from "@/lib/construct-url";
-import { toggleLessonCompletion } from "@/server/actions/course-progress";
+import { toggleLessonCompletion } from "@/features/courses/actions/progress.action";
 import { useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -176,25 +176,7 @@ export function CourseContent({ data }: CourseContentProps) {
             {data.resources && data.resources.length > 0 ? (
               <div className="grid gap-3">
                 {data.resources.map((resource) => (
-                  <div
-                    key={resource.id}
-                    className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-md">
-                        <FileText className="size-5 text-red-600 dark:text-red-400" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">{resource.name}</span>
-                        <span className="text-xs text-muted-foreground">PDF Document</span>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={resource.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                        Open
-                      </a>
-                    </Button>
-                  </div>
+                  <ResourceItem key={resource.id} resource={resource} />
                 ))}
               </div>
             ) : (
@@ -209,4 +191,54 @@ export function CourseContent({ data }: CourseContentProps) {
       </div>
     </div>
   )
+}
+
+function ResourceItem({ resource }: { resource: { id: string, name: string } }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleDownload = () => {
+    startTransition(async () => {
+      try {
+        const { getSecureResourceUrl } = await import("@/features/courses/actions/get-secure-resource-url.action");
+        const result = await getSecureResourceUrl(resource.id);
+
+        if (result.status === "success" && result.data?.url) {
+          window.open(result.data.url, '_blank', 'noopener,noreferrer');
+        } else {
+          toast.error(result.message || "Failed to download resource");
+        }
+      } catch (error) {
+        toast.error("Something went wrong");
+      }
+    });
+  };
+
+  return (
+    <div
+      className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-md">
+          {isPending ? (
+            <Loader2 className="size-5 text-red-600 dark:text-red-400 animate-spin" />
+          ) : (
+            <FileText className="size-5 text-red-600 dark:text-red-400" />
+          )}
+        </div>
+        <div className="flex flex-col">
+          <span className="font-medium text-sm">{resource.name}</span>
+          <span className="text-xs text-muted-foreground">PDF Document</span>
+        </div>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleDownload}
+        disabled={isPending}
+        className="gap-2"
+      >
+        {isPending ? "Opening..." : "Open"}
+      </Button>
+    </div>
+  );
 }

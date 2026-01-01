@@ -6,8 +6,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { BookOpen, Loader2 } from "lucide-react";
 import { BookmarkEmptyState } from "./BookmarkEmptyState";
 import { PublicCourseCard, PublicCourseCardSkeleton } from "../../academy/course/_components/PublicCourseCard";
-import { PublicCourseType } from "@/server/data/course/get-all-courses";
-import { getSavedCoursesAction } from "@/server/actions/course/get-saved-courses-action";
+import { PublicCourseType } from "@/features/courses/queries/get-all-courses";
+import { getSavedCoursesAction } from "@/features/courses/actions/get-saved-courses-action";
 
 export function SavedCoursesTab() {
     const { ref, inView } = useInView();

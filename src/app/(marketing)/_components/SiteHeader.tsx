@@ -13,7 +13,8 @@ import { useScrolled } from "@/hooks/use-scrolled";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { authClient } from "@/lib/auth-client";
 import useSignOut from "@/hooks/use-signout";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/BrandLogo";
+import { ConsensusLogo } from "@/components/ConsensusLogo";
 import {
   NavigationMenu,
   NavigationMenuContent,

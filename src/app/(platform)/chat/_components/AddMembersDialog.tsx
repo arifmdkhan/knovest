@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Check, Loader2, Search, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { searchUsers } from "@/server/actions/user";
-import { addMembersToChannel } from "@/server/actions/stream";
+import { searchUsers } from "@/features/user/user.action";
+import { addMembersToChannel } from "@/features/media/actions/stream.action";
 
 interface AddMembersDialogProps {
     open: boolean;
@@ -46,7 +46,7 @@ export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDial
         }
         setIsSearching(true);
         try {
-            const result = await searchUsers(val);
+            const result = await searchUsers({ query: val });
             if (result.status === "success" && result.data) {
                 const data = result.data as unknown as SearchedUser[];
                 const newUsers = data.filter((u) => !existingMembers.includes(u.id));
@@ -73,7 +73,7 @@ export function AddMembersDialog({ open, onOpenChange, channel }: AddMembersDial
         setIsAdding(true);
 
         try {
-            const result = await addMembersToChannel(channel.id!, selectedUsers);
+            const result = await addMembersToChannel({ channelId: channel.id!, userIds: selectedUsers });
             if (result.status === "error") throw new Error(result.message);
 
             toast.success("Members added successfully");

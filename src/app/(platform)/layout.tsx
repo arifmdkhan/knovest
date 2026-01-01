@@ -1,21 +1,21 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { DashboardHeader } from "@/components/dashboard-header";
+import { AppSidebar } from "@/components/AppSidebar";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ReactNode } from "react";
-import { requireUser } from "@/server/data/user/require-user";
+import { requireUser } from "@/features/user/queries/require-user";
 import { ActiveCallProvider } from "@/components/providers/ActiveCallProvider";
-import { getStreamToken } from "@/server/actions/stream";
-import PlatformStreamProvider from "@/components/providers/PlatformStreamProvider";
+import { getStreamToken } from "@/features/media/actions/stream.action";
+import GlobalVideoProvider from "@/components/providers/GlobalVideoProvider";
 
 export default async function PlatformLayout({ children }: { children: ReactNode }) {
     const [user, res] = await Promise.all([
         requireUser(),
-        getStreamToken()
+        getStreamToken({})
     ]);
     const token = res.status === "success" && res.data ? res.data : "";
 
     return (
-        <PlatformStreamProvider user={user} streamToken={token}>
+        <GlobalVideoProvider user={user} streamToken={token}>
             <ActiveCallProvider>
                 <SidebarProvider className="h-svh w-full overflow-hidden">
                     <AppSidebar />
@@ -31,6 +31,6 @@ export default async function PlatformLayout({ children }: { children: ReactNode
                     </SidebarInset>
                 </SidebarProvider>
             </ActiveCallProvider>
-        </PlatformStreamProvider>
+        </GlobalVideoProvider>
     );
 }

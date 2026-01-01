@@ -1,5 +1,5 @@
 import { AccountForm } from "../_components/AccountForm";
-import { requireUser } from "@/server/data/user/require-user";
+import { requireUser } from "@/features/user/queries/require-user";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { Separator } from "@/components/ui/separator";

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { purchaseStreamAccess } from "@/server/actions/stream-access";
+import { purchaseStreamAccess } from "@/features/media/actions/stream-access.action";
 import { CustomCallData } from "@/types/stream";
 
 interface PaymentPageProps {

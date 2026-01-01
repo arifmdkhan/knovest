@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { confirmSubscription } from "@/features/subscriptions/actions/confirm-subscription.action";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -20,7 +21,6 @@ export default function SubscriptionPaymentPage() {
         // Call confirmSubscription action
         const creatorId = new URLSearchParams(window.location.search).get("creatorId");
         if (creatorId) {
-            const { confirmSubscription } = await import("@/server/actions/subscription/confirm-subscription");
             const result = await confirmSubscription(creatorId);
             if (result.status === "success") {
                 toast.success("Payment successful! Subscription active.");

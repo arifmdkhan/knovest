@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Users, Twitter, Instagram, Linkedin, Facebook, Youtube } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export function SiteFooter() {
   return (

@@ -1,5 +1,5 @@
-import { ArticleCard } from "./article-card";
-import { getRelatedArticles } from "@/server/data/article/get-related-articles";
+import { ArticleCard } from "./ArticleCard";
+import { getRelatedArticles } from "@/features/articles/queries/get-related-articles";
 
 interface RelatedArticlesProps {
     category: string;

@@ -5,7 +5,7 @@ import { emailOTP, admin, username, multiSession } from "better-auth/plugins";
 import { resend } from "./email/resend";
 import { ac, ADMIN, SUPER_ADMIN, USER } from "./access-control";
 import OtpEmail from "./email/otp-email";
-import { createNotification } from "@/server/actions/notifications";
+import { createNotification } from "@/features/notifications/actions/notifications.action";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -102,9 +102,20 @@ export const auth = betterAuth({
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 3, // 2 minutes
-      strategy: "compact", // or "jwt" or "jwe"
-      //best jwe(most secure , large size)
+      maxAge: 60 * 5, // 5 minutes cache
+    },
+  },
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+    cookies: {
+      session_token: {
+        attributes: {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+        },
+      },
     },
   },
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],

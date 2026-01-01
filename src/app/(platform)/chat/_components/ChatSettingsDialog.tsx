@@ -123,7 +123,7 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
     if (isSubscriptionGroup) {
       // Robust check: fetch latest status from server
       try {
-        const { getSubscriptionStatus } = await import("@/server/actions/subscription/get-subscription-status");
+        const { getSubscriptionStatus } = await import("@/features/subscriptions/actions/get-subscription-status.action");
         const enabled = await getSubscriptionStatus();
 
         if (enabled) {

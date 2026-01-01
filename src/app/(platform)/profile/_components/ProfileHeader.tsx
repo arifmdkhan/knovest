@@ -13,8 +13,8 @@ import {
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
-import { toggleFollow } from "@/server/actions/user";
-import { createDM } from "@/server/actions/stream";
+import { toggleFollow } from "@/features/user/user.action";
+import { createDM } from "@/features/media/actions/stream.action";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { EditProfileDialog } from "./EditProfileDialog";
@@ -62,7 +62,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
     setIsLoading(true);
 
     try {
-      const res = await toggleFollow(profile.id);
+      const res = await toggleFollow({ targetUserId: profile.id });
       if (res.status === "error") throw new Error(res.message);
 
       if (res.data) {
@@ -87,7 +87,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
     }
     setIsMessaging(true);
     try {
-      const res = await createDM(profile.id);
+      const res = await createDM({ targetUserId: profile.id });
       if (res.status === "success" && res.data) {
         router.push(`/chat/${res.data}`);
       } else {

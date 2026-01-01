@@ -201,7 +201,7 @@ export function MediaUploader({
 
     if (fileToRemove.key) {
       try {
-        const { deleteMediaAction } = await import("@/server/actions/delete-media.actions");
+        const { deleteMediaAction } = await import("@/features/media/actions/delete-media.action");
         await deleteMediaAction(fileToRemove.key);
 
         // Success: Remove from UI

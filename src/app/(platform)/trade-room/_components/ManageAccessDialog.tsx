@@ -10,7 +10,7 @@ import { Channel } from "stream-chat";
 import { UserMultiSelect } from "@/components/UserMultiSelect";
 import { CustomChannelData } from "@/lib/chat-types";
 import { toast } from "sonner";
-import { revokeStreamAccess, getStreamAccessDetails } from "@/server/actions/stream-access";
+import { revokeStreamAccess, getStreamAccessDetails } from "@/features/media/actions/stream-access.action";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useInView } from "react-intersection-observer";

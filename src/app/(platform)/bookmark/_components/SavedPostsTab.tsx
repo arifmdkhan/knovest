@@ -6,7 +6,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2, Bookmark } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeedPost, FeedPage } from "@/types/post";
-import { getSavedPostsAction } from "@/server/actions/post/get-saved-posts-action";
+import { getSavedPostsAction } from "@/features/posts/actions/get-saved-posts-action";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { BookmarkEmptyState } from "./BookmarkEmptyState";
 

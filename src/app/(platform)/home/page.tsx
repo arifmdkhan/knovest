@@ -4,10 +4,10 @@ import { FollowSuggestionsSkeleton } from "./_components/right-sidebar/FollowSug
 import { FeedTabs } from "./_components/FeedTabs";
 import { createMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
-import { getFeedPosts } from "@/server/data/post/get-posts";
+import { getFeedPosts } from "@/features/posts/queries/get-posts";
 import { getServerSession } from "@/lib/get-sessions";
 import { FeedSkeleton } from "./_components/Feed";
-import { getRecentPublicCourse } from "@/server/data/course/get-recent-course";
+import { getRecentPublicCourse } from "@/features/courses/queries/get-recent-course";
 import { PublicCourseCard, PublicCourseCardSkeleton } from "@/app/(platform)/academy/course/_components/PublicCourseCard";
 
 export const metadata: Metadata = createMetadata({

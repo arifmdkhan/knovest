@@ -1,4 +1,4 @@
-import { PublicCourseType } from "@/server/data/course/get-all-courses";
+import { PublicCourseType } from "@/features/courses/queries/get-all-courses";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";

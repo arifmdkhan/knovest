@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { updateProfile } from "@/server/actions/user";
+import { updateProfile } from "@/features/user/user.action";
 import { AvatarUploader } from "@/components/handle-media/avatar-uploader";
 
 

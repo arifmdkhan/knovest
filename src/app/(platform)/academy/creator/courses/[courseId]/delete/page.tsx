@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, Trash2 } from 'lucide-react'
 import { tryCatch } from '@/helper/try-catch'
-import { deleteCourse } from '@/server/actions/courses/delete-course'
+import { deleteCourse } from '@/features/courses/actions/delete-course'
 
 
 export default function DeleteCourse() {

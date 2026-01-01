@@ -2,7 +2,7 @@
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { tryCatch } from '@/helper/try-catch'
-import { deleteLesson } from '@/server/actions/courses/edit-course'
+import { deleteLesson } from '@/features/courses/actions/edit-course'
 
 import { Trash2 } from 'lucide-react'
 import React, { useState, useTransition } from 'react'

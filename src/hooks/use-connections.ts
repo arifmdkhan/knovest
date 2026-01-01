@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ConnectionType, ConnectionUser } from "@/server/data/user/get-connections";
-import { getConnectionsAction } from "@/server/actions/user/get-connections-action";
+import { ConnectionType, ConnectionUser } from "@/features/user/queries/get-connections";
+import { getConnectionsAction } from "@/features/user/connections.action";
 
 
 export interface ConnectionPage {

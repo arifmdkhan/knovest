@@ -28,12 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { TextEditor } from "@/components/shared/text-editor/editor";
 import { tryCatch } from "@/helper/try-catch";
-import {
-    articleCategories,
-    articleSchema,
-    ArticleSchemaType,
-} from "@/lib/schema/article-schema";
-import { CreateArticle } from "@/server/actions/articles/create-article";
+import { articleCategories, articleSchema, ArticleSchemaType } from "@/features/articles/schemas";
+import { CreateArticle } from "@/features/articles/actions/create-article";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, PlusIcon, SparkleIcon } from "lucide-react";
 import Link from "next/link";

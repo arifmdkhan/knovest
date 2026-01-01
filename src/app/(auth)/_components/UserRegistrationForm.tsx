@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { checkUsernameAvailability } from "@/server/actions/register";
+import { checkUsernameAvailability } from "@/features/auth/actions/register.action";
 import { usernameSchema } from "@/lib/validations/auth";
 import Link from "next/link";
 
