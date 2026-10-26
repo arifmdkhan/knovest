@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Play, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SecureVideoPlayerProps {
@@ -22,17 +22,11 @@ export function SecureVideoPlayer({
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    // The secure stream URL is our API route
-    // Note: We use the API route directly as the src.
-    // The browser will follow the redirect standardly.
     const streamUrl = `/api/courses/${courseId}/lessons/${lessonId}/stream`;
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
-
-        // Event listeners for custom state if needed
         const handlePlay = () => setIsPlaying(true);
         const handlePause = () => setIsPlaying(false);
         const handleError = () => setError("Failed to load video stream.");
@@ -72,8 +66,8 @@ export function SecureVideoPlayer({
                 <>
                     {/* 
                         Native Video Element 
-                        - controlsList="nodownload" is a hint to Chrome to hide download button
-                        - onContextMenu prevents right click
+                        controlsList="nodownload" is a hint to Chrome to hide download button
+                        onContextMenu prevents right click
                     */}
                     <video
                         ref={videoRef}

@@ -1,11 +1,10 @@
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
 
 export default function NotFound() {
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* Background Ambient Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-[20%] left-[20%] w-[60%] h-[60%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/10 rounded-full blur-[120px]" />
@@ -20,7 +19,7 @@ export default function NotFound() {
                         Page not found
                     </h2>
                     <p className="text-muted-foreground text-lg">
-                        Sorry, we couldn't find the page you're looking for. It might have been removed, renamed, or doesn't exist.
+                        Sorry, we couldn&apos;t find the page you&apos;re looking for. It might have been removed, renamed, or doesn&apos;t exist.
                     </p>
                 </div>
 

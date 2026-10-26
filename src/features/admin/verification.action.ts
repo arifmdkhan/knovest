@@ -3,11 +3,10 @@
 import { prisma } from "@/lib/db";
 import { VerificationStatus } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
-import { ApiResponse } from "@/types/api";
 import { safeAction } from "@/lib/safe-action";
 import { z } from "zod";
 
-// --- Schemas ---
+
 const GetApplicationsSchema = z.object({
     statusFilter: z.nativeEnum(VerificationStatus).optional()
 });
@@ -26,11 +25,12 @@ const RequestInfoSchema = z.object({
     notes: z.string().min(1, "Review notes are required")
 });
 
-// --- Fetch Applications ---
+// Fetch Applications
 export const getVerificationApplications = safeAction(
     GetApplicationsSchema,
     async ({ statusFilter }) => {
         const applications = await prisma.verificationApplication.findMany({
+            take: 100,
             where: statusFilter ? { status: statusFilter } : {},
             include: {
                 user: {
@@ -53,7 +53,7 @@ export const getVerificationApplications = safeAction(
     { requiredRole: "ADMIN" }
 );
 
-// --- Approve Application ---
+// approve Application
 export const approveApplication = safeAction(
     ApplicationIdSchema,
     async ({ applicationId }) => {
@@ -106,7 +106,7 @@ export const approveApplication = safeAction(
     { requiredRole: "ADMIN" }
 );
 
-// --- Reject Application ---
+// Reject Application
 export const rejectApplication = safeAction(
     RejectApplicationSchema,
     async ({ applicationId, reason }) => {
@@ -144,7 +144,7 @@ export const rejectApplication = safeAction(
     { requiredRole: "ADMIN" }
 );
 
-// --- Reset Application ---
+// Reset Application
 export const resetApplication = safeAction(
     ApplicationIdSchema,
     async ({ applicationId }) => {
@@ -182,7 +182,7 @@ export const resetApplication = safeAction(
     { requiredRole: "ADMIN" }
 );
 
-// --- Request Additional Info ---
+// Request Additional Info
 export const requestAdditionalInfo = safeAction(
     RequestInfoSchema,
     async ({ applicationId, notes }) => {

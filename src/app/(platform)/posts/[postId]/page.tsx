@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { CreateCommentForm } from "../../home/_components/comments/components/create-comment-form";
 import { CommentList } from "../../home/_components/comments/components/comment-list";

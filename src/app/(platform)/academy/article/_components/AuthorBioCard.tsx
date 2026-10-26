@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ShieldCheck, Award, TrendingUp, BadgeCheck } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { User } from "@/generated/prisma/client";
 import { UserHoverCard } from "@/components/UserHoverCard";
 
@@ -50,7 +50,7 @@ export function AuthorBioCard({ author }: AuthorBioCardProps) {
                         {author.expertVerificationType === "SEBI" && (
                             <Badge
                                 variant="outline"
-                                className="h-5 px-1.5 rounded-[4px] bg-green-500/10 text-[9px] font-bold text-green-600 border-green-200 flex items-center gap-1"
+                                className="h-5 px-1.5 rounded-lg bg-green-500/10 text-[9px] font-bold text-green-600 border-green-200 flex items-center gap-1"
                             >
                                 <ShieldCheck className="w-2.5 h-2.5" /> SEBI
                             </Badge>
@@ -58,7 +58,7 @@ export function AuthorBioCard({ author }: AuthorBioCardProps) {
                         {author.expertVerificationType === "CERTIFIED" && (
                             <Badge
                                 variant="outline"
-                                className="h-5 px-1.5 rounded-[4px] bg-blue-500/10 text-[9px] font-bold text-blue-600 border-blue-200 flex items-center gap-1"
+                                className="h-5 px-1.5 rounded-lg bg-blue-500/10 text-[9px] font-bold text-blue-600 border-blue-200 flex items-center gap-1"
                             >
                                 <Award className="w-2.5 h-2.5" /> PRO
                             </Badge>
@@ -66,7 +66,7 @@ export function AuthorBioCard({ author }: AuthorBioCardProps) {
                         {author.expertVerificationType === "TRACK_RECORD" && (
                             <Badge
                                 variant="outline"
-                                className="h-5 px-1.5 rounded-[4px] bg-purple-500/10 text-[9px] font-bold text-purple-600 border-purple-200 flex items-center gap-1"
+                                className="h-5 px-1.5 rounded-lg bg-purple-500/10 text-[9px] font-bold text-purple-600 border-purple-200 flex items-center gap-1"
                             >
                                 <TrendingUp className="w-2.5 h-2.5" /> TRADER
                             </Badge>
@@ -76,7 +76,7 @@ export function AuthorBioCard({ author }: AuthorBioCardProps) {
                 </div>
 
                 <p className="text-muted-foreground leading-relaxed max-w-2xl">
-                    {author.bio || `Content creator at Consensus. Follow ${displayName} to stay updated with their latest insights and articles.`}
+                    {author.bio || `Content creator at Knovest. Follow ${displayName} to stay updated with their latest insights and articles.`}
                 </p>
 
                 <div className="pt-2">

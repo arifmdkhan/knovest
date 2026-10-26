@@ -1,15 +1,9 @@
 'use client';
 
 import { Suspense, useCallback } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-
+import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { articleCategories } from "@/features/articles/schemas";
 
 const categories = articleCategories;
@@ -35,7 +29,6 @@ function CategoryFilterContent() {
     );
 
     const handleCategoryChange = (category: string) => {
-        // If "all" is selected or the same category, remove the filter
         const newCategory = category === "all" ? null : category;
         router.push(pathname + '?' + createQueryString('category', newCategory));
     };

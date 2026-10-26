@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { UploadIntent } from "@/lib/storage/types";
-
 import { cn } from "@/lib/utils";
 
 interface StepProps {
@@ -28,8 +27,6 @@ const CERT_TYPES = ["NISM", "CFA", "CA", "CS", "FRM", "MBA (Finance)", "CFP", "O
 
 export function StepCertifications({ data, updateData, onNext, onBack, userId }: StepProps) {
     const [saving, setSaving] = useState(false);
-
-    // Helper to add empty cert
     const addCert = () => {
         updateData({
             certifications: [

@@ -1,13 +1,4 @@
-import {
-    Attachment,
-    Channel,
-    ChannelMemberResponse,
-    MessageResponse,
-    ReactionResponse,
-    UserResponse,
-    Event,
-    LiteralStringForUnion
-} from 'stream-chat';
+import { Attachment, MessageResponse, ReactionResponse, UserResponse, Event, LiteralStringForUnion } from 'stream-chat';
 
 export type StreamChatGenerics = {
     attachmentType: Attachment;

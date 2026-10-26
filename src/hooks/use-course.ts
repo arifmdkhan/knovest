@@ -15,10 +15,7 @@ export const useToggleSaveCourse = () => {
         onSuccess: (data) => {
             toast.success(data.saved ? "Course saved" : "Removed from saved courses");
 
-            // Invalidate course queries to refresh UI
             queryClient.invalidateQueries({ queryKey: ["courses"] });
-
-            // If we are on the saved courses page (if it exists or will exist)
             queryClient.invalidateQueries({ queryKey: ["saved-courses"] });
         },
         onError: (error: Error) => {

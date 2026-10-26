@@ -3,7 +3,7 @@
 import { authClient } from "@/lib/auth-client";
 import { useState, useEffect } from "react";
 import { VerificationStatus } from "../../generated/prisma/enums";
-import { saveApplicationDraft, submitApplication, getVerificationStatus } from "@/features/verification/actions/verification.action";
+import { getVerificationStatus } from "@/features/verification/actions/verification.action";
 import { StepIdentity } from "./components/step-identity";
 import { StepSebi } from "./components/step-sebi";
 import { StepCertifications } from "./components/step-certifications";
@@ -12,13 +12,12 @@ import { StepDeclaration } from "./components/step-declaration";
 import { StepSubmission } from "./components/step-submission";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { useRouter } from "@/components/NavigationProvider";
 import { cn } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
-// --- Types for local state (can be shared or inferred) ---
 export type VerificationFormData = {
     id?: string;
     fullName: string;
@@ -62,8 +61,7 @@ export default function VerificationPage() {
     const [currentStep, setCurrentStep] = useState(STEPS.IDENTITY);
     const [isEditing, setIsEditing] = useState(false);
 
-    // We'll store one big state object for the wizard form
-    // In a production app, RHF with Zod schema is better, but plain state works for this multi-step wizard logic nicely without over-engineering context first.
+    //Can use React hook form(will see later)
     const [formData, setFormData] = useState<VerificationFormData>({
         fullName: "",
         nationality: "Indian",
@@ -123,7 +121,7 @@ export default function VerificationPage() {
                             certifications: application.certifications || [],
                             brokerPnls: application.brokerPnls || [],
 
-                            pnlVerified: application.pnlVerified || false, // default
+                            pnlVerified: application.pnlVerified || false, 
                             reviewNotes: application.reviewNotes,
                         }));
                     }
@@ -158,7 +156,7 @@ export default function VerificationPage() {
                     </div>
                     <h2 className="text-3xl font-bold text-foreground">You are Verified</h2>
                     <p className="text-muted-foreground text-lg">
-                        You are already a verified expert on Consensus. Your badge is visible on your profile and content.
+                        You are already a verified expert on Knovest. Your badge is visible on your profile and content.
                     </p>
                     <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
                         <Button variant="outline" onClick={() => router.push("/home")}>
@@ -174,15 +172,13 @@ export default function VerificationPage() {
     }
 
     if (applicationStatus === "REJECTED") {
-        // Basic Rejection View
+    
         return <StepSubmission status="REJECTED" applicationId={formData.id} />;
     }
-
-    // --- WIZARD NAVIGATION HELPERS ---
     const nextStep = () => setCurrentStep(prev => prev + 1);
     const prevStep = () => setCurrentStep(prev => prev - 1);
 
-    // --- RENDER CURRENT STEP ---
+   //render current state
     const renderStep = () => {
         switch (currentStep) {
             case STEPS.IDENTITY:
@@ -215,12 +211,10 @@ export default function VerificationPage() {
                     />
                 );
             case STEPS.PNL:
-                // Conditional Logic: Skip P&L step if SEBI registered
+                // Skip P&L step if SEBI registered
                 // If SEBI == Yes -> Skip to Declaration
                 if (formData.isSebiRegistered) {
-                    // We might auto-advance, or render a specialized 'You are SEBI verified, skipping P&L' message
-                    // For smoother UX, let's just create an effect or logic to skip in navigation
-                    // But here for simplicity inside the render switch:
+                   //We can make it better later
                     return <StepDeclaration data={formData} updateData={(d) => setFormData(p => ({ ...p, ...d }))} onBack={prevStep} onSubmitSuccess={(id) => {
                         setFormData(prev => ({ ...prev, id }));
                         setApplicationStatus("PENDING");
@@ -233,7 +227,7 @@ export default function VerificationPage() {
                         updateData={(d) => setFormData(p => ({ ...p, ...d }))}
                         onNext={nextStep}
                         onBack={prevStep}
-                        optional={formData.hasCertifications === true} // "If has_certification = true -> Optional"
+                        optional={formData.hasCertifications === true} 
                         userId={session?.user?.id}
                     />
                 );
@@ -256,7 +250,6 @@ export default function VerificationPage() {
 
     return (
         <div className="min-h-screen bg-background relative overflow-hidden">
-            {/* Background Pattern */}
             <div className="absolute inset-0 bg-grid-black/[0.02] dark:bg-grid-white/[0.02] -z-10" />
 
             <div className="container max-w-3xl py-12 px-4 relative z-10 mx-auto">
@@ -278,7 +271,7 @@ export default function VerificationPage() {
                         <AlertDescription className="mt-2 text-sm opacity-90">
                             The admin has requested changes to your application:
                             <div className="mt-2 p-3 bg-background/50 rounded border border-orange-500/20 font-medium">
-                                "{formData.reviewNotes}"
+                                &quot;{formData.reviewNotes}&quot;
                             </div>
                             <div className="mt-2">
                                 Please update the relevant details below and resubmit.
@@ -287,7 +280,7 @@ export default function VerificationPage() {
                     </Alert>
                 )}
 
-                {/* Progress Bar (Simple) */}
+                {/* Progress Bar */}
                 <div className="flex gap-2 mb-8">
                     {[1, 2, 3, 4, 5].map(step => (
                         <div

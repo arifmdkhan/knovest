@@ -4,7 +4,7 @@ import { createMetadata } from "@/lib/metadata";
 
 export const metadata:Metadata = createMetadata({
   title: "Login",
-  description: "Secure access to the Consensus financial learning network.",
+  description: "Secure access to the Knovest financial learning network.",
 });
 
 export default function LoginPage() {

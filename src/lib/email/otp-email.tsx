@@ -1,45 +1,33 @@
-import {
-    Body,
-    Container,
-    Head,
-    Heading,
-    Html,
-    Preview,
-    Section,
-    Text,
-    Hr,
-    Link,
-} from "@react-email/components";
-import * as React from "react";
+
 
 interface OtpEmailProps {
     otp: string;
 }
 
-export const OtpEmail = ({ otp }: OtpEmailProps) => {
+const OtpEmail = ({ otp }: OtpEmailProps) => {
     return (
-        <Html>
-            <Head />
-            <Preview>Your verification code for Consensus</Preview>
-            <Body style={main}>
-                <Container style={container}>
-                    <Heading style={h1}>Verify your email address</Heading>
-                    <Text style={text}>
-                       Please Verify using below code to proceed.
-                    </Text>
-                    <Section style={codeContainer}>
-                        <Text style={code}>{otp}</Text>
-                    </Section>
-                    <Text style={text}>
+        <html>
+            <head />
+            <body style={main}>
+                <span style={{ display: "none" }}>Your verification code for Knovest</span>
+                <div style={container}>
+                    <h1 style={h1}>Verify your email address</h1>
+                    <p style={text}>
+                       Use this code to continue to Knovest.
+                    </p>
+                    <div style={codeContainer}>
+                        <p style={code}>{otp}</p>
+                    </div>
+                    <p style={text}>
                         This code is valid for 10 minutes.
-                    </Text>
-                    <Hr style={hr} />
-                    <Link href="https://consensus.app" style={reportLink}>
-                        Consensus
-                    </Link>
-                </Container>
-            </Body>
-        </Html>
+                    </p>
+                    <hr style={hr} />
+                    <a href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"} style={reportLink}>
+                        Knovest
+                    </a>
+                </div>
+            </body>
+        </html>
     );
 };
 
@@ -59,7 +47,7 @@ const container = {
 
 const h1 = {
     fontSize: "24px",
-    fontWeight: "bold",
+    fontWeight: "bold" as const,
     margin: "40px 0",
     padding: "0",
     color: "#333",

@@ -1,10 +1,12 @@
 "use server";
 
+import { requireVisiblePost } from "@/features/posts/access";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import { ApiResponse } from "@/types/api";
 import { toggleRepostSchema, ToggleRepostSchemaType } from "@/features/posts/schemas";
 import { getServerSession } from "@/lib/get-sessions";
-import { createNotification } from "@/features/notifications/actions/notifications.action";
+import { createNotification } from "@/features/notifications/services/create-notification";
 
 export async function toggleRepost(data: ToggleRepostSchemaType): Promise<ApiResponse<{ reposted: boolean; count: number }>> {
     try {
@@ -12,12 +14,15 @@ export async function toggleRepost(data: ToggleRepostSchemaType): Promise<ApiRes
         const session = await getServerSession();
 
         if (!session?.user) return { status: "error", message: "Unauthorized" };
+        await enforceRateLimit(`mutations:${session.user.id}`, 60);
 
         const parsed = toggleRepostSchema.safeParse(data);
         if (!parsed.success) return { status: "error", message: "Invalid data" };
 
         const { postId } = parsed.data;
         const userId = session.user.id;
+        const visiblePost = await requireVisiblePost(postId, userId);
+        if (visiblePost.visibility !== "PUBLIC" || visiblePost.originalPostId) return { status: "error", message: "Only original public posts can be reposted" };
 
         // Check if user already reposted this post
         // A repost is a Post where authorId is current user AND originalPostId is the target post

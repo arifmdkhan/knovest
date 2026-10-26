@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { cn } from "@/lib/utils";
 import { UserHoverCard } from "./UserHoverCard";
 import { memo } from "react";
@@ -28,7 +28,16 @@ export const UserAvatarWithInfo = memo(function UserAvatarWithInfo({
     children,
 }: UserAvatarWithInfoProps) {
     const displayName = name || "Unknown";
-    const displayUsername = username || "unknown";
+    const displayUsername = username?.trim();
+    if (!displayUsername) {
+        return <div className={cn("flex min-w-0 items-center gap-3", className)}>
+            <Avatar className={cn("size-10 shrink-0 border border-border/50", avatarClassName)}>
+                <AvatarImage src={image || undefined} />
+                <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0"><p className="truncate text-sm font-semibold">{displayName}</p>{children}</div>
+        </div>;
+    }
 
     return (
         <UserHoverCard username={displayUsername}>
@@ -43,10 +52,10 @@ export const UserAvatarWithInfo = memo(function UserAvatarWithInfo({
                             {displayName}
                         </span>
 
-                        {/* --- ACCOUNT VERIFICATION --- */}
+                        {/*ACCOUNT VERIFICATION type */}
                         <VerificationBadge accountType={accountVerificationType} className="w-3.5 h-3.5" />
 
-                        {/* --- EXPERT BADGES --- */}
+                        {/*EXPERT BADGES type */}
                         <VerificationBadge expertType={expertVerificationType} />
 
 

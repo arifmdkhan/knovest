@@ -1,21 +1,10 @@
 "use server";
 
 import { requireUser } from "@/features/user/queries/require-user";
-import arcjet, { fixedWindow } from "@/lib/arcjet";
 import { prisma } from "@/lib/db";
 import { articleSchema, ArticleSchemaType } from "@/features/articles/schemas";
 import { ApiResponse } from "@/types/api";
-import { request } from "@arcjet/next";
 import { revalidatePath } from "next/cache";
-
-const aj = arcjet
-    .withRule(
-        fixedWindow({
-            mode: "LIVE",
-            window: "1m",
-            max: 10,
-        })
-    );
 
 export async function UpdateArticle(
     articleId: string,
@@ -24,25 +13,6 @@ export async function UpdateArticle(
     const user = await requireUser();
 
     try {
-        const req = await request();
-        const decision = await aj.protect(req, {
-            fingerprint: user.id,
-        });
-
-        if (decision.isDenied()) {
-            if (decision.reason.isRateLimit()) {
-                return {
-                    status: "error",
-                    message: "Too many requests. Please try again later.",
-                };
-            } else {
-                return {
-                    status: "error",
-                    message:
-                        "You are a bot! If this is a mistake, please contact support.",
-                };
-            }
-        }
 
         const validation = articleSchema.safeParse(values);
         if (!validation.success) {

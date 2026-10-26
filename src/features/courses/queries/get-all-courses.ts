@@ -1,20 +1,21 @@
 
 import { prisma } from "@/lib/db";
 import "server-only";
+import type { courseLevels } from "../schemas";
 
 
-export async function getAllCourses(authorId?: string, category?: string, userId?: string) {
-  //   await new Promise((resolve) => setTimeout(resolve, 5000));
+export async function getAllCourses(authorId?: string, category?: string, userId?: string, options: { query?: string; level?: typeof courseLevels[number]; sort?: string } = {}) {
   const data = await prisma.course.findMany({
+    take: 100,
     where: {
       status: "Published",
       deletedAt: null,
       ...(authorId && { userId: authorId }),
       ...(category && { category: category }),
+      ...(options.level && { level: options.level }),
+      ...(options.query?.trim() && { title: { contains: options.query.trim().slice(0, 200), mode: "insensitive" as const } }),
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: options.sort === "price" ? [{ price: "asc" }, { createdAt: "desc" }] : { createdAt: "desc" },
     select: {
       id: true,
       title: true,
@@ -57,12 +58,15 @@ export async function getAllCourses(authorId?: string, category?: string, userId
     },
   });
 
-  // Transform data to include isSaved boolean
-  return data.map(course => ({
-    ...course,
-    isSaved: course.savedBy?.length > 0,
-    savedBy: undefined // cleanup
-  }));
+  // Transform data to ensure type safety and cleaner object
+  return data.map(course => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { savedBy, ...rest } = course;
+    return {
+      ...rest,
+      isSaved: course.savedBy ? course.savedBy.length > 0 : false,
+    };
+  });
 }
 
 export type PublicCourseType = Awaited<ReturnType<typeof getAllCourses>>[0];

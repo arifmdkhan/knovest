@@ -1,11 +1,16 @@
 import { z } from "zod";
 import { getServerSession } from "@/lib/get-sessions";
 import { ApiResponse } from "@/types/api";
+import { enforceRateLimit, RateLimitError } from "@/lib/rate-limit";
+
+
+// Define strict role types to avoid loose string matching where possible
+type UserRole = "USER" | "ADMIN" | "SUPER_ADMIN" | (string & {});
 
 type ActionContext = {
     user?: {
         id: string;
-        role: "USER" | "ADMIN" | "SUPER_ADMIN" | string; // Allow string to match Prisma output more easily, or cast later
+        role: UserRole;
         [key: string]: any;
     };
 };
@@ -37,6 +42,10 @@ export const safeAction = <TInput extends z.ZodType<any>, TOutput>(
                     return { status: "error", message: "Unauthorized: Login required" };
                 }
 
+                if (session.user.banned) {
+                    return { status: "error", message: "Your account is banned." };
+                }
+
                 const userRole = session.user.role;
                 if (options.requiredRole === "ADMIN" && userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
                     return { status: "error", message: "Forbidden: Insufficient permissions" };
@@ -46,24 +55,24 @@ export const safeAction = <TInput extends z.ZodType<any>, TOutput>(
                 }
             }
 
-            // 3. Execution using "as any" or partial casting to satisfy the strict type if needed, 
-            // or better, just pass session.user and let it be compatible.
-            // The error was specifically about 'role' being string vs union.
-            // We adjusted ActionContext to allow string role to avoid friction.
+            // 3. Execution
+            if (session?.user) await enforceRateLimit(`actions:${session.user.id}`);
             return await handler(parseResult.data, {
                 user: session?.user ? {
                     ...session.user,
-                    role: session.user.role || "" // Ensure it's a string, not null/undefined if that was key
+                    role: (session.user.role || "") as UserRole
                 } : undefined
             });
 
-        } catch (error: any) {
-            // Re-throw Next.js internal errors (bailouts, redirects)
-            if (error.digest === 'DYNAMIC_SERVER_USAGE' || error.digest === 'NEXT_REDIRECT' || error.message?.includes('NEXT_REDIRECT')) {
-               throw error;
+        } catch (error: unknown) {
+            if (error instanceof RateLimitError) return { status: "error", message: error.message };
+           
+            if (isNextRedirectError(error)) {
+                throw error;
             }
 
             console.error("SafeAction Error:", error);
+            
             // 4. Error Sanitization
             return {
                 status: "error",
@@ -72,3 +81,17 @@ export const safeAction = <TInput extends z.ZodType<any>, TOutput>(
         }
     };
 };
+
+function isNextRedirectError(error: unknown): boolean {
+    if (typeof error === 'object' && error !== null) {
+        const digest = (error as { digest?: string }).digest;
+        if (digest === 'NEXT_REDIRECT' || digest === 'DYNAMIC_SERVER_USAGE') {
+            return true;
+        }
+        const message = (error as { message?: string }).message;
+        if (message && (message.includes('NEXT_REDIRECT') || message.includes('NEXT_NOT_FOUND'))) {
+            return true;
+        }
+    }
+    return false;
+}

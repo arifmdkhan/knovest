@@ -39,7 +39,7 @@ export function SubscribeButton({ creatorId, price }: SubscribeButtonProps) {
             if (res && res.status === "error") {
                 toast.error(res.message);
             }
-            // Redirect is handled by the server action
+           
         });
     }
 
@@ -71,7 +71,7 @@ export function SubscribeButton({ creatorId, price }: SubscribeButtonProps) {
     }
 
     return (
-        <Button onClick={onSubscribe} disabled={isPending} size="sm" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0">
+        <Button onClick={onSubscribe} disabled={isPending} size="sm" className="bg-linear-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0">
             {isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (

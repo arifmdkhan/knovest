@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Twitter, Facebook, Linkedin, Mail, Link as LinkIcon } from "lucide-react";
+import { Copy, Check, Twitter, Facebook, Linkedin, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,6 @@ interface ShareDialogProps {
 
 export function ShareDialog({ isOpen, onOpenChange, url, title = "Check this out!" }: ShareDialogProps) {
     const [copied, setCopied] = useState(false);
-
-    // Fallback if window is undefined (e.g. server render), though this is client component
     const shareUrl = typeof window !== "undefined" ? url : "";
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedTitle = encodeURIComponent(title);

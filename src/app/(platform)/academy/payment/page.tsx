@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { useState, Suspense } from "react";
 import { toast } from "sonner";
 import { confirmEnrollment } from "@/features/courses/actions/confirm-enrollment";
@@ -22,14 +23,11 @@ function PaymentContent() {
 
         setIsProcessing(true);
 
-        // Simulate payment processing
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
         try {
             const res = await confirmEnrollment(enrollmentId);
 
             if (res.status === "success") {
-                toast.success("Payment successful! You are now enrolled.");
+                toast.success("Enrollment confirmed.");
                 router.push("/academy/enrolled");  // Or redirect to the course page if we had the slug
             } else {
                 toast.error(res.message);
@@ -55,16 +53,16 @@ function PaymentContent() {
                 <CardHeader>
                     <CardTitle>Complete Enrollment</CardTitle>
                     <CardDescription>
-                        Confirm your payment to enroll in this course.
+                        Confirm your enrollment. Paid checkout is not available yet.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        <span className="font-medium">Secure Payment</span>
+                        <span className="font-medium">Confirm access</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        You are about to purchase this course. This will charge your payment method.
+                        Free enrollment is supported. Paid checkout is not available yet.
                     </p>
                 </CardContent>
                 <CardFooter>
@@ -79,7 +77,7 @@ function PaymentContent() {
                                 Processing...
                             </>
                         ) : (
-                            "Pay Now"
+                            "Confirm"
                         )}
                     </Button>
                 </CardFooter>

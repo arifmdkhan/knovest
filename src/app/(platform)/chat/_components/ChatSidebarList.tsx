@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { ChannelList } from "stream-chat-react";
 import { ChannelPreview } from "./ChannelPreview";
 import { CustomChannelSearch } from "./CustomChannelSearch";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { Channel } from "stream-chat";
 import "stream-chat-react/dist/css/v2/index.css";
 
@@ -15,7 +16,6 @@ interface ChatSidebarListProps {
 export default function ChatSidebarList({ sessionUserId }: ChatSidebarListProps) {
     const pathname = usePathname();
     const router = useRouter();
-
     const filters = useMemo(() => {
         return {
             type: 'messaging',

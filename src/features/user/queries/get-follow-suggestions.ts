@@ -31,8 +31,8 @@ export async function getFollowSuggestions(limit = 5) {
             accountVerificationType: true,
         },
         orderBy: {
-            // Simple heuristic: suggest users who joined recently or randomly
-            // For better results, sort by follower count (requires aggregation or raw query)
+            
+            // For better results, sort by follower count (requires aggregation or raw query). will implement later properly
             createdAt: 'desc'
         }
     });

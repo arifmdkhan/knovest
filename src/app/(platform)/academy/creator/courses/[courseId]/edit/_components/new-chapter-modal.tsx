@@ -1,18 +1,18 @@
 
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { tryCatch } from '@/helper/try-catch'
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { tryCatch } from '@/helper/try-catch';
 import { chapterSchema, chapterSchemaType } from "@/features/courses/schemas";
-import { createChapter } from '@/features/courses/actions/edit-course'
+import { createChapter } from '@/features/courses/actions/edit-course';
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus } from 'lucide-react'
-import React, { useState, useTransition } from 'react'
-import { useForm, UseFormProps } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { useForm, UseFormProps } from 'react-hook-form';
 
-import { toast } from 'sonner'
+import { toast } from 'sonner';
 
 export default function NewChapterModal({ courseId }: { courseId: string }) {
     const [isOpen, setIsOpen] = useState(false)

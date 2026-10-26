@@ -2,10 +2,12 @@
 
 import { prisma } from "@/lib/db";
 import { ApiResponse } from "@/types/api";
+import { getServerSession } from "@/lib/get-sessions";
 
 export async function hasUserPaidForStream(streamId: string, userId: string): Promise<ApiResponse<boolean>> {
     try {
-        if (!userId) return { status: "success", message: "Not logged in", data: false };
+        const session = await getServerSession();
+        if (!session || session.user.id !== userId) return { status: "error", message: "Unauthorized" };
 
         const count = await prisma.streamAccess.count({
             where: {

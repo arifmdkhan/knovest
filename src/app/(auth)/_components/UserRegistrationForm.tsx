@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, User, Mail, AtSign } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { authClient } from "@/lib/auth-client";
 import { checkUsernameAvailability } from "@/features/auth/actions/register.action";
 import { usernameSchema } from "@/lib/validations/auth";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -35,7 +35,7 @@ export function RegisterForm() {
   const onSubmit = (data: RegisterInput) => {
     startTransition(async () => {
       try {
-        const check = await checkUsernameAvailability(data.username);
+        const check = await checkUsernameAvailability({ username: data.username });
         if (check.status === 'error') {
           form.setError("username", { message: check.message });
           toast.error(check.message);
@@ -50,7 +50,7 @@ export function RegisterForm() {
               toast.success("Verification code sent");
               router.push(`/verify-request?email=${encodeURIComponent(data.email)}`);
             },
-            onError: (ctx) => {
+            onError: (ctx: any) => {
               toast.error(ctx.error.message);
             }
           }
@@ -62,42 +62,42 @@ export function RegisterForm() {
   };
 
   return (
-    <Card className="w-full max-w-md border-border/50 shadow-xl bg-card/50 backdrop-blur-md">
+    <Card className="auth-card">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight">Create Account</CardTitle>
-        <CardDescription>Join the Consensus network</CardDescription>
+        <CardTitle className="text-2xl font-bold tracking-tight"><h1>Create your account</h1></CardTitle>
+        <CardDescription>Join a community that grows together.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
           <div className="grid gap-2">
-            <Label>Full Name</Label>
+            <Label htmlFor="name">Full name</Label>
             <div className="relative">
               <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="John Doe" {...form.register("name")} disabled={isPending} />
+              <Input aria-invalid={!!form.formState.errors.name} aria-describedby={form.formState.errors.name ? "name-error" : undefined} id="name" autoComplete="name" required className="pl-9" placeholder="Your full name" {...form.register("name")} disabled={isPending} />
             </div>
-            {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
+            {form.formState.errors.name && <p id="name-error" role="alert" className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
           </div>
 
           <div className="grid gap-2">
-            <Label>Username</Label>
+            <Label htmlFor="username">Username</Label>
             <div className="relative">
               <AtSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="username" {...form.register("username")} disabled={isPending} />
+              <Input aria-invalid={!!form.formState.errors.username} aria-describedby={form.formState.errors.username ? "username-error" : undefined} id="username" autoComplete="username" required className="pl-9" placeholder="Choose a username" {...form.register("username")} disabled={isPending} />
             </div>
-            {form.formState.errors.username && <p className="text-xs text-destructive">{form.formState.errors.username.message}</p>}
+            {form.formState.errors.username && <p id="username-error" role="alert" className="text-xs text-destructive">{form.formState.errors.username.message}</p>}
           </div>
 
           <div className="grid gap-2">
-            <Label>Email</Label>
+            <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="name@example.com" {...form.register("email")} disabled={isPending} />
+              <Input aria-invalid={!!form.formState.errors.email} aria-describedby={form.formState.errors.email ? "email-error" : undefined} id="email" type="email" autoComplete="email" required className="pl-9" placeholder="name@example.com" {...form.register("email")} disabled={isPending} />
             </div>
-            {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
+            {form.formState.errors.email && <p id="email-error" role="alert" className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
           </div>
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Register"}
+            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending code…</> : "Create account"}
           </Button>
         </form>
       </CardContent>

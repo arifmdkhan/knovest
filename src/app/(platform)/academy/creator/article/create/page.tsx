@@ -1,30 +1,11 @@
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { TextEditor } from "@/components/shared/text-editor/editor";
 import { tryCatch } from "@/helper/try-catch";
@@ -32,8 +13,8 @@ import { articleCategories, articleSchema, ArticleSchemaType } from "@/features/
 import { CreateArticle } from "@/features/articles/actions/create-article";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, PlusIcon, SparkleIcon } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/AppLink";
+import { useRouter } from "@/components/NavigationProvider";
 import { useTransition, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";

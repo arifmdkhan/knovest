@@ -11,10 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
-import { useRouter } from "next/navigation";
+import { openRoomTab } from "@/lib/open-room-tab";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { StreamChatGenerics, CustomChannelData } from "@/lib/chat-types";
+import { CustomChannelData } from "@/lib/chat-types";
 import { CustomCallData } from "@/types/stream";
 import { Channel } from "stream-chat";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -31,7 +31,6 @@ interface CreateStreamDialogProps {
 export function CreateStreamDialog({ open, onOpenChange, initialScheduled = false, editCall }: CreateStreamDialogProps) {
     const client = useStreamVideoClient();
     const { client: chatClient } = useChatContext();
-    const router = useRouter();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [permissionType, setPermissionType] = useState<"everyone" | "group">("everyone");
@@ -114,11 +113,16 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
             return;
         }
 
-        if (isPaid && (!price || Number(price) <= 0)) {
-            toast.error("Please enter a valid price for the access pass");
+        if (isPaid) {
+            toast.error("Paid streams are disabled for this release");
             return;
         }
 
+        const roomWindow = !editCall && !isScheduled ? openRoomTab("about:blank") : null;
+        if (!editCall && !isScheduled && !roomWindow) {
+            toast.error("Allow Knovest to open a new tab, then try again.");
+            return;
+        }
         setIsLoading(true);
         try {
             // Prepare custom data with permissions
@@ -151,6 +155,8 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
                 const call = client.call("livestream", callId);
 
                 // Ensure we have a valid token/user connection before creating
+                await call.camera.disable();
+                await call.microphone.disable();
                 await call.getOrCreate({
                     data: {
                         starts_at,
@@ -160,13 +166,14 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
                 toast.success(isScheduled ? "Stream scheduled successfully" : "Stream started successfully");
 
                 if (!isScheduled) {
-                    router.push(`/trade-room/${callId}`);
+                    roomWindow?.location.replace(`/trade-room/${callId}`);
                 }
             }
 
             onOpenChange(false);
 
         } catch (error: unknown) {
+            roomWindow?.close();
             console.error("Failed to save stream", error);
             if (error instanceof Error && error.message?.includes("User token is not set")) {
                 toast.error("Connection lost. Please refresh the page.");
@@ -302,11 +309,12 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
                         <div className="flex items-center justify-between pt-4 border-t">
                             <div className="space-y-0.5">
                                 <Label htmlFor="paid-access">Enable Paid Access Pass</Label>
-                                <p className="text-xs text-muted-foreground">Allow others to pay to join this stream (15 min window)</p>
+                                <p className="text-xs text-muted-foreground">Paid access is disabled for this release.</p>
                             </div>
                             <Switch
                                 id="paid-access"
                                 checked={isPaid}
+                                disabled
                                 onCheckedChange={setIsPaid}
                             />
                         </div>

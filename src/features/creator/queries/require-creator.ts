@@ -10,6 +10,8 @@ export const requireCreator = cache(async () => {
     return redirect("/login");
   }
 
+  if (session.user.banned) return redirect("/banned");
+
   const isExpert = !!session.user.expertVerificationType;
   const isAdmin = session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN";
 

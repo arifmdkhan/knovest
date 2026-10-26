@@ -4,33 +4,17 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { Check, X, Eye, FileText, ExternalLink, ShieldCheck, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter
-} from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { approveApplication, rejectApplication, resetApplication, requestAdditionalInfo } from "@/features/admin/verification.action";
 import { VerificationApplication, VerificationCertification, VerificationBrokerPnl } from "@/generated/prisma/client";
-import { RotateCcw, MessageSquare } from "lucide-react"; // Import icon for reset/request info
+import { RotateCcw, MessageSquare } from "lucide-react"; 
 
-// Define the shape of the data including relations
+
 type ApplicationWithUser = VerificationApplication & {
     user: {
         name: string;
@@ -68,7 +52,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
             } else {
                 toast.error(res.message);
             }
-        } catch (err) {
+        } catch {
             toast.error("Something went wrong");
         } finally {
             setIsProcessing(false);
@@ -227,7 +211,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
                 </Table>
             </div>
 
-            {/* --- Details Dialog --- */}
+            {/* Details Dialog */}
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
                 <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 bg-background/95 backdrop-blur-xl">
                     {selectedApp && (
@@ -246,7 +230,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
 
                             <ScrollArea className="flex-1 p-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* LEFT COL: Personal & SEBI */}
+                                    {/* LEFT Col: Personal & SEBI */}
                                     <div className="space-y-6">
                                         <Section title="Identity Details" icon={<ShieldCheck className="w-4 h-4" />}>
                                             <DetailRow label="Full Name" value={selectedApp.fullName} />
@@ -271,7 +255,7 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
                                         )}
                                     </div>
 
-                                    {/* RIGHT COL: Certs & P&L */}
+                                    {/* RIGHT Col: Certs & P&L */}
                                     <div className="space-y-6">
                                         {(selectedApp.certifications.length > 0) && (
                                             <Section title={`Certifications (${selectedApp.certifications.length})`} icon={<AlertCircle className="w-4 h-4 text-purple-500" />}>
@@ -443,7 +427,6 @@ export function ApplicationsList({ initialApplications }: ApplicationsListProps)
     );
 }
 
-// --- Subcomponents ---
 
 function Section({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
     return (
@@ -463,7 +446,7 @@ function DetailRow({ label, value }: { label: string, value: string | null | und
     return (
         <div className="grid grid-cols-[100px_1fr] gap-2 text-sm">
             <span className="text-muted-foreground">{label}:</span>
-            <span className="font-medium text-foreground break-words">{value}</span>
+            <span className="font-medium text-foreground wrap-break-word">{value}</span>
         </div>
     );
 }

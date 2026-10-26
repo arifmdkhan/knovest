@@ -1,22 +1,7 @@
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
-import arcjet, { createMiddleware, detectBot } from "@arcjet/next";
-
-const aj = arcjet({
-  key: process.env.ARCJET_KEY!,
-  rules: [
-    detectBot({
-      mode: "LIVE",
-      // Block all bots except the following
-      allow: [
-        "CATEGORY:SEARCH_ENGINE", // Google, Bing, etc
-        "CATEGORY:MONITOR", // Uptime monitoring services
-        "CATEGORY:PREVIEW", // Link previews e.g. Slack, Discord
-      ],
-    }),
-  ],
-});
 
 // Define security headers
 const securityHeaders = {
@@ -43,7 +28,7 @@ export const config = {
   ],
 };
 
-export default createMiddleware(aj, async (request: NextRequest) => {
+async function handleRequest(request: NextRequest) {
   const response = request.nextUrl.pathname.startsWith("/admin")
     ? await proxy(request)
     : NextResponse.next();
@@ -54,4 +39,6 @@ export default createMiddleware(aj, async (request: NextRequest) => {
   });
 
   return response;
-});
+}
+
+export default handleRequest;

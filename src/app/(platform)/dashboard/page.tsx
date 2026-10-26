@@ -1,13 +1,14 @@
-import { creatorGetEnrollmentStats } from "@/features/creator/queries/creator-get-enrollment-stats"
-import { getCreatorSubscribers } from "@/features/creator/queries/get-creator-subscribers"
-import { getCreatorEnrollments } from "@/features/creator/queries/get-creator-enrollments"
-import { ChartAreaInteractive } from "@/components/creator-dashboard/chart-area-interactive"
-import { SectionCards } from "@/components/creator-dashboard/section-cards"
-import { SubscribersTable } from "@/components/creator-dashboard/subscribers-table"
-import { EnrollmentsTable } from "@/components/creator-dashboard/enrollments-table"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { LayoutDashboard, MonitorPlay } from "lucide-react"
+import { AppHero } from "@/components/AppHero";
+import { creatorGetEnrollmentStats } from "@/features/creator/queries/creator-get-enrollment-stats";
+import { getCreatorSubscribers } from "@/features/creator/queries/get-creator-subscribers";
+import { getCreatorEnrollments } from "@/features/creator/queries/get-creator-enrollments";
+import { ChartAreaInteractive } from "@/components/creator-dashboard/chart-area-interactive";
+import { SectionCards } from "@/components/creator-dashboard/section-cards";
+import { SubscribersTable } from "@/components/creator-dashboard/subscribers-table";
+import { EnrollmentsTable } from "@/components/creator-dashboard/enrollments-table";
+import Link from "@/components/AppLink"
+import { Button } from "@/components/ui/button";
+import { LayoutDashboard, MonitorPlay } from "lucide-react";
 
 
 export default async function CreatorDashboardPage() {
@@ -20,6 +21,7 @@ export default async function CreatorDashboardPage() {
 
     return (
         <div className="flex flex-col gap-6">
+            <AppHero title="Creator dashboard" description="Your community, courses, and learning activity at a glance." />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Link href="/academy/creator">
                     <Button variant="outline" className="w-full h-12 text-lg gap-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">

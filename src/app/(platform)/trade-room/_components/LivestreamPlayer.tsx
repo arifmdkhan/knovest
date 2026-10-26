@@ -1,358 +1,196 @@
 "use client";
 
-import {
-    Call,
-    StreamCall,
-    StreamTheme,
-    SpeakerLayout,
-    useCallStateHooks,
-    ParticipantView
-} from "@stream-io/video-react-sdk";
-import React, { useEffect, useState } from "react";
-import { useChatContext, Channel, MessageList, MessageInput, Window, Thread } from "stream-chat-react";
+import { Call, StreamCall, StreamTheme, hasScreenShare, useCallStateHooks, ParticipantView } from "@stream-io/video-react-sdk";
+import { useEffect, useMemo, useState } from "react";
+import { useChatContext, Channel, MessageList, MessageInput, Window } from "stream-chat-react";
+import type { Channel as ChatChannel } from "stream-chat";
 import { ManageAccessDialog } from "./ManageAccessDialog";
+import { RoomParticipantView } from "./RoomParticipantView";
 import { StreamControls } from "./StreamControls";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MediaDeviceSettings } from "./MediaDeviceSettings";
-import { Loader2, MessageSquare, X, Link, Users, Share2, Shield, Settings2 } from "lucide-react";
+import { Loader2, MessageSquare, X, Share2, Shield, Settings2, MoreHorizontal, Users, Radio, MonitorUp, Video, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-import { cn } from "@/lib/utils";
+import { KnovestLogo } from "@/components/KnovestLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { CustomCallData } from "@/types/stream";
-import { authClient } from "@/lib/auth-client";
 
-interface LivestreamPlayerProps {
-    call: Call;
+export function LivestreamPlayer({ call }: { call: Call }) {
+    return <StreamCall call={call}><LivestreamContent call={call} /></StreamCall>;
 }
 
-export const LivestreamPlayer = React.memo(function LivestreamPlayer({ call }: LivestreamPlayerProps) {
-    const { data: session } = authClient.useSession();
-    const { client: chatClient } = useChatContext();
-    // Permission Check - REMOVED: Managed by parent Page component
-    // If we are here, we have access.
-
-    // We can keep customData for title/desc but not for permission validation.
-
-
-    return (
-        <StreamCall call={call}>
-            <LivestreamContent call={call} />
-        </StreamCall>
-    );
-});
+function EmptyChat() {
+    return <div className="room-chat-empty">
+        <span className="room-empty-icon"><MessageSquare size={24} /></span>
+        <h3>Join the conversation</h3>
+        <p>Share a question or an insight with the room.</p>
+    </div>;
+}
 
 function LivestreamContent({ call }: { call: Call }) {
     const router = useRouter();
     const { client: chatClient } = useChatContext();
-    const [chatChannel, setChatChannel] = useState<any>(null);
-    const [showChat, setShowChat] = useState(true);
-    const { useCallState, useParticipants } = useCallStateHooks();
-    const { backstage } = useCallState();
-    const participants = useParticipants();
-    const [isBackstage, setIsBackstage] = useState(backstage);
+    const [chatChannel, setChatChannel] = useState<ChatChannel | null>(null);
+    const [chatError, setChatError] = useState(false);
+    const [chatRetry, setChatRetry] = useState(0);
+    const [showChat, setShowChat] = useState(false);
     const [showManageAccess, setShowManageAccess] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-
-    const checkCustomData = (data: Record<string, unknown> | undefined): CustomCallData => {
-        return (data || {}) as CustomCallData;
-    };
-
-    const customData = checkCustomData(call.state.custom);
-
-    // Deduplicate participants based on userId, prioritizing those with active tracks
-    // This prevents showing a 'ghost' (disconnected) participant instead of the real (connected) one
-    const uniqueParticipants = React.useMemo(() => {
-        const grouped = participants.reduce((acc, p) => {
-            if (!acc[p.userId]) {
-                acc[p.userId] = p;
-            } else {
-                // If we already have this user, check if the new one is 'better'
-                // Better means: Has video or audio track
-                const current = acc[p.userId];
-                const currentHasVideo = current.videoStream || current.publishedTracks.includes('video' as any);
-                const currentHasAudio = current.audioStream || current.publishedTracks.includes('audio' as any);
-
-                const newHasVideo = p.videoStream || p.publishedTracks.includes('video' as any);
-                const newHasAudio = p.audioStream || p.publishedTracks.includes('audio' as any);
-
-                // If new one has tracks and current doesn't, swap
-                if ((newHasVideo || newHasAudio) && (!currentHasVideo && !currentHasAudio)) {
-                    acc[p.userId] = p;
-                }
-                // If both have tracks or neither, maybe prefer the newer one? (Usually later in list?)
-            }
-            return acc;
-        }, {} as Record<string, typeof participants[0]>);
-
-        return Object.values(grouped);
-    }, [participants]);
+    const [busy, setBusy] = useState(false);
+    const [participantPage, setParticipantPage] = useState(0);
+    const [compactStage, setCompactStage] = useState(false);
+    const [ended, setEnded] = useState(false);
+    const { useCallState, useParticipants, useScreenShareState } = useCallStateHooks();
+    const { backstage } = useCallState();
+    const participants = useParticipants();
+    const { status: screenStatus } = useScreenShareState();
+    const customData = (call.state.custom || {}) as CustomCallData;
+    const isCreator = call.state.createdBy?.id === chatClient?.userID;
 
     useEffect(() => {
-        setIsBackstage(backstage);
-    }, [backstage]);
-
-    // Listen for call ended event (for participants)
-    useEffect(() => {
-        const handleCallEnded = () => {
-            toast.info("Stream ended by host");
-            router.push("/trade-room");
-        };
-
-        call.on('call.ended', handleCallEnded);
-
-        return () => {
-            call.off('call.ended', handleCallEnded);
-        };
-    }, [call, router]);
-
-    // Initialize Chat Channel for this stream
-    useEffect(() => {
-        if (!chatClient || !call.id) return;
-
-        const initChat = async () => {
-            const channel = chatClient.channel('livestream', call.id, {
-                name: customData.title || "Livestream Chat",
-            } as any);
-            await channel.watch();
-            setChatChannel(channel);
-        };
-
-        initChat();
-    }, [chatClient, call.id, customData.title]);
-
-    // Check for Secure Context (HTTPS)
-    useEffect(() => {
-        // navigator.mediaDevices is undefined in insecure contexts (HTTP)
-        const isSecure = typeof window !== 'undefined' && window.isSecureContext;
-        if (!isSecure) {
-            toast.error("Insecure Connection Detected", {
-                description: "Browsers block Camera/Microphone on HTTP. Please use HTTPS or localhost to enable audio/video.",
-                duration: Infinity, // Make it stick so they see it
-                action: {
-                    label: "Dismiss",
-                    onClick: () => console.log("Dismissed insecure warning")
-                }
-            });
-        }
+        setShowChat(window.matchMedia("(min-width: 1024px)").matches);
+        const query = window.matchMedia("(max-width: 600px)");
+        const update = () => setCompactStage(query.matches);
+        update();
+        query.addEventListener("change", update);
+        return () => query.removeEventListener("change", update);
     }, []);
 
-    // Show waiting screen if stream is backstage and we are not the creator
-    const isCreator = (call.state as any).createdBy?.id === chatClient?.userID;
+    const uniqueParticipants = useMemo(() => {
+        const grouped = new Map<string, typeof participants[number]>();
+        for (const participant of participants) {
+            const current = grouped.get(participant.userId);
+            if (!current || (!(current.videoStream || current.audioStream) && (participant.videoStream || participant.audioStream))) {
+                grouped.set(participant.userId, participant);
+            }
+        }
+        return [...grouped.values()];
+    }, [participants]);
 
-    if (isBackstage && !isCreator) {
-        return (
-            <div className="flex h-full w-full items-center justify-center bg-zinc-950 text-white flex-col gap-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-violet-900/20 via-zinc-950 to-black pointer-events-none"></div>
-                <div className="relative group">
-                    <div className="absolute -inset-4 rounded-full bg-linear-to-r from-violet-600 to-indigo-600 blur-xl opacity-50 animate-pulse group-hover:opacity-75 transition-opacity duration-500"></div>
-                    <div className="relative bg-zinc-900/90 backdrop-blur-xl rounded-full p-6 ring-1 ring-white/10 shadow-2xl">
-                        <Loader2 className="h-10 w-10 animate-spin text-violet-400" />
-                    </div>
-                </div>
-                <div className="text-center z-10 space-y-2">
-                    <h3 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-b from-white to-zinc-400">Stream Starting Soon</h3>
-                    <p className="text-zinc-500 font-medium">The host is preparing backstage.</p>
-                </div>
-            </div>
-        );
-    }
+    const screenPresenter = uniqueParticipants.find(hasScreenShare);
+    const focusedParticipant = screenPresenter || uniqueParticipants.find(participant => !!participant.pin);
+    const pageSize = focusedParticipant ? (compactStage ? 2 : 4) : 6;
+    const pageCount = Math.max(1, Math.ceil(uniqueParticipants.length / pageSize));
+    const page = Math.min(participantPage, pageCount - 1);
+    const visibleParticipants = uniqueParticipants.slice(page * pageSize, (page + 1) * pageSize);
+    const visibleIds = new Set(visibleParticipants.map(participant => participant.sessionId));
+    const offPageParticipants = uniqueParticipants.filter(participant => !visibleIds.has(participant.sessionId) && participant.sessionId !== focusedParticipant?.sessionId);
 
-    const handleLeave = () => {
-        router.push('/trade-room');
+    useEffect(() => {
+        const onEnded = () => setEnded(true);
+        call.on("call.ended", onEnded);
+        return () => { call.off("call.ended", onEnded); };
+    }, [call]);
+
+    useEffect(() => {
+        if (!chatClient || !call.id) return;
+        let active = true;
+        const channel = chatClient.channel("livestream", call.id);
+        setChatError(false);
+        setChatChannel(null);
+        const watching = channel.watch();
+        watching.then(() => { if (active) setChatChannel(channel); }).catch(() => { if (active) setChatError(true); });
+        return () => {
+            active = false;
+            watching.then(() => channel.stopWatching()).catch(() => {});
+        };
+    }, [chatClient, call.id, chatRetry]);
+
+    const leave = async () => {
+        try { await call.leave(); router.push("/trade-room"); }
+        catch { toast.error("Unable to leave. Please try again."); }
     };
 
-    return (
-        <StreamTheme className="livestream-chat-theme">
-            <div className="flex h-full w-full bg-zinc-950 text-white overflow-hidden relative font-sans">
-                {/* Main Video Area */}
-                <div className="flex-1 flex flex-col h-full w-full relative">
-                    <div className="flex-1 relative bg-zinc-900/50 w-full h-full">
-                        {uniqueParticipants.length === 1 ? (
-                            <ParticipantView
-                                participant={uniqueParticipants[0]}
-                                className="h-screen w-full object-cover"
-                            />
-                        ) : (
-                            <SpeakerLayout
-                                participantsBarPosition="top"
-                            />
-                        )}
+    const changeBroadcast = async () => {
+        if (busy) return;
+        setBusy(true);
+        try {
+            if (backstage) { await call.goLive(); toast.success("You are now live"); }
+            else { await call.stopLive(); await call.endCall(); setEnded(true); }
+        } catch { toast.error("Unable to update the broadcast. Please try again."); }
+        finally { setBusy(false); }
+    };
 
-                        {/* Stream Title Overlay */}
-                        <div className="absolute top-6 left-6 z-10 pointer-events-none max-w-[calc(100%-4rem)] sm:max-w-md">
-                            <div className="bg-black/40 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/5 shadow-2xl">
-                                <h1 className="text-lg font-bold text-white truncate leading-tight">
-                                    {customData.title || "Untitled Stream"}
-                                </h1>
-                                {customData.description && (
-                                    <p className="text-xs text-zinc-300 truncate mt-1 font-medium opacity-90">
-                                        {customData.description}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
+    if (ended) return <div className="room-finished">
+        <span className="room-empty-icon"><Video /></span>
+        <h1>This stream has ended</h1><p>Thanks for being part of the conversation.</p>
+        <Button onClick={() => router.push("/trade-room")}>Back to Trade Room</Button>
+    </div>;
 
-                        {/* Overlay Controls */}
-                        <div className="absolute bottom-6 left-0 right-0 flex justify-center px-6 pointer-events-none">
-                            <div className="flex gap-3 items-center pointer-events-auto p-2 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
-                                {isCreator && isBackstage && (
-                                    <Button
-                                        size="sm"
-                                        onClick={async () => {
-                                            try {
-                                                await call.goLive();
-                                                setIsBackstage(false); // Optimistic update
-                                                await call.get(); // Refresh state
-                                                toast.success("You are now live!");
-                                            } catch (error) {
-                                                console.error("Failed to go live", error);
-                                                toast.error("Failed to go live");
-                                            }
-                                        }}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-full px-6 font-semibold shadow-emerald-900/20 shadow-lg transition-all active:scale-95"
-                                    >
-                                        Go Live
-                                    </Button>
-                                )}
-                                {isCreator && !isBackstage && (
-                                    <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={async () => {
-                                            try {
-                                                await call.stopLive();
-                                                await call.endCall(); // Terminate call for everyone
-                                                toast.success("Stream ended");
-                                                router.push("/trade-room");
-                                            } catch (error) {
-                                                console.error("Failed to end stream", error);
-                                                toast.error("Failed to end stream");
-                                            }
-                                        }}
-                                        className="rounded-full px-6 font-semibold shadow-red-900/20 shadow-lg active:scale-95 transition-all"
-                                    >
-                                        End Stream
-                                    </Button>
-                                )}
-
-                                <div className="h-6 w-px bg-white/20 mx-1"></div>
-
-                                <div className="flex gap-2 shrink-0 items-center">
-                                    <StreamControls call={call} onLeave={handleLeave} />
-
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        className="rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-none shrink-0 h-10 w-10 transition-colors"
-                                        onClick={() => setShowSettings(true)}
-                                        title="Audio & Video Settings"
-                                    >
-                                        <Settings2 className="h-4.5 w-4.5" />
-                                    </Button>
-
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        className="rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-none shrink-0 h-10 w-10 transition-colors"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(window.location.href);
-                                            toast.success("Stream link copied");
-                                        }}
-                                        title="Copy Link" // Tooltip
-                                    >
-                                        <Share2 className="h-4.5 w-4.5" />
-                                    </Button>
-
-                                    {isCreator && (
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            className="rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-none shrink-0 h-10 w-10 transition-colors"
-                                            onClick={() => setShowManageAccess(true)}
-                                            title="Manage Access"
-                                        >
-                                            <Shield className="h-4.5 w-4.5" />
-                                        </Button>
-                                    )}
-
-                                    <Button
-                                        variant={showChat ? "default" : "secondary"}
-                                        size="icon"
-                                        className={cn(
-                                            "rounded-full shrink-0 h-10 w-10 transition-colors border-none",
-                                            showChat ? "bg-violet-600 hover:bg-violet-700 text-white" : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
-                                        )}
-                                        onClick={() => setShowChat(!showChat)}
-                                    >
-                                        <MessageSquare className="h-4.5 w-4.5" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    return <StreamTheme className="room-theme">
+        <div className="stream-room">
+            <header className="room-header">
+                <KnovestLogo className="size-8" />
+                <div className="room-heading"><h1 title={customData.title}>{customData.title || "Live session"}</h1>
+                    <p>{isCreator ? "Your broadcast studio" : "Knovest Trade Room"}</p>
                 </div>
+                <span className="room-status" data-live={!backstage}><Radio size={13} />{backstage ? "Backstage" : "Live"}</span>
+                <span className="room-attendance" aria-label={`${uniqueParticipants.length} participants`}><Users size={15} />{uniqueParticipants.length}</span>
+                <ThemeToggle />
+            </header>
 
-                {/* Chat Sidebar (Responsive) */}
-                <div className={
-                    cn(
-                        "absolute z-20 backdrop-blur-2xl bg-black/80 sm:bg-zinc-950/90 border-l border-white/5 shadow-2xl transform transition-all duration-300 ease-in-out",
-                        "top-0 right-0 bottom-0 w-full sm:top-0 sm:right-0 sm:bottom-0 sm:w-[380px] sm:h-full",
-                        showChat ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
-                    )
-                }>
-                    <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 backdrop-blur-sm">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-violet-500/20 p-1.5 rounded-lg">
-                                <MessageSquare className="h-4 w-4 text-violet-400" />
+            <div className="room-body" data-chat={showChat}>
+                <section className="room-stage" aria-label="Video stage">
+                    {backstage && !isCreator ? <div className="room-stage-placeholder"><Radio size={32} />
+                        <h2>The session starts soon</h2><p>The host is getting ready. You can join the chat while you wait.</p>
+                    </div> : uniqueParticipants.length === 0 ? <div className="room-stage-placeholder"><Video size={32} />
+                        <h2>Waiting for participants</h2><p>Participant tiles will appear here as people join.</p>
+                    </div> : <div className="room-stage-layout" data-sharing={!!focusedParticipant}>
+                        <div className={focusedParticipant ? "room-sharing-layout" : "room-presenter-grid"} data-count={visibleParticipants.length}>
+                            {focusedParticipant && <RoomParticipantView participant={focusedParticipant} trackType={screenPresenter ? "screenShareTrack" : "videoTrack"} className="room-shared-screen room-presenter-video" />}
+                            <div className={focusedParticipant ? "room-sharing-participants" : "room-grid-contents"}>
+                                {visibleParticipants.map(participant => <RoomParticipantView key={participant.sessionId} participant={participant} muteAudio={participant.sessionId === focusedParticipant?.sessionId} className="room-presenter-video" />)}
                             </div>
-                            <h3 className="font-semibold text-white tracking-tight text-sm">Live Chat</h3>
                         </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setShowChat(false)}
-                            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
+                        {pageCount > 1 && <nav className="room-stage-pagination" aria-label="Participant pages">
+                            <Button variant="ghost" size="icon" aria-label="Previous participants" disabled={page === 0} onClick={() => setParticipantPage(page - 1)}><ChevronLeft size={16} /></Button>
+                            <span>Participants {page * pageSize + 1}–{Math.min((page + 1) * pageSize, uniqueParticipants.length)} of {uniqueParticipants.length}</span>
+                            <Button variant="ghost" size="icon" aria-label="Next participants" disabled={page + 1 >= pageCount} onClick={() => setParticipantPage(page + 1)}><ChevronRight size={16} /></Button>
+                        </nav>}
+                    </div>}
+                    <div className="hidden" aria-hidden="true">{offPageParticipants.map(participant => <ParticipantView key={participant.sessionId} participant={participant} trackType="none" ParticipantViewUI={null} />)}</div>
+                    {backstage && isCreator && <div className="room-stage-note"><span />You are backstage. Check your devices, then go live.</div>}
+                </section>
+
+                {showChat && <aside className="room-chat" aria-label="Live chat">
+                    <div className="room-chat-header"><div><h2><MessageSquare size={17} />Live chat</h2><p>A space for questions and ideas</p></div>
+                        <Button variant="ghost" size="icon" aria-label="Close chat" onClick={() => setShowChat(false)}><X size={18} /></Button>
                     </div>
-                    <div className="h-[calc(100%-65px)] relative flex flex-col">
-                        {chatChannel && (
-                            <Channel channel={chatChannel} >
-                                <Window>
-                                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                                        <MessageList
-                                            disableDateSeparator
-                                            hideDeletedMessages
-                                            messageActions={['react', 'reply']}
-                                        />
-                                    </div>
-                                    <div className="p-4 bg-zinc-900/50 backdrop-blur-md border-t border-white/5">
-                                        <MessageInput focus />
-                                    </div>
-                                </Window>
-                            </Channel>
-                        )}
+                    <div className="room-chat-content">
+                        {chatChannel ? <Channel channel={chatChannel} EmptyStateIndicator={EmptyChat}>
+                            <Window>
+                                <MessageList disableDateSeparator hideDeletedMessages messageActions={["react", "reply"]} />
+                                <MessageInput maxRows={3} additionalTextareaProps={{ placeholder: "Share a message…" }} />
+                            </Window>
+                        </Channel> : <div className="room-chat-empty" role="status">
+                            {chatError ? <><MessageSquare size={24} /><h3>Chat could not connect</h3><Button variant="outline" onClick={() => setChatRetry(value => value + 1)}>Retry chat</Button></> : <><Loader2 className="animate-spin" /><p>Connecting to chat…</p></>}
+                        </div>}
                     </div>
-                </div>
+                </aside>}
             </div>
 
-            <ManageAccessDialog
-                open={showManageAccess}
-                onOpenChange={setShowManageAccess}
-                call={call}
-            />
-
-            <Dialog open={showSettings} onOpenChange={setShowSettings}>
-                <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800 text-white">
-                    <DialogHeader>
-                        <DialogTitle>Audio & Video Settings</DialogTitle>
-                    </DialogHeader>
-                    <MediaDeviceSettings />
-                </DialogContent>
-            </Dialog>
-        </StreamTheme>
-    );
+            <footer className="room-toolbar">
+                <div className="room-device-controls"><StreamControls call={call} onLeave={leave} /></div>
+                <div className="room-toolbar-actions">
+                    {isCreator && <Button variant="outline" size="icon" aria-label={screenStatus === "enabled" ? "Stop sharing screen" : "Share screen"} aria-pressed={screenStatus === "enabled"} onClick={() => call.screenShare.toggle().catch(() => toast.error("Screen sharing was not started."))}><MonitorUp size={18} /></Button>}
+                    <Button variant={showChat ? "default" : "outline"} size="icon" aria-label="Toggle live chat" aria-expanded={showChat} onClick={() => setShowChat(value => !value)}><MessageSquare size={18} /></Button>
+                    <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="More session options"><MoreHorizontal size={19} /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => setShowSettings(true)}><Settings2 />Device settings</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => { navigator.clipboard.writeText(window.location.href).then(() => toast.success("Stream link copied")).catch(() => toast.error("Unable to copy the link")); }}><Share2 />Copy invite link</DropdownMenuItem>
+                            {isCreator && <DropdownMenuItem onSelect={() => setShowManageAccess(true)}><Shield />Manage access</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                {isCreator && <Button className="room-broadcast-button" variant={backstage ? "default" : "destructive"} disabled={busy} onClick={changeBroadcast}>{busy && <Loader2 className="size-4 animate-spin" />}{backstage ? "Go live" : "End stream"}</Button>}
+            </footer>
+        </div>
+        <ManageAccessDialog open={showManageAccess} onOpenChange={setShowManageAccess} call={call} />
+        <Dialog open={showSettings} onOpenChange={setShowSettings}>
+            <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Device settings</DialogTitle><DialogDescription>Choose your microphone, camera and speakers.</DialogDescription></DialogHeader><MediaDeviceSettings /></DialogContent>
+        </Dialog>
+    </StreamTheme>;
 }

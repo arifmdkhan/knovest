@@ -3,22 +3,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
-import { getSubscriptionStatus } from "@/features/subscriptions/actions/get-subscription-status.action";
 import { cancelSubscription } from "@/features/subscriptions/actions/cancel-subscription.action";
 import { toast } from "sonner";
 import { useState, useTransition } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Subscription {
     id: string;

@@ -1,106 +1,40 @@
-import Link from "next/link";
-import {
-  BookOpen,
-  GraduationCap,
-  Layout,
-  ArrowRight
-} from "lucide-react";
+import Link from "@/components/AppLink";
+import { BookOpen, GraduationCap, Layout, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 import { createMetadata } from "@/lib/metadata";
-import { Metadata } from "next";
 import { AcademyCard } from "./_components/AcademyCard";
+import { AppHero } from "@/components/AppHero";
+import { Button } from "@/components/ui/button";
+import { getAllCourses } from "@/features/courses/queries/get-all-courses";
+import { PublicCourseCard } from "./course/_components/PublicCourseCard";
 
-export const metadata: Metadata = createMetadata({
-  title: "Academy",
-  description: "Master your craft with Consensus Academy. Access expert-led courses, in-depth articles, and a community of learners dedicated to elevating their trading journey.",
-});
+export const metadata = createMetadata({ title: "Academy", description: "Build your knowledge with expert-led courses and articles on Knovest." });
 
 export default async function AcademyPage() {
   const session = await getServerSession();
-  let showCreatorDashboard = false;
-
-  if (session?.user?.id) {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true, expertVerificationType: true },
-    });
-    if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || !!user?.expertVerificationType) {
-      showCreatorDashboard = true;
-    }
-  }
-
+  const user = session?.user?.id ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true, expertVerificationType: true } }) : null;
+  const showCreatorDashboard = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || !!user?.expertVerificationType;
+  const courses = await getAllCourses(undefined, undefined, session?.user?.id);
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse delay-1000" />
-      </div>
-      <div className="relative z-10 max-w-7xl mx-auto space-y-16">
-        <header className="text-center space-y-6 py-12">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground">
-            Consensus Academy
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto font-light">
-            Master your craft. Share your knowledge. <br />
-            <span className="text-primary font-medium">Elevate your journey.</span>
-          </p>
-        </header>
-
-        {showCreatorDashboard && (
-          <div className="flex justify-center">
-            <Link href="/academy/creator" className="group relative inline-flex items-center justify-center px-8 py-3 font-semibold text-white transition-all duration-200 bg-primary font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary hover:bg-primary/90">
-              Creator Dashboard
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              <div className="absolute -inset-3 rounded-xl bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity blur-lg" />
-            </Link>
-          </div>
-        )}
-
-        {/* Courses Section */}
-        <section className="space-y-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">Courses & Articles</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-
-            {/* All Courses */}
-            <AcademyCard
-              href="/academy/course"
-              icon={GraduationCap}
-              title="Browse Courses"
-              description="Explore a vast library of knowledge curated by industry experts."
-              actionText="Start Learning"
-              color="cyan"
-            />
-
-            {/* All Articles */}
-            <AcademyCard
-              href="/academy/article"
-              icon={Layout}
-              title="Read Articles"
-              description="Discover the latest trends, tutorials, and community stories."
-              actionText="Explore"
-              color="cyan"
-            />
-
-            {/* My Learning */}
-            <AcademyCard
-              href="/academy/enrolled"
-              icon={BookOpen}
-              title="My Learning"
-              description="Track your progress and resume where you left off."
-              actionText="Go to Dashboard"
-              color="cyan"
-            />
-          </div>
-        </section>
-      </div>
+    <div className="space-y-8">
+      <AppHero title={<>Knovest <span className="text-primary">Academy</span></>} description="Build your knowledge. Sharpen your edge. Learn from people who know the markets.">
+        <div className="mt-7 flex flex-wrap items-center gap-3">
+          <Button asChild><Link href="/academy/course">Browse courses <ArrowRight className="size-4" /></Link></Button>
+          {showCreatorDashboard && <Button variant="outline" asChild><Link href="/academy/creator">Creator dashboard</Link></Button>}
+        </div>
+        <GraduationCap className="absolute right-10 top-0 hidden size-36 rotate-[-12deg] text-primary/25 xl:block" strokeWidth={1} aria-hidden="true" />
+      </AppHero>
+      <section aria-label="Explore the academy" className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <AcademyCard href="/academy/course" icon={GraduationCap} title="Browse courses" description="Practical lessons from verified experts." actionText="Explore courses" />
+        <AcademyCard href="/academy/article" icon={Layout} title="Read articles" description="Fresh perspectives, insights, and ideas." actionText="Explore articles" />
+        <AcademyCard href="/academy/enrolled" icon={BookOpen} title="My learning" description="Pick up where you left off." actionText="Continue learning" />
+      </section>
+      <section className="space-y-5">
+        <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold tracking-tight">Explore your next chapter</h2><Link className="text-sm text-primary hover:underline" href="/academy/course">View all courses →</Link></div>
+        {courses.length ? <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{courses.slice(0, 3).map(course => <PublicCourseCard key={course.id} data={course} />)}</div>
+        : <div className="app-panel px-6 py-16 text-center"><GraduationCap className="mx-auto mb-4 size-9 text-primary" /><h3 className="font-semibold">New learning opportunities ahead</h3><p className="mt-2 text-sm text-muted-foreground">Published courses will appear here. Explore articles in the meantime.</p><Button asChild variant="outline" className="mt-5"><Link href="/academy/article">Read articles</Link></Button></div>}
+      </section>
     </div>
   );
 }

@@ -8,6 +8,17 @@ export async function confirmSubscription(creatorId: string): Promise<ApiRespons
     try {
         const user = await requireUser();
 
+        const pending = await prisma.subscription.findUnique({
+            where: { subscriberId_subscribedToId: { subscriberId: user.id, subscribedToId: creatorId } },
+            include: { subscribedTo: true },
+        });
+        if (!pending || !pending.subscribedTo.isSubscriptionEnabled || pending.subscribedTo.subscriptionPrice > 0) {
+            return { status: "error", message: "Paid subscriptions require a verified payment. Payments are not available yet." };
+        }
+        if (pending.status !== "PENDING" && pending.status !== "ACTIVE") {
+            return { status: "error", message: "This subscription cannot be confirmed." };
+        }
+
         // 1. Update Subscription Status
         const subscription = await prisma.subscription.update({
             where: {
@@ -24,11 +35,11 @@ export async function confirmSubscription(creatorId: string): Promise<ApiRespons
             },
         });
 
-        // 2. Add to Stream Group if exists
+        
         // 2. Add to Stream Group
         let subscriptionChannelId = subscription.subscribedTo.subscriptionChannelId;
 
-        // Lazy creation if missing
+    
         // Lazy creation if missing
         if (!subscriptionChannelId && subscription.subscribedTo.isSubscriptionEnabled) {
             try {
@@ -37,7 +48,7 @@ export async function confirmSubscription(creatorId: string): Promise<ApiRespons
                     select: { username: true, image: true }
                 });
 
-                const { createSubscriptionGroup } = await import("@/features/media/actions/stream.action");
+                const { createSubscriptionGroup } = await import("@/features/media/services/subscription-channel");
                 subscriptionChannelId = await createSubscriptionGroup(creatorId, creator?.username || "Creator", creator?.image);
 
                 // Update user record
@@ -53,13 +64,13 @@ export async function confirmSubscription(creatorId: string): Promise<ApiRespons
 
         if (subscriptionChannelId) {
             try {
-                const { addSubscriberToGroup } = await import("@/features/media/actions/stream.action");
+                const { addSubscriberToGroup } = await import("@/features/media/services/subscription-channel");
                 console.log(`Adding user ${user.id} to group ${subscriptionChannelId}`);
                 await addSubscriberToGroup(subscriptionChannelId, user.id);
                 console.log(`Successfully added user ${user.id} to group ${subscriptionChannelId}`);
             } catch (error) {
                 console.error("Failed to add user to subscription group:", error);
-                // Don't fail the whole request if chat addition fails
+               
             }
         } else {
             console.warn(`No subscription channel ID found for creator ${creatorId}`);

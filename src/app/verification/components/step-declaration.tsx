@@ -10,8 +10,6 @@ import { saveApplicationDraft, submitApplication } from "@/features/verification
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-
 interface StepProps {
     data: VerificationFormData;
     updateData: (data: Partial<VerificationFormData>) => void;

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Search, X, Loader2, User as UserIcon, BookOpen, FileText } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
+import { Search, X, Loader2, BookOpen, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { searchGlobal } from "@/features/search/actions/search.action";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 
 interface GlobalSearchInputProps {
     className?: string;
@@ -81,6 +82,11 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
         e.preventDefault();
         if (query.trim()) {
             setIsOpen(false);
+            try {
+                const stored: unknown = JSON.parse(localStorage.getItem("knovest-recent-searches") || "[]");
+                const history = Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string") : [];
+                localStorage.setItem("knovest-recent-searches", JSON.stringify([query.trim(), ...history.filter(value => value !== query.trim())].slice(0, 5)));
+            } catch { /* Search history is optional. */ }
             router.push(`/search?q=${encodeURIComponent(query.trim())}`);
         }
     };
@@ -118,13 +124,16 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
                     onChange={handleChange}
                     onFocus={handleFocus}
                     placeholder="Search..."
+                    aria-label="Search people, courses, and articles"
+                    onKeyDown={(event) => { if (event.key === "Escape") setIsOpen(false); }}
                     className="pl-9 pr-8 h-full w-full bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                 />
                 {query ? (
                     <button
                         type="button"
+                        aria-label="Clear search"
                         onClick={clearSearch}
-                        className="absolute right-3 text-muted-foreground hover:text-foreground"
+                        className="absolute right-0 flex size-11 items-center justify-center text-muted-foreground hover:text-foreground"
                     >
                         <X className="h-3 w-3" />
                     </button>
@@ -198,7 +207,7 @@ export function GlobalSearchInput({ className }: GlobalSearchInputProps) {
                                     {results.articles.map((article) => (
                                         <Link
                                             key={article.id}
-                                            href={`/academy/article/${article.slug}`} // Assuming article link
+                                            href={`/academy/article/${article.slug}`} 
                                             onClick={() => setIsOpen(false)}
                                             className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 transition-colors"
                                         >

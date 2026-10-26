@@ -3,17 +3,19 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { getServerSession } from "@/lib/get-sessions";
 import { FeedPost } from "@/types/post";
+import { readablePostWhere, postMediaUrl } from "@/features/posts/access";
 
 export type FeedType = 'FOR_YOU' | 'FOLLOWING' | 'SUBSCRIBED';
 
 export async function getFeedPosts(cursor?: string, limit = 10, authorId?: string, type: FeedType = 'FOR_YOU', explicitUserId?: string): Promise<{ posts: FeedPost[]; nextCursor?: string }> {
+    limit = Math.min(50, Math.max(1, Math.trunc(limit) || 10));
     let session;
     if (!explicitUserId) {
         try {
             session = await getServerSession();
         } catch (error) {
             console.error("getFeedPosts Session Error:", error);
-            // Continue without session (guest mode)
+           
         }
     }
     const userId = explicitUserId || session?.user?.id;
@@ -99,7 +101,7 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
                 }
             } else {
                 // If not logged in or following no one, show nothing or empty
-                orConditions.push({ id: 'NO_MATCH' }); // Hack to return empty
+                orConditions.push({ id: 'NO_MATCH' }); 
             }
         } else if (type === 'SUBSCRIBED') {
             if (userId && subscribedToIds.length > 0) {
@@ -114,14 +116,12 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
         }
     }
 
-    // Fallback for empty OR conditions to avoid fetching everything if logic falls through
     if (orConditions.length === 0) {
         orConditions.push({ id: 'NO_MATCH' });
     }
 
     const whereClause: Prisma.PostWhereInput = {
-        OR: orConditions,
-        deletedAt: null
+        AND: [{ OR: orConditions }, readablePostWhere(userId)],
     };
 
     let posts;
@@ -129,7 +129,7 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
         posts = await prisma.post.findMany({
             take: limit + 1,
             cursor: cursor ? { id: cursor } : undefined,
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
             where: whereClause,
             include: {
                 author: {
@@ -180,23 +180,21 @@ export async function getFeedPosts(cursor?: string, limit = 10, authorId?: strin
     }
 
     const formattedPosts: FeedPost[] = posts.map(post => {
-        // Helper to format a post object (reused for originalPost)
+   
         const formatPost = (p: typeof post | typeof post.Post): FeedPost => {
             if (!p) throw new Error("Post is null");
 
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { likes, savedBy, other_Post, Post, ...rest } = p as any;
-            // Note: We use 'as any' intermediately here to destructure properties that might not exist 
-            // on the strict type if p is potentially undefined or has different relation shapes, 
-            // but effectively we are stripping the raw relations to build the FeedPost.
-            // A cleaner way is to manually construct the object.
+        
 
             return {
                 ...rest,
+                media: p.media.map(item => ({ ...item, url: postMediaUrl(p.id, item.id) })),
                 hasLiked: (p as any).likes?.length > 0,
                 isSaved: (p as any).savedBy?.length > 0,
                 isReposted: (p as any).other_Post?.length > 0,
-                originalPost: undefined, // Default, overridden if recursive
+                originalPost: undefined, 
                 _count: p._count
             } as FeedPost;
         };

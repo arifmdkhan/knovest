@@ -1,8 +1,10 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
+import { readablePostWhere, postMediaUrl } from "@/features/posts/access";
 
 export async function getSavedPosts(cursor?: string, limit = 10) {
+    limit = Math.min(50, Math.max(1, Math.trunc(limit) || 10));
     const session = await getServerSession();
     if (!session?.user) return { posts: [], nextCursor: undefined };
 
@@ -11,8 +13,8 @@ export async function getSavedPosts(cursor?: string, limit = 10) {
     const savedPosts = await prisma.savedPost.findMany({
         take: limit + 1,
         cursor: cursor ? { id: cursor } : undefined, // Using SavedPost ID as cursor
-        orderBy: { createdAt: 'desc' },
-        where: { userId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        where: { userId, post: { is: readablePostWhere(userId) } },
         include: {
             post: {
                 include: {
@@ -35,9 +37,10 @@ export async function getSavedPosts(cursor?: string, limit = 10) {
     // Transform to flat FeedPost structure
     const posts = savedPosts.map(item => ({
         ...item.post,
+        media: item.post.media.map(media => ({ ...media, url: postMediaUrl(item.post.id, media.id) })),
         hasLiked: item.post.likes.length > 0,
-        isSaved: true, // By definition
-        isReposted: false, // In saved context, we are showing the saved post itself
+        isSaved: true,
+        isReposted: false, 
         likes: undefined,
         savedBy: undefined
     }));

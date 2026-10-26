@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, Activity, TrendingUp } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { requireAdmin } from "@/lib/permissions";
 
 export default async function AdminDashboard() {
+    await requireAdmin();
     // Fetch real stats
     const [userCount, postCount, articleCount, courseCount] = await Promise.all([
         prisma.user.count(),
@@ -64,7 +66,7 @@ export default async function AdminDashboard() {
                 </Card>
             </div>
 
-            {/* Recent Activity Section (Placeholder for now) */}
+            {/* Recent Activity Section (will be implemented properly later on)*/}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                     <CardHeader>

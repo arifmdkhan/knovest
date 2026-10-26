@@ -4,10 +4,10 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { CheckIcon, ChevronDown, Clock, BarChart, BookOpen, PlayCircle, Star, Share2, Globe, MessageSquare, ArrowLeft } from 'lucide-react';
+import { ChevronDown, Clock, BookOpen, PlayCircle, Star, Share2, Globe, MessageSquare, ArrowLeft } from 'lucide-react';
 import Image from 'next/image'
 import { checkIfCourseBought } from '@/features/user/queries/user-is-enrolled';
-import Link from 'next/link';
+import Link from "@/components/AppLink";
 import { EnrollmentButton } from './_components/EnrollmentButton';
 import { cn } from '@/lib/utils';
 import { ExpandableDescription } from '../_components/ExpandableDescription';
@@ -17,21 +17,23 @@ import { ReviewForm } from "../_components/ReviewForm";
 import { ReviewList } from "../_components/ReviewList";
 import { requireUser } from '@/features/user/queries/require-user';
 import { CourseActions } from './_components/CourseActions';
+import { constructUrl } from '@/lib/construct-url';
 
 type Params = Promise<{ slug: string }>
 
 export default async function SlugPage({ params }: { params: Params }) {
     const { slug } = await params;
     const course = await getIndividualCourse(slug)
-    const isEnrolled = await checkIfCourseBought(course.id)
-    const { reviews, totalReviews, averageRating } = await getCourseReviews(course.id);
-    const user = await requireUser();
+    const [isEnrolled, { reviews, totalReviews, averageRating }, user] = await Promise.all([
+        checkIfCourseBought(course.id),
+        getCourseReviews(course.id),
+        requireUser(),
+    ]);
 
     // Check if user has already reviewed
     const userReview = reviews.find(r => r.userId === user.id);
 
-    // Construct image URL manually as in the original code, or use a helper if available server-side
-    const imageUrl = `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES}.t3.storage.dev/${course.fileKey.replace(/^finlume\//, "")}`;
+    const imageUrl = constructUrl(course.fileKey);
 
     return (
         <div className="min-h-screen bg-background relative">

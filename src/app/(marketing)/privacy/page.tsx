@@ -1,117 +1,21 @@
+import { LegalPage } from "../_components/PublicSections";
 import { createMetadata } from "@/lib/metadata";
-import { Metadata } from "next";
 
-export const metadata:Metadata = createMetadata({
-    title: "Privacy Policy",
-    description: "How we collect, use, and protect your personal data.",
+export const metadata = createMetadata({
+  alternates: { canonical: "/privacy" }, title: "Privacy Policy",
+  description: "How information is collected and handled on Knovest.",
 });
 
 export default function PrivacyPage() {
-    return (
-        <div className="container mx-auto px-4 py-24 max-w-4xl">
-            <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
-            <p className="text-muted-foreground mb-12">Last updated: {new Date().toLocaleDateString()}</p>
-
-            <div className="prose prose-slate dark:prose-invert max-w-none space-y-12">
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">1. Introduction</h2>
-                    <p className="mb-4">
-                        This Privacy Policy explains how <strong>Consensus</strong> collects, uses, and protects your personal data in accordance with:
-                    </p>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>Information Technology Act, 2000</li>
-                        <li>IT Rules, 2011</li>
-                        <li>Applicable Indian data protection standards</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">2. Information We Collect</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <h3 className="text-xl font-semibold mb-2">a. Personal Information</h3>
-                            <ul className="list-disc pl-6 space-y-2">
-                                <li>Name, email, profile details</li>
-                                <li>Payment details (processed securely by payment gateways)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold mb-2">b. Usage Data</h3>
-                            <ul className="list-disc pl-6 space-y-2">
-                                <li>Device, browser, IP address</li>
-                                <li>Interaction logs and analytics</li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">3. How We Use Your Data</h2>
-                    <p className="mb-4">We use data to:</p>
-                    <ul className="list-disc pl-6 space-y-2 mb-4">
-                        <li>Provide platform services</li>
-                        <li>Process payments and subscriptions</li>
-                        <li>Improve user experience</li>
-                        <li>Ensure security and compliance</li>
-                    </ul>
-                    <p className="font-semibold text-primary">We do not sell personal data.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">4. Data Sharing</h2>
-                    <p className="mb-4">Data may be shared with:</p>
-                    <ul className="list-disc pl-6 space-y-2 mb-4">
-                        <li>Payment gateways</li>
-                        <li>Analytics providers</li>
-                        <li>Legal authorities (if required by law)</li>
-                    </ul>
-                    <p>All partners follow strict confidentiality standards.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">5. Data Security</h2>
-                    <p className="mb-4">We implement:</p>
-                    <ul className="list-disc pl-6 space-y-2 mb-4">
-                        <li>Encryption</li>
-                        <li>Secure access controls</li>
-                        <li>Regular monitoring</li>
-                    </ul>
-                    <p>Despite safeguards, no system is 100% secure.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">6. Cookies & Tracking</h2>
-                    <p className="mb-4">We use cookies to:</p>
-                    <ul className="list-disc pl-6 space-y-2 mb-4">
-                        <li>Maintain sessions</li>
-                        <li>Analyze platform usage</li>
-                    </ul>
-                    <p>You may control cookies via browser settings.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">7. User Rights</h2>
-                    <p className="mb-4">You may:</p>
-                    <ul className="list-disc pl-6 space-y-2 mb-4">
-                        <li>Access or update your data</li>
-                        <li>Request deletion of your account</li>
-                        <li>Withdraw consent where applicable</li>
-                    </ul>
-                    <p>Contact us at <strong>support@consensus.com</strong>.</p>
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">8. Data Retention</h2>
-                    <p>Data is retained only as long as necessary for legal or operational purposes.</p>
-                </section>
-
-
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">9. Changes to Privacy Policy</h2>
-                    <p>Updates will be posted on this page.</p>
-                </section>
-
-            </div>
-        </div>
-    );
+  return <LegalPage title="Privacy Policy" description="Information used to provide your Knovest account and services.">
+    <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
+      <section><h2>Information we collect</h2><p>Account information includes your name, email, username, optional profile details, and sign-in sessions. Google sign-in provides the profile details you authorize. We store posts, messages, course activity, subscriptions, and media that you submit or interact with.</p><p>If you apply for creator verification, we collect the identity and supporting information you submit. This can include date of birth, nationality, state, PAN, mobile number, registration or certification details, and broker or trading records. Verification is optional. Do not upload unrelated financial or identity information.</p></section>
+      <section><h2>How information is used</h2><p>We use information to authenticate accounts, display your chosen public profile and content, deliver messages and lessons, review creator applications, and investigate abuse. Payments are disabled for this release; Knovest does not collect payment card details.</p></section>
+      <section><h2>Services used</h2><p>The application uses Neon for its database and object storage, Resend for verification emails, Google for optional sign-in, and Stream for enabled chat and live features. These services receive information needed to perform their functions. Hosting services process requests and operational logs. We may disclose information when legally required.</p></section>
+      <section><h2>Public and restricted content</h2><p>Your public profile, approved verification summary, and public posts may be visible to other users. Identity documents and private application fields are intended for authorized review. Avoid putting private information in your public profile, messages to others, or public content. A verification badge records a review of submitted material; it does not guarantee continuing registration or investment outcomes.</p></section>
+      <section><h2>Cookies and logs</h2><p>Essential cookies maintain sign-in sessions and account selection. Browser storage may retain an unfinished registration draft. No advertising or third-party analytics tracker is currently integrated. Service providers may maintain their own operational logs. Blocking essential cookies can prevent sign-in.</p></section>
+      <section><h2>Access and deletion</h2><p>You can update profile information through account settings. Contact support to request access, correction, or account deletion. Content deletion can queue removal of stored media; cached or previously downloaded copies may remain outside Knovest. Backups and records required for legal or operational purposes may have separate retention periods.</p><p>Support: <strong>{process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "Support contact is not yet configured. Public registration should remain closed until it is published."}</strong></p></section>
+      <section><h2>Protection and retention</h2><p>Access controls restrict account operations and verification records. No system can guarantee absolute security. The operating entity, service locations, grievance contact, and specific retention periods must be confirmed before public launch. Material policy changes will be published here.</p></section>
+    </div>
+  </LegalPage>;
 }

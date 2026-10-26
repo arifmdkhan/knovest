@@ -4,15 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  MapPin,
-  Link as LinkIcon,
-  Calendar,
-  ShieldCheck
-} from "lucide-react";
+import { MapPin, Link as LinkIcon, Calendar, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
-import { useRouter } from "next/navigation";
-
+import { useRouter } from "@/components/NavigationProvider";
 import { toggleFollow } from "@/features/user/user.action";
 import { createDM } from "@/features/media/actions/stream.action";
 import { toast } from "sonner";
@@ -20,11 +14,9 @@ import { authClient } from "@/lib/auth-client";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { SubscribeButton } from "./SubscribeButton";
 import { UserListDialog } from "./UserListDialog";
-
 import { VerificationDetailsModal } from "./VerificationDetailsModal";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 import { ProfileActionsMenu } from "./ProfileActionsMenu";
-
 import { ProfileData } from "@/types/user";
 
 interface ProfileHeaderProps {
@@ -35,13 +27,11 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const isCurrentUser = session?.user?.id === profile.id;
-
   const [isFollowing, setIsFollowing] = useState(profile.isFollowing);
   const [followersCount, setFollowersCount] = useState(profile.followersCount);
   const [isLoading, setIsLoading] = useState(false);
   const [isMessaging, setIsMessaging] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
-
   const [activeList, setActiveList] = useState<{
     type: "FOLLOWERS" | "FOLLOWING" | "SUBSCRIBERS";
     title: string;
@@ -93,7 +83,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       } else {
         toast.error(res.message || "Failed to start chat");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to start chat");
     } finally {
       setIsMessaging(false);
@@ -105,29 +95,26 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   };
 
   return (
-    <div className="w-full bg-card border-b border-border/50 pb-6">
-      {/* Banner */}
-      <div className="h-32 md:h-48 bg-linear-to-r from-primary/10 to-primary/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/10 mask-[linear-gradient(0deg,transparent,black)]" />
+    <div className="app-panel relative isolate w-full overflow-hidden pb-7">
+      <div className="cosmos" aria-hidden="true" />
+      {/* Profile actions */}
+      <div className="absolute inset-x-0 top-0 h-16">
+        
         <div className="absolute top-4 right-4 z-20">
           <ProfileActionsMenu username={profile.username || ""} isCurrentUser={isCurrentUser} />
         </div>
       </div>
 
-      <div className="container max-w-4xl mx-auto px-4">
-        {/* Avatar + Right-Aligned Button Column */}
-        <div className="relative -mt-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+      <div className="relative px-6 pt-10 md:px-9">
+        <div className="relative flex flex-wrap items-center justify-between gap-5">
           {/* Avatar */}
-          <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background shadow-2xl ring-4 ring-background z-10">
+          <Avatar className="size-24 md:size-28 border-4 border-card shadow-lg ring-1 ring-border">
             <AvatarImage src={profile.image || ""} alt={profile.name} />
             <AvatarFallback className="text-5xl font-bold bg-muted">
               {profile.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
-
-          {/* Buttons: Stacked column on mobile, aligned right */}
-          {/* Added w-fit and ml-auto */}
-          <div className="flex flex-col gap-3 items-end lg:items-start lg:flex-row w-fit ml-auto mr-5 mt-[-35px]  md:mt-18 lg:mt-0">
+          <div className="flex flex-wrap gap-3 items-center ml-auto">
             {isCurrentUser ? (
               <div className="self-end md:self-auto flex items-center gap-2">
                 <EditProfileDialog profile={profile} />
@@ -174,23 +161,22 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         </div>
 
         {/* User Info */}
-        <div className="mt-8 space-y-5">
+        <div className="mt-5 space-y-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
                 {profile.name}
               </h1>
-
-              {/* --- ACCOUNT VERIFICATION --- */}
+              {/*ACCOUNT VERIFICATION */}
               <VerificationBadge accountType={profile.accountVerificationType} className="w-5 h-5" />
-
-              {/* --- EXPERT VERIFICATION --- */}
+              {/*  EXPERT VERIFICATION  */}
               {profile.expertVerificationType === "SEBI" && (
                 <div
                   className="flex items-center gap-2 cursor-pointer group"
                   onClick={() => setIsVerificationModalOpen(true)}
                   role="button"
                   tabIndex={0}
+                  onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setIsVerificationModalOpen(true); } }}
                 >
                   <VerificationBadge
                     expertType="SEBI"
@@ -206,6 +192,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                   className="cursor-pointer group"
                   role="button"
                   tabIndex={0}
+                  onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setIsVerificationModalOpen(true); } }}
                 >
                   <VerificationBadge
                     expertType="CERTIFIED"
@@ -220,6 +207,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                   className="cursor-pointer group"
                   role="button"
                   tabIndex={0}
+                  onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setIsVerificationModalOpen(true); } }}
                 >
                   <VerificationBadge
                     expertType="TRACK_RECORD"
@@ -289,7 +277,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           {/* Stats */}
           <div className="flex gap-6 text-sm pt-4 border-t border-border/40">
             <button
-              className="hover:underline disabled:cursor-default text-left"
+              className="min-h-11 hover:underline disabled:cursor-default text-left"
               onClick={() => openList("FOLLOWING", "Following")}
               disabled={!isCurrentUser}
             >
@@ -297,7 +285,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
               <span className="text-muted-foreground">Following</span>
             </button>
             <button
-              className="hover:underline disabled:cursor-default text-left"
+              className="min-h-11 hover:underline disabled:cursor-default text-left"
               onClick={() => openList("FOLLOWERS", "Followers")}
               disabled={!isCurrentUser}
             >
@@ -306,7 +294,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             </button>
             {profile.isSubscriptionEnabled && (
               <button
-                className="hover:underline disabled:cursor-default text-left"
+                className="min-h-11 hover:underline disabled:cursor-default text-left"
                 onClick={() => openList("SUBSCRIBERS", "Subscribers")}
                 disabled={!isCurrentUser}
               >

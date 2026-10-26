@@ -1,3 +1,4 @@
+import { AppHero } from "@/components/AppHero";
 import { Suspense } from "react";
 import { NotificationFeed } from "./_components/NotificationFeed";
 import { Loader2, Bell } from "lucide-react";
@@ -11,13 +12,8 @@ export const metadata: Metadata = createMetadata({
 
 export default function NotificationsPage() {
     return (
-        <div className="container max-w-2xl mx-auto min-h-screen pb-20">
-            <div className="flex items-center gap-3 px-4 py-6 border-b border-border/40">
-                <div className="p-2 bg-primary/10 rounded-full">
-                    <Bell className="w-5 h-5 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-            </div>
+        <div className="w-full space-y-7 pb-10">
+            <AppHero title={<span className="flex items-center gap-3"><Bell className="size-8 text-primary" />Notifications</span>} description="Stay in the loop with your community and the latest on Knovest." />
 
             <div className="mt-2">
                 <Suspense fallback={

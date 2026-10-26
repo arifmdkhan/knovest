@@ -2,23 +2,14 @@
 
 import { useCallStateHooks } from "@stream-io/video-react-sdk";
 import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mic, Video, Volume2, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { useEffect, useState } from "react";
-
 import { useMediaDevices } from "@/hooks/use-media-devices";
 
 export function MediaDeviceSettings() {
     const { useMicrophoneState, useCameraState, useSpeakerState } = useCallStateHooks();
-
     // SDK Hooks
     const { microphone, selectedDevice: selectedMic } = useMicrophoneState();
     const { camera, selectedDevice: selectedCam } = useCameraState();
@@ -61,7 +52,7 @@ export function MediaDeviceSettings() {
                         <div className="flex-1">
                             <h5 className="font-medium text-amber-500 text-sm mb-1">Permissions Required</h5>
                             <p className="text-xs text-amber-500/90 mb-3">
-                                We can't see your devices yet. Please allow access to select your specific microphone or camera.
+                                We can&apos;t see your devices yet. Please allow access to select your specific microphone or camera.
                             </p>
                             <Button
                                 size="sm"
@@ -91,7 +82,7 @@ export function MediaDeviceSettings() {
 
             {/* Microphone */}
             <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Mic className="h-4 w-4" />
                     <Label>Microphone</Label>
                 </div>
@@ -99,7 +90,7 @@ export function MediaDeviceSettings() {
                     value={selectedMic || undefined}
                     onValueChange={(val) => microphone?.select(val)}
                 >
-                    <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-sm">
+                    <SelectTrigger className="w-full bg-background border-input text-sm">
                         <SelectValue placeholder="Select Microphone" />
                     </SelectTrigger>
                     <SelectContent>
@@ -118,7 +109,7 @@ export function MediaDeviceSettings() {
 
             {/* Camera */}
             <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Video className="h-4 w-4" />
                     <Label>Camera</Label>
                 </div>
@@ -126,7 +117,7 @@ export function MediaDeviceSettings() {
                     value={selectedCam || undefined}
                     onValueChange={(val) => camera?.select(val)}
                 >
-                    <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-sm">
+                    <SelectTrigger className="w-full bg-background border-input text-sm">
                         <SelectValue placeholder="Select Camera" />
                     </SelectTrigger>
                     <SelectContent>
@@ -146,7 +137,7 @@ export function MediaDeviceSettings() {
             {/* Output */}
             {audioOutputs.length > 0 && (
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Volume2 className="h-4 w-4" />
                         <Label>Speakers</Label>
                     </div>
@@ -154,7 +145,7 @@ export function MediaDeviceSettings() {
                         value={selectedSpeaker || undefined}
                         onValueChange={(val) => speaker.select(val)}
                     >
-                        <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-sm">
+                        <SelectTrigger className="w-full bg-background border-input text-sm">
                             <SelectValue placeholder="Select Speakers" />
                         </SelectTrigger>
                         <SelectContent>

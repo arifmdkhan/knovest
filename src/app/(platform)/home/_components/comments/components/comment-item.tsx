@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { formatDistanceToNow } from "date-fns";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateCommentForm } from "./create-comment-form";
 import { CommentList } from "./comment-list";
@@ -79,7 +78,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                     parentId={comment.id} 
                     onSuccess={() => {
                         setIsReplying(false);
-                        setShowReplies(true); // Auto expand to show new reply
+                        setShowReplies(true); 
                     }}
                     autoFocus
                 />

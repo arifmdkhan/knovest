@@ -42,8 +42,10 @@ export function SaveCourseButton({ courseId, initialIsSaved }: SaveCourseButtonP
             variant="ghost"
             size="icon"
             disabled={isSaving}
+            aria-label={isSaved ? "Remove saved course" : "Save course"}
+            aria-pressed={isSaved}
             className={cn(
-                "rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-8 w-8 transition-colors",
+                "rounded-full hover:bg-primary/10 hover:text-primary shrink-0 h-11 w-11 transition-colors",
                 isSaved && "text-primary hover:text-primary/90"
             )}
             onClick={(e) => {

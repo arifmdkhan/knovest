@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Share2, Flag } from "lucide-react";
 import { ShareDialog } from "@/components/ShareDialog";
 
@@ -25,7 +19,7 @@ export function ProfileActionsMenu({ username, isCurrentUser }: ProfileActionsMe
     };
 
     const handleReport = () => {
-        // Placeholder for report logic
+        //report logic
         console.log("Report submitted for:", username);
     };
 
@@ -59,7 +53,7 @@ export function ProfileActionsMenu({ username, isCurrentUser }: ProfileActionsMe
                 isOpen={isShareOpen}
                 onOpenChange={setIsShareOpen}
                 url={typeof window !== "undefined" ? `${window.location.origin}/profile/${username}` : ""}
-                title={`Check out ${username}'s profile on Consensus`}
+                title={`Check out ${username}'s profile on Knovest`}
             />
         </>
     );

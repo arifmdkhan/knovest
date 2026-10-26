@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "@/components/AppLink";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -43,15 +45,17 @@ export function FollowSuggestionsSkeleton() {
 export function FollowSuggestions({ users }: { users: Suggestion[] }) {
   if (users.length === 0) {
     return (
-      <Card className="bg-card border border-border/60 rounded-xl p-4 shadow-sm h-full flex items-center justify-center text-muted-foreground text-sm min-h-[300px]">
-        No suggestions available
+      <Card className="p-5 gap-4">
+        <h2 className="text-base font-semibold">Who to follow</h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">You’re up to date. Discover people and fresh perspectives in search.</p>
+        <Link href="/search" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">Explore the community →</Link>
       </Card>
     );
   }
 
   return (
     <Card className="bg-card border border-border/60 rounded-xl p-4 shadow-sm hover:shadow-md">
-      <h3 className="font-semibold text-lg mb-4">Who to follow</h3>
+      <h2 className="font-semibold text-base">Who to follow</h2>
       <div className="space-y-4">
         {users.map((user) => (
           <SuggestionItem key={user.id} user={user} />
@@ -67,7 +71,7 @@ function SuggestionItem({ user }: { user: Suggestion }) {
 
   const handleFollow = async () => {
     setIsLoading(true);
-    // Optimistic
+    // Optimistic updates
     setIsFollowing(true);
 
     try {
@@ -77,8 +81,8 @@ function SuggestionItem({ user }: { user: Suggestion }) {
       if (result.data) {
         setIsFollowing(result.data.isFollowing);
       }
-    } catch (error) {
-      setIsFollowing(false); // Revert
+    } catch  {
+      setIsFollowing(false); // Revert following.
       toast.error("Failed to follow");
     } finally {
       setIsLoading(false);

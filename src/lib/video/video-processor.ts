@@ -7,6 +7,9 @@ import { s3Client } from "@/lib/s3-client";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@/lib/db";
 import { Readable } from "stream";
+import { pipeline } from "node:stream/promises";
+import { tmpdir } from "node:os";
+import { isLessonAssetKey } from "@/lib/storage/asset-keys";
 
 if (!ffmpegPath) {
     throw new Error("FFmpeg binary not found in ffmpeg-static!");
@@ -22,22 +25,33 @@ export class VideoProcessor {
      * 4. Updates Lesson Record
      */
     static async processLessonVideo(lessonId: string): Promise<void> {
-        const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
+        const lesson = await prisma.lesson.findUnique({ where: { id: lessonId, deletedAt: null }, include: { chapter: { select: { courseId: true } } } });
         if (!lesson || !lesson.videoKey) throw new Error("Lesson or video key not found");
+        if (!isLessonAssetKey(lesson.videoKey, lesson.chapter.courseId, lessonId, "video") || !lesson.videoKey.includes("/video/raw/")) throw new Error("Invalid source video");
 
-        // Temp Check: Is it already done? (Wait, what if we want to re-process? Let's rely on caller or force flag)
+        // Temp Check
         if (lesson.videoStatus === "READY") return;
 
-        await prisma.lesson.update({
-            where: { id: lessonId },
-            data: { videoStatus: "PROCESSING", videoProgress: 0, videoError: null }
+        const leaseToken = uuidv4();
+        const claim = await prisma.lesson.updateMany({
+            where: { id: lessonId, videoKey: lesson.videoKey, videoAttempts: { lt: 3 }, OR: [
+                { videoStatus: { in: ["UPLOADED", "FAILED"] } },
+                { videoStatus: "PROCESSING", videoLeaseExpiresAt: { lt: new Date() } },
+            ] },
+            data: { videoStatus: "PROCESSING", videoProgress: 0, videoError: null, videoAttempts: { increment: 1 }, videoLeaseToken: leaseToken, videoLeaseExpiresAt: new Date(Date.now() + 20 * 60000) }
         });
+        if (!claim.count) return;
 
-        const workDir = path.join(process.cwd(), "tmp", "video-processing", lessonId);
-        if (!fs.existsSync(workDir)) fs.mkdirSync(workDir, { recursive: true });
+        const workDir = fs.mkdtempSync(path.join(tmpdir(), "knovest-video-"));
+        const cleanup = () => {
+            const resolved = path.resolve(workDir);
+            if (!resolved.startsWith(path.resolve(tmpdir()) + path.sep) || !path.basename(resolved).startsWith("knovest-video-")) throw new Error("Invalid scratch directory");
+            fs.rmSync(resolved, { recursive: true, force: true });
+        };
 
         const rawInputPath = path.join(workDir, "input.mp4");
         const outputDir = path.join(workDir, "hls");
+        const outputPrefix = `courses/${lesson.chapter.courseId}/lessons/${lessonId}/video/hls/${leaseToken}`;
         if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
         try {
@@ -54,43 +68,40 @@ export class VideoProcessor {
             // 3. Upload Output
             console.log(`[VideoProcessor] Uploading HLS segments...`);
 
-            const rawKeyParts = lesson.videoKey.split("/");
-            let outputPrefix = `processed/${lessonId}/${uuidv4()}`;
-            if (rawKeyParts.includes("courses") && rawKeyParts.includes("lessons")) {
-                // reconstruct base: courses/{id}/lessons/{id}
-                const lessonIdx = rawKeyParts.indexOf("lessons");
-                const base = rawKeyParts.slice(0, lessonIdx + 2).join("/");
-                outputPrefix = `${base}/video/hls/${uuidv4()}`;
-            }
-
             const masterKey = await this.uploadDirectory(outputDir, outputPrefix);
 
             // 4. Cleanup
-            fs.rmSync(workDir, { recursive: true, force: true });
+            cleanup();
 
             // 5. Update DB
-            await prisma.lesson.update({
-                where: { id: lessonId },
-                data: {
-                    videoStatus: "READY",
-                    videoProgress: 100,
-                    videoKey: masterKey // Update to point to master.m3u8
-                }
+            await prisma.$transaction(async tx => {
+                const committed = await tx.lesson.updateMany({
+                    where: { id: lessonId, videoKey: lesson.videoKey, videoLeaseToken: leaseToken },
+                    data: { videoStatus: "READY", videoProgress: 100, videoKey: masterKey, videoLeaseToken: null, videoLeaseExpiresAt: null },
+                });
+                await tx.cleanupJob.create({ data: committed.count
+                    ? { entityType: "OBJECT", entityId: lesson.videoKey!, scheduledAt: new Date() }
+                    : { entityType: "ASSET_PREFIX", entityId: lessonId, prefixes: [outputPrefix + "/"], scheduledAt: new Date() } });
             });
 
             console.log(`[VideoProcessor] Job Complete. Master: ${masterKey}`);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("[VideoProcessor] Job Failed", error);
-            await prisma.lesson.update({
-                where: { id: lessonId },
+            await prisma.$transaction(async tx => {
+              await tx.cleanupJob.create({ data: { entityType: "ASSET_PREFIX", entityId: lessonId, prefixes: [outputPrefix + "/"], scheduledAt: new Date() } });
+              await tx.lesson.updateMany({
+                where: { id: lessonId, videoLeaseToken: leaseToken },
                 data: {
                     videoStatus: "FAILED",
-                    videoError: error.message || "Unknown transcoding error"
+                    videoError: "Video processing failed. Retry or upload a supported video.",
+                    videoLeaseToken: null,
+                    videoLeaseExpiresAt: new Date(Date.now() + 5 * 60000),
                 }
+              });
             });
             // Cleanup even on fail
-            fs.rmSync(workDir, { recursive: true, force: true });
+            cleanup();
             throw error;
         }
     }
@@ -109,19 +120,23 @@ export class VideoProcessor {
         const stream = response.Body as Readable;
         const fileStream = fs.createWriteStream(destPath);
 
-        return new Promise<void>((resolve, reject) => {
-            stream.pipe(fileStream)
-                .on("error", reject)
-                .on("finish", resolve);
-        });
+        await pipeline(stream, fileStream, { signal: AbortSignal.timeout(60000) });
     }
 
     private static async transcodeToHLS(inputPath: string, outputDir: string): Promise<void> {
+        const hasAudio = await new Promise<boolean>((resolve, reject) => {
+            const probe = spawn(ffmpegPath!, ['-hide_banner', '-nostdin', '-protocol_whitelist', 'file,pipe', '-i', inputPath], { timeout: 15000, windowsHide: true });
+            let details = '';
+            probe.stderr.on('data', data => { details = (details + data.toString()).slice(-16384); });
+            probe.once('error', reject);
+            probe.once('close', () => details.includes('Video:') ? resolve(details.includes('Audio:')) : reject(new Error('Unsupported video')));
+        });
         return new Promise((resolve, reject) => {
             // Construct arguments for ffmpeg
             // We need to map the fluent-ffmpeg logic to raw CLI args
             const args = [
-                '-i', inputPath,
+                '-nostdin', '-protocol_whitelist', 'file,pipe', '-i', inputPath,
+                ...(!hasAudio ? ['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000', '-shortest'] : []),
                 '-profile:v', 'main',
                 '-preset', 'veryfast',
                 '-sc_threshold', '0',
@@ -132,22 +147,22 @@ export class VideoProcessor {
                 '-master_pl_name', 'master.m3u8',
 
                 // MAP 0
-                '-map', '0:v:0', '-map', '0:a:0',
+                '-map', '0:v:0', '-map', hasAudio ? '0:a:0' : '1:a:0',
                 // MAP 1
-                '-map', '0:v:0', '-map', '0:a:0',
+                '-map', '0:v:0', '-map', hasAudio ? '0:a:0' : '1:a:0',
                 // MAP 2
-                '-map', '0:v:0', '-map', '0:a:0',
+                '-map', '0:v:0', '-map', hasAudio ? '0:a:0' : '1:a:0',
 
                 // Stream 0: 1080p
-                '-s:v:0', '1920x1080', '-c:v:0', 'libx264', '-b:v:0', '5000k', '-maxrate:v:0', '5350k', '-bufsize:v:0', '7500k',
+                '-filter:v:0', "scale=w='min(1920,iw)':h='min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2", '-threads:v:0', '1', '-c:v:0', 'libx264', '-b:v:0', '5000k', '-maxrate:v:0', '5350k', '-bufsize:v:0', '7500k',
                 '-c:a:0', 'aac', '-b:a:0', '192k',
 
                 // Stream 1: 720p
-                '-s:v:1', '1280x720', '-c:v:1', 'libx264', '-b:v:1', '2800k', '-maxrate:v:1', '2996k', '-bufsize:v:1', '4200k',
+                '-filter:v:1', "scale=w='min(1280,iw)':h='min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2", '-threads:v:1', '1', '-c:v:1', 'libx264', '-b:v:1', '2800k', '-maxrate:v:1', '2996k', '-bufsize:v:1', '4200k',
                 '-c:a:1', 'aac', '-b:a:1', '128k',
 
                 // Stream 2: 480p
-                '-s:v:2', '854x480', '-c:v:2', 'libx264', '-b:v:2', '1400k', '-maxrate:v:2', '1498k', '-bufsize:v:2', '2100k',
+                '-filter:v:2', "scale=w='min(854,iw)':h='min(480,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2", '-threads:v:2', '1', '-c:v:2', 'libx264', '-b:v:2', '1400k', '-maxrate:v:2', '1498k', '-bufsize:v:2', '2100k',
                 '-c:a:2', 'aac', '-b:a:2', '96k',
 
                 // Variant Map
@@ -157,16 +172,13 @@ export class VideoProcessor {
                 `${outputDir}/stream_%v.m3u8`
             ];
 
-            console.log(`[VideoProcessor] Spawning ffmpeg: ${ffmpegPath} ${args.join(' ')}`);
+            const ffmpegProcess = spawn(ffmpegPath!, args, { timeout: 180000, killSignal: 'SIGKILL', windowsHide: true });
 
-            const ffmpegProcess = spawn(ffmpegPath!, args);
-
-            // Optional: Capture logs to see progress
+    
             ffmpegProcess.stderr.on('data', (data) => {
                 // ffmpeg logs to stderr by default
-                const msg = data.toString();
-                // console.log(`[FFmpeg] ${msg}`); 
-                // We could parse this for progress if we wanted to update DB %
+                void data; // Drain stderr; do not retain private input paths or unbounded logs.
+            
             });
 
             ffmpegProcess.on('close', (code) => {

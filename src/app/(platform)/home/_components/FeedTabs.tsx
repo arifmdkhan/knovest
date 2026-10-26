@@ -2,11 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/premium-tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeedPost } from "@/types/post";
 import { FeedType } from "@/hooks/use-post";
 import { InfiniteFeed } from "./Feed";
-import { Skeleton } from "@/components/ui/skeleton";
+
 
 const PostComposer = dynamic(() => import("./PostComposer").then(mod => mod.PostComposer), {
     ssr: false,
@@ -21,7 +21,7 @@ export function FeedTabs({ initialData }: { initialData?: { posts: FeedPost[], n
             <PostComposer />
 
             <Tabs defaultValue="FOR_YOU" value={feedType} onValueChange={(v) => setFeedType(v as FeedType)} className="w-full">
-                <TabsList>
+                <TabsList className="w-full justify-start [&>button]:flex-none">
                     <TabsTrigger value="FOR_YOU">
                         For You
                     </TabsTrigger>

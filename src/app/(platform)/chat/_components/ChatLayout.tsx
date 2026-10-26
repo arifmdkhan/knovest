@@ -1,19 +1,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useChatContext } from "stream-chat-react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CreateChatDialog } from "./ChatDialogue";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { Event } from "stream-chat";
 import { ChatSidebarSkeleton } from "./ChatSidebarSkeleton";
 
 const ChatSidebarList = dynamic(() => import("./ChatSidebarList"), {
     loading: () => <ChatSidebarSkeleton />,
-    ssr: false // No SSR for channel list as it depends on client chat state
+    ssr: false
 });
 
 interface ChatLayoutProps {
@@ -23,6 +24,7 @@ interface ChatLayoutProps {
         name: string;
         image?: string | null;
         email?: string | null;
+        expertVerificationType?: string | null;
     };
 }
 
@@ -32,7 +34,6 @@ export function ChatLayout({ children, sessionUser }: ChatLayoutProps) {
     const pathname = usePathname();
     const router = useRouter();
 
-    // Determine if we are on the main list page or a specific channel
     const isChannelPage = pathname.startsWith("/chat/") && pathname.length > 6;
 
     // Handle removal from channel
@@ -59,16 +60,16 @@ export function ChatLayout({ children, sessionUser }: ChatLayoutProps) {
     }, [client, pathname, router]);
 
     return (
-        <div className="flex h-full w-full bg-background relative overflow-hidden rounded-xl shadow-sm border border-border/40">
+        <div className="flex h-full w-full bg-background relative overflow-hidden rounded-2xl shadow-sm border border-border">
 
             {/* LEFT: Channel List Sidebar */}
             <div className={cn(
                 // Shared Styles
-                "h-full flex flex-col bg-muted/10 transition-all duration-300 ease-in-out z-20 border-r border-border/60",
+                "h-full flex flex-col bg-card z-20 border-r border-border",
                 // Mobile Styles: 
                 isChannelPage ? "hidden md:flex" : "flex w-full",
                 // Desktop Styles: Fixed width
-                "md:w-[380px] lg:w-[420px]" // Slightly wider for a clearer view
+                "md:w-[280px] xl:w-[320px]"
             )}>
                 {/* Header */}
                 <div className="px-6 py-5 flex justify-between items-center shrink-0">
@@ -78,17 +79,17 @@ export function ChatLayout({ children, sessionUser }: ChatLayoutProps) {
                         size="icon"
                         variant="ghost"
                         className="rounded-full h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-all shadow-sm"
-                        title="New Chat"
+                        aria-label="New chat" title="New chat"
                     >
                         <Plus className="w-5 h-5" />
                     </Button>
                 </div>
 
-                {/* Channel List - Lazy Loaded */}
+                {/* Channel List  Lazy Load */}
                 <ChatSidebarList sessionUserId={sessionUser.id} />
             </div>
 
-            {/* RIGHT: Chat Window / Empty State */}
+            {/* Right Chat Window / Empty State */}
             <div
                 className={cn(
                     "h-full flex-1 bg-background relative flex flex-col z-30",
@@ -100,8 +101,8 @@ export function ChatLayout({ children, sessionUser }: ChatLayoutProps) {
 
             <CreateChatDialog
                 open={showCreateDialog}
-                onOpenChange={setShowCreateDialog}
-                canCreateGroup={!!(sessionUser as any)?.expertVerificationType}
+                onOpenChangeAction={setShowCreateDialog}
+                canCreateGroup={!!sessionUser.expertVerificationType}
             />
         </div>
     );

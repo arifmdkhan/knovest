@@ -1,0 +1,185 @@
+/* Shared light and dark tokens for Knovest screens. */
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 320px));
+  gap: 16px;
+  align-items: start;
+}
+.my-sessions-grid { grid-template-columns: minmax(0, 1fr); }
+.my-sessions-grid > div { min-width: 0; }
+.knovest-app .session-card {
+  width: 100%;
+  min-width: 0;
+  background: var(--card);
+  border-color: var(--border);
+  box-shadow: none;
+}
+.session-card > div:first-child { height: 136px; aspect-ratio: auto; flex-shrink: 0; }
+.session-card [data-slot="card-title"] { color: var(--foreground); }
+.session-card-footer { flex-wrap: wrap; }
+.session-card-footer > button:first-child { min-height: 40px; }
+.session-card-footer > div { margin-left: auto; }
+@media (min-width: 1100px) {
+  .my-sessions-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+.room-shell .trade-room-content { height: 100%; border-radius: 0; overflow: hidden; }
+:root:has(.knovest-app) {
+  --background: #f4f7fc;
+  --foreground: #17243b;
+  --card: #ffffff;
+  --card-foreground: #17243b;
+  --popover: #ffffff;
+  --popover-foreground: #17243b;
+  --primary: #3659e3;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf0fc;
+  --secondary-foreground: #2445aa;
+  --muted: #edf1f8;
+  --muted-foreground: #586981;
+  --accent: #e6edfc;
+  --accent-foreground: #2848b8;
+  --border: #dce4f0;
+  --input: #d2dced;
+  --ring: #486bff;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #53627a;
+  --sidebar-primary: #3659e3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edf2ff;
+  --sidebar-accent-foreground: #294bc5;
+  --sidebar-border: #dce4f0;
+  --sidebar-ring: #486bff;
+  --hero-glow: #9db9ff;
+  --planet-body: #e5edff;
+  --panel-shadow: 0 5px 24px #263d6b05;
+}
+
+:root.dark:has(.knovest-app) {
+  --background: #050c18;
+  --foreground: #edf2ff;
+  --card: #0b1525;
+  --card-foreground: #edf2ff;
+  --popover: #101d31;
+  --popover-foreground: #edf2ff;
+  --primary: #718cff;
+  --primary-foreground: #060e23;
+  --secondary: #152541;
+  --secondary-foreground: #c1d0ff;
+  --muted: #111f33;
+  --muted-foreground: #9daec7;
+  --accent: #162743;
+  --accent-foreground: #d7e2ff;
+  --border: #20304a;
+  --input: #293c59;
+  --ring: #7c96ff;
+  --sidebar: #080f1d;
+  --sidebar-foreground: #a3b1c9;
+  --sidebar-primary: #718cff;
+  --sidebar-primary-foreground: #060e23;
+  --sidebar-accent: #142745;
+  --sidebar-accent-foreground: #d7e2ff;
+  --sidebar-border: #1d2b42;
+  --sidebar-ring: #7c96ff;
+  --hero-glow: #284bc0;
+  --planet-body: #08152f;
+  --panel-shadow: 0 8px 28px #00000015;
+}
+
+.knovest-app { color: var(--foreground); background: var(--background); }
+:root:has(.knovest-app) :where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+:root:has(.knovest-app) :where(button, [role="button"]) { cursor: pointer; }
+.knovest-app button:disabled { cursor: not-allowed; }
+:root:has(.knovest-app) :where([data-slot="button"]) { min-height: 44px; }
+:root:has(.knovest-app) [data-slot="button"].bg-primary { background: #4265ed; color: #ffffff; }
+:root:has(.knovest-app) [data-slot="button"].bg-primary:hover { background: #3657d8; }
+:root:has(.knovest-app) :where([data-slot="card"]) {
+  background: var(--card);
+  border-color: var(--border);
+  border-radius: 18px;
+  box-shadow: var(--panel-shadow);
+}
+:root:has(.knovest-app) :where([data-slot="tabs-list"]) {
+  min-height: 46px;
+  height: auto;
+  padding: 5px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+}
+:root:has(.knovest-app) :where([data-slot="tabs-trigger"]) { min-height: 36px; padding-inline: 18px; border-radius: 8px; color: var(--muted-foreground); }
+:root:has(.knovest-app) :where([data-slot="tabs-trigger"][data-state="active"]) { background: var(--accent); color: var(--primary); border-color: transparent; box-shadow: none; }
+:root:has(.knovest-app) :where([data-slot="input"], [data-slot="select-trigger"]) { min-height: 44px; border-radius: 10px; background: var(--background); }
+:root:has(.knovest-app) [data-slot="sidebar-menu-button"] { min-height: 44px; border-radius: 9px; }
+:root:has(.knovest-app) [data-slot="sidebar-trigger"] { width: 44px; height: 44px; }
+/* Reserve space for branding and the account menu, then size navigation to the viewport. */
+:root:has(.knovest-app) [data-slot="sidebar-header"] { height: 64px; padding-block: 8px; }
+:root:has(.knovest-app) [data-slot="sidebar-footer"] { padding-block: 8px; }
+:root:has(.knovest-app) [data-slot="sidebar-content"] { overflow: visible; scrollbar-width: none; }
+:root:has(.knovest-app) [data-slot="sidebar-content"]::-webkit-scrollbar { display: none; }
+.app-navigation { --nav-row-height: clamp(28px, calc((100svh - 200px) / 11), 44px); padding-block: 8px; }
+:root:has(.knovest-app) .app-navigation [data-slot="sidebar-menu-button"] { height: var(--nav-row-height); min-height: var(--nav-row-height); }
+.app-navigation-section { margin-top: 8px; padding-top: 8px; }
+.post-composer { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); background: linear-gradient(125deg, var(--card), var(--background)); }
+.post-composer:focus-within { border-color: var(--primary); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent); }
+.post-composer .composer-input { max-height: 180px; overflow-y: auto; }
+:root:has(.knovest-app) .post-composer .composer-visibility { min-height: 40px; border-radius: 12px; }
+.app-content { width: 100%; max-width: 1440px; margin-inline: auto; padding: 28px 32px 48px; }
+.app-panel { border: 1px solid var(--border); border-radius: 18px; background: var(--card); box-shadow: var(--panel-shadow); }
+.app-hero { position: relative; isolation: isolate; overflow: hidden; padding: 40px; border: 1px solid var(--border); border-radius: 20px; background: linear-gradient(110deg, var(--card), var(--background)); }
+.app-hero-content { position: relative; z-index: 1; }
+.app-hero-title { font-size: clamp(1.75rem, 3.2vw, 2.65rem); font-weight: 650; letter-spacing: -.045em; line-height: 1.2; text-wrap: balance; }
+.app-hero-description { margin-top: 12px; max-width: 620px; color: var(--muted-foreground); font-size: 15px; line-height: 1.75; }
+.cosmos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; background: radial-gradient(ellipse at 80% 90%, color-mix(in srgb, var(--hero-glow) 26%, transparent), transparent 65%); }
+.cosmos::before { content: ""; position: absolute; inset: 0; opacity: .45; background-image: radial-gradient(var(--primary) .7px, transparent .7px), radial-gradient(var(--primary) .8px, transparent .8px); background-size: 107px 83px, 173px 137px; background-position: 16px 24px, 64px 52px; mask-image: linear-gradient(to right, transparent, black); }
+.cosmos::after { content: ""; position: absolute; width: 350px; height: 350px; right: -30px; top: 18%; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); background: radial-gradient(circle at 30% 24%, color-mix(in srgb, var(--primary) 24%, var(--planet-body)), var(--planet-body) 65%); box-shadow: inset 12px 15px 40px color-mix(in srgb, var(--primary) 12%, transparent), -12px -8px 45px color-mix(in srgb, var(--hero-glow) 15%, transparent); opacity: .65; }
+.app-hero-centered { text-align: center; padding-block: 48px; }
+.app-hero-centered .app-hero-description { margin-inline: auto; }
+.auth-shell { position: relative; isolation: isolate; display: flex; min-height: 100svh; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 32px 20px 24px; }
+.auth-shell > .cosmos { background: radial-gradient(ellipse at 50% 65%, color-mix(in srgb, var(--hero-glow) 15%, transparent), transparent 60%); }
+.auth-shell > .cosmos::before { background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 64px 64px; opacity: .25; mask-image: radial-gradient(ellipse at center, black, transparent 75%); }
+.auth-shell > .cosmos::after { right: -150px; top: 48%; width: 470px; height: 470px; opacity: .35; }
+.auth-card { width: 100%; gap: 22px; overflow: hidden; padding: 28px 0 0; border-radius: 22px !important; box-shadow: 0 20px 80px color-mix(in srgb, var(--hero-glow) 12%, transparent) !important; }
+.auth-card [data-slot="card-header"], .auth-card [data-slot="card-content"] { padding-inline: 36px; }
+.auth-card [data-slot="card-header"] { gap: 10px; }
+.auth-card [data-slot="card-title"] { font-size: 28px; letter-spacing: -.04em; font-weight: 650; line-height: 1.2; }
+.auth-card [data-slot="card-description"] { line-height: 1.6; }
+.auth-card [data-slot="card-footer"] { justify-content: center; padding: 18px 20px; background: transparent; border-color: var(--border); }
+.auth-card [data-slot="input"] { height: 46px; padding-left: 44px; }
+.auth-card form > div { gap: 10px; }
+.auth-card form { display: grid; gap: 16px; }
+.auth-card form .relative > svg { top: 15px; left: 16px; }
+.auth-card [data-slot="button"] { min-height: 48px; border-radius: 10px; }
+.auth-card [data-slot="button"][type="submit"], .auth-verify { background: #4265ed; color: #fff; box-shadow: 0 5px 18px #4265ed25; }
+.auth-card [data-slot="button"][type="submit"]:hover, .auth-verify:hover { background: #3657d8; }
+.auth-card [data-slot="input-otp-slot"] { border-radius: 10px; border: 1px solid var(--input); background: var(--background); height: 56px; width: clamp(36px, 9vw, 54px); font-size: 22px; box-shadow: none; }
+.auth-card [data-slot="card-content"]:last-child { padding-bottom: 36px; }
+@media (max-width: 767px) {
+  .app-content { padding: 18px 16px 32px; }
+  .app-hero { padding: 28px 22px; border-radius: 16px; }
+  .cosmos::after { right: -140px; opacity: .35; }
+  .auth-shell { padding: 32px 16px 24px; gap: 20px; }
+  .auth-card { padding-top: 24px; gap: 20px; }
+  .auth-card [data-slot="card-header"], .auth-card [data-slot="card-content"] { padding-inline: 24px; }
+  :root:has(.knovest-app) :where([data-slot="tabs-trigger"]) { padding-inline: 12px; }
+}
+@media (max-width: 480px) {
+  .post-composer .composer-visibility { width: 64px; gap: 4px; padding-inline: 8px; }
+  .composer-visibility .composer-option-label { display: none; }
+  .auth-card [data-slot="card-title"] { font-size: 26px; }
+}
+@media (max-height: 720px) {
+  .auth-shell { gap: 12px; padding-block: 16px; }
+  .auth-card { gap: 18px; padding-top: 22px; }
+  .auth-card [data-slot="card-header"] { gap: 8px; }
+  .auth-card [data-slot="card-footer"] { padding-block: 16px; }
+  .auth-card [data-slot="input"], .auth-card [data-slot="button"] { height: 44px; min-height: 44px; }
+  .auth-card form { gap: 12px; }
+  .auth-card form > div { gap: 8px; }
+  .auth-card form .relative > svg { top: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .knovest-app *, .knovest-app *::before, .knovest-app *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

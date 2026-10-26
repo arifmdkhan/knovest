@@ -26,6 +26,10 @@ export async function confirmEnrollment(enrollmentId: string): Promise<ApiRespon
             return { status: "success", message: "Enrollment is already active" };
         }
 
+        if (enrollment.status !== "Pending" || enrollment.amount > 0 || (enrollment.course.offerPrice ?? enrollment.course.price) > 0) {
+            return { status: "error", message: "Paid enrollment requires a verified payment. Payments are not available yet." };
+        }
+
         await prisma.enrollment.update({
             where: { id: enrollmentId },
             data: { status: "Active", updatedAt: new Date() }

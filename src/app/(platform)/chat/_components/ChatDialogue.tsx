@@ -11,9 +11,9 @@ import { toast } from "sonner";
 import { searchUsers } from "@/features/user/user.action";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 
-export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open: boolean, onOpenChange: (o: boolean) => void, canCreateGroup: boolean }) {
+export function CreateChatDialog({ open, onOpenChangeAction, canCreateGroup }: { open: boolean, onOpenChangeAction: (o: boolean) => void, canCreateGroup: boolean }) {
     const { client } = useChatContext();
     const router = useRouter();
     const [query, setQuery] = useState("");
@@ -26,7 +26,6 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
     const [groupName, setGroupName] = useState("");
     const [mode, setMode] = useState<"direct" | "group">("direct");
 
-    // Ensure mode is reset if permission changes or dialog opens
     useEffect(() => {
         if (!canCreateGroup && mode === "group") {
             setMode("direct");
@@ -41,10 +40,6 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
         }
         setIsSearching(true);
         try {
-            // The instruction implies passing 'query' as an object property.
-            // Assuming 'debouncedSearch' is intended to be 'val' for this specific change,
-            // or that 'debouncedSearch' would be defined elsewhere.
-            // For faithfulness to the instruction's snippet, we use 'val' as the query value.
             const result = await searchUsers({ query: val });
             if (result.status === "success" && result.data) {
                 setResults(result.data);
@@ -79,7 +74,6 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
             let channel;
 
             if (mode === "direct") {
-                // Create a distinct DM with a deterministic ID
                 const targetUserId = selectedUsers[0];
 
                 if (!targetUserId) {
@@ -87,11 +81,7 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
                     setIsCreating(false);
                     return;
                 }
-
-                // Sort members to ensure the ID is the same regardless of who creates it
                 const members = [client.userID!, targetUserId].sort();
-
-                // Use shared helper for consistency
                 const { getDmChannelId } = await import("@/lib/chat-utils");
                 const channelId = await getDmChannelId(client.userID!, targetUserId);
 
@@ -113,7 +103,7 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
             await channel.watch();
             toast.success(mode === "direct" ? "Chat started" : "Group created");
             router.push(`/chat/${channel.id}`);
-            onOpenChange(false);
+            onOpenChangeAction(false);
 
             // Reset state
             setSelectedUsers([]);
@@ -129,7 +119,7 @@ export function CreateChatDialog({ open, onOpenChange, canCreateGroup }: { open:
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={onOpenChangeAction}>
             <DialogContent className="sm:max-w-[450px]">
                 <DialogHeader>
                     <DialogTitle>New Message</DialogTitle>

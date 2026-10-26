@@ -3,7 +3,7 @@
 import { requireUser } from "@/features/user/queries/require-user";
 import { prisma } from "@/lib/db";
 import { ApiResponse } from "@/types/api";
-import { redirect } from "next/navigation";
+
 
 export async function getSubscriptionStatus(): Promise<ApiResponse<boolean>> {
     try {

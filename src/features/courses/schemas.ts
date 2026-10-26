@@ -35,10 +35,12 @@ export const courseSchema = z.object({
     fileKey: z.string().min(1, { message: "File key is required" }),
     price: z.coerce
         .number({ message: "Price must be a valid number" })
-        .min(0, { message: "Price must be at least 0" }),
+        .min(0, { message: "Price must be at least 0" })
+        .max(0, { message: "Paid courses are disabled for this release" }),
     offerPrice: z.coerce
         .number({ message: "Offer Price must be a valid number" })
         .min(0, { message: "Offer Price must be at least 0" })
+        .max(0, { message: "Paid courses are disabled for this release" })
         .optional(),
     duration: z.coerce
         .number({ message: "Duration must be a valid number" })

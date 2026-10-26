@@ -1,27 +1,27 @@
 "use client"
 
-import { Button, buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { courseSchema, CourseSchemaType, courseCategories, courseLevels, CourseStatus } from "@/features/courses/schemas";
-import { ArrowLeft, Loader2, PlusIcon, SparkleIcon } from 'lucide-react'
-import Link from 'next/link'
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, UseFormProps } from "react-hook-form"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
+import { ArrowLeft, Loader2, PlusIcon, SparkleIcon } from 'lucide-react';
+import Link from "@/components/AppLink"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, UseFormProps } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import slugify from 'slugify'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useTransition } from 'react'
-import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
-import { tryCatch } from '@/helper/try-catch'
-import { UploadIntent } from '@/lib/storage/types'
-import { useState, useEffect } from 'react'
-import { CreateCourse } from '@/features/courses/actions/create-course'
-import { MediaUploader } from '@/components/handle-media/media-uploader'
-import { TextEditor } from '@/components/shared/text-editor/editor'
-import { constructUrl } from '@/lib/construct-url'
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTransition } from 'react';
+import { toast } from 'sonner';
+import { useRouter } from "@/components/NavigationProvider";
+import { tryCatch } from '@/helper/try-catch';
+import { UploadIntent } from '@/lib/storage/types';
+import { useState, useEffect } from 'react';
+import { CreateCourse } from '@/features/courses/actions/create-course';
+import { MediaUploader } from '@/components/handle-media/media-uploader';
+import { TextEditor } from '@/components/shared/text-editor/editor';
+import { constructUrl } from '@/lib/construct-url';
 
 export default function CourseCreate() {
 
@@ -291,7 +291,7 @@ export default function CourseCreate() {
                                                 <FormItem>
                                                     <FormLabel>Duration (h)</FormLabel>
                                                     <FormControl>
-                                                        <Input type='number' {...field} />
+                                                        <Input type='number' {...field} readOnly aria-label='Price: free. Paid courses are disabled for this release.' />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -302,7 +302,7 @@ export default function CourseCreate() {
                                             name='price'
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Price (₹)</FormLabel>
+                                                    <FormLabel>Price (₹) — free for this release</FormLabel>
                                                     <FormControl>
                                                         <Input type='number' {...field} />
                                                     </FormControl>

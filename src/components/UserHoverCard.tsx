@@ -1,22 +1,16 @@
 'use client';
 
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, MessageCircle, UserPlus, Check, CheckCircle2, ShieldCheck } from "lucide-react";
+import { CalendarDays, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUserProfile, toggleFollow } from "@/features/user/user.action";
 import { createDM } from "@/features/media/actions/stream.action";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { VerificationBadge } from "./ui/verification-badge";
 
@@ -25,8 +19,6 @@ interface UserHoverCardProps {
     children: React.ReactNode;
 }
 
-// Define the type based on the return of getUserProfile which calls getProfileByUsername
-// We'll trust the shape for now or define a partial interface
 interface UserProfileData {
     id: string;
     name: string;

@@ -1,4 +1,4 @@
-import { Post, User, Media, Like, Comment, SavedPost } from "@/generated/prisma/client";
+import { Post, User, Media } from "@/generated/prisma/client";
 
 export type FeedPost = Post & {
     author: Pick<User, "id" | "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType">;
@@ -6,21 +6,15 @@ export type FeedPost = Post & {
     _count: {
         likes: number;
         comments: number;
-        other_Post: number; // Reposts count (mapped from relation)
+        other_Post: number; 
     };
     hasLiked: boolean;
     isSaved: boolean;
     isReposted: boolean;
-    originalPost?: FeedPost | null; // For recursive display
+    originalPost?: FeedPost | null; 
 };
 
-export type PostWithRelations = Post & {
-    author: User;
-    media: Media[];
-    likes: Like[];
-    comments: Comment[];
-    savedBy: SavedPost[];
-};
+
 
 export type FeedPage = {
     posts: FeedPost[];

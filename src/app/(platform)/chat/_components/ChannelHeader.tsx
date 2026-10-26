@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { useChatContext, useChannelStateContext } from "stream-chat-react";
 import { ArrowLeft, Settings, MoreHorizontal, Users, Phone, Video, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export function CustomChannelHeader({ onBackAction, isSubscriptionEnabled = fals
         if (otherMember?.user?.online) return "Online";
 
         if (otherMember?.user?.last_active) {
-            // Optional: Format last active time
+            // last active/online time to be implemented
             return "Offline";
         }
 
@@ -72,7 +72,7 @@ export function CustomChannelHeader({ onBackAction, isSubscriptionEnabled = fals
     return (
         <div className="h-[72px] border-b border-border/40 flex items-center px-6 justify-between bg-background/80 backdrop-blur-md shrink-0 w-full transition-all duration-300">
             <div className="flex items-center gap-4 overflow-hidden">
-                {/* Mobile Back Button */}
+                {/* Small width Back Button */}
                 <Button variant="ghost" size="icon" className="md:hidden -ml-2 shrink-0 hover:bg-muted/50 rounded-full" onClick={onBackAction}>
                     <ArrowLeft className="w-5 h-5 text-muted-foreground" />
                 </Button>
@@ -154,7 +154,6 @@ export function CustomChannelHeader({ onBackAction, isSubscriptionEnabled = fals
                 onOpenChange={setShowSettings}
                 channel={channel}
                 isGroup={isGroup}
-                isSubscriptionEnabled={isSubscriptionEnabled}
             />
         </div>
     );

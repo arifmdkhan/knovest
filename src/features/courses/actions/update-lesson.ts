@@ -6,12 +6,13 @@ import { lessonSchema } from "@/features/courses/schemas";
 import { lessonSchemaType } from "@/features/courses/schemas";
 
 import { ApiResponse } from "@/types/api";
+import { isLessonAssetKey } from "@/lib/storage/asset-keys";
 
 export async function updateLesson(
   values: lessonSchemaType,
   lessonId: string
 ): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
   try {
     const result = lessonSchema.safeParse(values);
 
@@ -22,10 +23,22 @@ export async function updateLesson(
       };
     }
 
+    const owner = await prisma.lesson.findFirst({
+      where: { id: lessonId, deletedAt: null, chapter: { course: { userId: session.user.id, deletedAt: null } } },
+      select: { chapter: { select: { courseId: true } } },
+    });
+    if (!owner) return { status: "error", message: "Lesson unavailable" };
+    const courseId = owner.chapter.courseId;
+    if ((result.data.videoKey && !isLessonAssetKey(result.data.videoKey, courseId, lessonId, "video")) ||
+        (result.data.thumbnailKey && !isLessonAssetKey(result.data.thumbnailKey, courseId, lessonId, "thumbnail")) ||
+        result.data.resources?.some(item => !isLessonAssetKey(item.url, courseId, lessonId, "resources"))) {
+      return { status: "error", message: "Upload each asset to this lesson before attaching it" };
+    }
     await prisma.$transaction(async (tx) => {
       await tx.lesson.update({
         where: {
           id: lessonId,
+          chapter: { course: { userId: session.user.id, deletedAt: null } },
         },
         data: {
           title: result.data.name,

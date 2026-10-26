@@ -1,120 +1,33 @@
-"use client"
+"use client";
 
-import { type LucideIcon } from "lucide-react"
-
-import {
-  Collapsible,
-} from "@/components/ui/collapsible"
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
+import { type LucideIcon } from "lucide-react";
+import { SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import Link from "@/components/AppLink";
+import { usePathname } from "next/navigation";
 import { NotificationBadge } from "@/components/NotificationBadge";
 
-import { useMemo } from "react"
-// ... (imports)
-
-// ...
-
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
-  }[]
-}) {
-  const pathname = usePathname()
-
-  // Find the single best matching item (longest URL match)
-  const activeItemUrl = useMemo(() => {
-    if (!pathname) return null;
-
-    // 1. Find all items that could effectively "claim" this path
-    const matchingItems = items.filter(item =>
-      pathname === item.url || pathname.startsWith(`${item.url}/`)
-    );
-
-    // 2. Sort by URL length descending (most specific match first)
-    //    e.g. "/admin/expert-verification" (longer) beats "/admin" (shorter)
-    matchingItems.sort((a, b) => b.url.length - a.url.length);
-
-    return matchingItems[0]?.url || null;
-  }, [pathname, items]);
+export function NavMain({ items }: { items: { title: string; url: string; icon?: LucideIcon }[] }) {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const activeUrl = items.filter(item => pathname === item.url || pathname.startsWith(`${item.url}/`))
+    .sort((a, b) => b.url.length - a.url.length)[0]?.url;
 
   return (
-    <SidebarGroup>
-
-      <SidebarMenu>
-        {items.map((item) => {
-
-          // Only the best match is active
-          const isActive = item.url === activeItemUrl;
-          return (
-            <Collapsible
-              key={item.title}
-              asChild
-              defaultOpen={item.isActive}
-              className="group/collapsible"
-            >
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip={item.title}
-                  asChild
-                  className={cn(
-                    "relative transition-all duration-300",
-                    isActive ? "font-semibold text-primary" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Link href={item.url} className="flex items-center w-full relative z-10">
-                    {/* Active Background Indicator */}
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeNavIndicator"
-                        className="absolute inset-0 bg-primary/10 border-l-2 border-primary"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                      />
-                    )}
-
-                    <div className="relative mr-2">
-                      {item.icon && (
-                        <item.icon
-                          className={cn(
-                            "size-4 transition-transform duration-300 group-hover/collapsible:scale-110",
-                            isActive ? "text-primary" : "text-muted-foreground group-hover/collapsible:text-foreground"
-                          )}
-                        />
-                      )}
-                      {item.title === "Notifications" && (
-                        <div className="absolute -top-1.5 -right-1.5 z-10">
-                          <NotificationBadge />
-                        </div>
-                      )}
-                    </div>
-                    <span className="flex-1">{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </Collapsible>
-          )
-        })}
+    <SidebarGroup className="app-navigation px-2 py-2">
+      <SidebarMenu className="gap-[3px]">
+        {items.map((item) => (
+          <SidebarMenuItem key={item.url} className={item.url === "/trade-room" ? "app-navigation-section border-t border-sidebar-border" : undefined}>
+            <SidebarMenuButton asChild tooltip={item.title} isActive={activeUrl === item.url}
+              className="px-3 text-[14px] font-medium transition-colors data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground">
+              <Link href={item.url} aria-current={activeUrl === item.url ? "page" : undefined} onClick={() => { if (isMobile) setOpenMobile(false); }}>
+                {item.icon && <item.icon className="size-[19px] shrink-0" strokeWidth={1.7} />}
+                <span className="ml-1 min-w-0 flex-1 truncate group-data-[collapsible=icon]:sr-only">{item.title}</span>
+                {item.title === "Notifications" && <NotificationBadge />}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

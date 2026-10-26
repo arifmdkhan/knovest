@@ -1,12 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import {
-    initiateMultipartUploadAction,
-    getMultipartUploadUrlsAction,
-    completeMultipartUploadAction
-} from "@/features/media/actions/video-upload.action";
+import { initiateMultipartUploadAction, getMultipartUploadUrlsAction, completeMultipartUploadAction, abortMultipartUploadAction } from "@/features/media/actions/video-upload.action";
 
 interface UseChunkedUploadOptions {
     lessonId: string;
@@ -21,10 +17,28 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
     const [progress, setProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
 
-    // Refs to manage cancellation if needed (not fully implemented yet but good practice)
-    const abortControllers = useRef<AbortController[]>([]);
+    const requests = useRef(new Set<XMLHttpRequest>());
+    const cancelled = useRef(false);
+    const busy = useRef(false);
+    const active = useRef<{ uploadId: string; key: string } | null>(null);
+    const cancelUpload = async () => {
+        cancelled.current = true;
+        for (const xhr of requests.current) xhr.abort();
+        const upload = active.current;
+        active.current = null;
+        if (upload) await abortMultipartUploadAction({ lessonId, ...upload });
+    };
+    useEffect(() => () => {
+        cancelled.current = true;
+        for (const xhr of requests.current) xhr.abort();
+        const upload = active.current;
+        if (upload) void abortMultipartUploadAction({ lessonId, ...upload }).catch(() => {});
+    }, [lessonId]);
 
     const uploadFile = async (file: File) => {
+        if (busy.current) throw new Error("Wait for the current upload to finish");
+        busy.current = true;
+        cancelled.current = false;
         setIsUploading(true);
         setProgress(0);
 
@@ -42,13 +56,12 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
             }
 
             const { uploadId, key } = initRes.data;
+            active.current = { uploadId, key };
+            if (cancelled.current) throw new Error("Upload cancelled");
             const totalParts = Math.ceil(file.size / CHUNK_SIZE);
             const uploadedParts: { ETag: string; PartNumber: number }[] = [];
 
             // 2. Chunk & Upload
-            // We'll use a pool of workers pattern
-            let activeUploads = 0;
-            let nextPartNumber = 1;
 
             const uploadPart = async (partNumber: number): Promise<{ ETag: string; PartNumber: number }> => {
                 const start = (partNumber - 1) * CHUNK_SIZE;
@@ -60,32 +73,30 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
                 if (urlRes.status === "error" || !urlRes.data?.parts[0]) throw new Error("Failed to get part URL");
 
                 const url = urlRes.data.parts[0].url;
+                if (cancelled.current) throw new Error("Upload cancelled");
 
                 // Upload
                 return new Promise((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
+                    requests.current.add(xhr);
                     xhr.open("PUT", url, true);
 
                     xhr.onload = () => {
                         if (xhr.status >= 200 && xhr.status < 300) {
                             const etag = xhr.getResponseHeader("ETag");
                             if (!etag) return reject(new Error("No ETag received"));
-                            // Update global progress roughly
-                            // (This is simplistic; for precise progress we'd need to track bytes per part)
-                            // setProgress(prev => Math.min(99, prev + (100 / totalParts)));
+                    
                             resolve({ ETag: etag.replace(/"/g, ''), PartNumber: partNumber });
                         } else {
                             reject(new Error(`Upload failed ${xhr.status}`));
                         }
                     };
                     xhr.onerror = () => reject(new Error("Network error"));
+                    xhr.onabort = () => reject(new Error("Upload cancelled"));
+                    xhr.onloadend = () => requests.current.delete(xhr);
                     xhr.send(chunk);
                 });
             };
-
-            // Simple batch processing
-            // Todo: True concurrency pool
-            // For MVP, simply batching
 
             for (let i = 1; i <= totalParts; i += CONCURRENT_UPLOADS) {
                 const batch = [];
@@ -103,6 +114,7 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
 
             // Sort parts (S3 requirement)
             uploadedParts.sort((a, b) => a.PartNumber - b.PartNumber);
+            if (cancelled.current) throw new Error("Upload cancelled");
 
             // 3. Complete
             const completeRes = await completeMultipartUploadAction({
@@ -113,6 +125,8 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
             });
 
             if (completeRes.status === "error") throw new Error(completeRes.message);
+            active.current = null;
+            if (cancelled.current) return;
 
             toast.success("Video uploaded successfully");
             if (onUploadComplete) onUploadComplete(key);
@@ -120,13 +134,16 @@ export function useChunkedUpload({ lessonId, onUploadComplete, onUploadError }: 
             return key;
 
         } catch (error: any) {
+            await cancelUpload().catch(() => {});
             console.error(error);
             toast.error(error.message || "Upload failed");
             if (onUploadError) onUploadError(error.message);
         } finally {
+            busy.current = false;
+            requests.current.clear();
             setIsUploading(false);
         }
     };
 
-    return { uploadFile, isUploading, progress };
+    return { uploadFile, isUploading, progress, cancelUpload };
 }

@@ -11,9 +11,7 @@ export const metadata: Metadata = createMetadata({
 export default function RegisterPage() {
   return (
     <div className="flex flex-col items-center space-y-6">
-
       <RegisterForm />
-
     </div>
   );
 }

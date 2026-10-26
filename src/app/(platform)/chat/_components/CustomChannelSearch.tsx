@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { searchUsers } from "@/features/user/user.action";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "stream-chat-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { getDmChannelId } from "@/lib/chat-utils";
 import { useDebounce } from "use-debounce";
 

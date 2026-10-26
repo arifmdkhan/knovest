@@ -5,23 +5,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, ArrowRight, Mail } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { toast } from "sonner";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { Separator } from "@/components/ui/separator";
-import { IconBrandGoogle } from "@tabler/icons-react";
+import Image from "next/image";
 import { checkUserExists } from "@/features/user/check-user-exist.action";
 
 const loginSchema = z.object({
@@ -42,10 +35,11 @@ export function LoginForm() {
   async function signInWithGoogle() {
     setIsGoogleLoading(true);
     try {
-      await authClient.signIn.social({
+      const result = await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/home',
       });
+      if (result.error) throw new Error(result.error.message || 'Failed to connect to Google');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to connect to Google";
       toast.error(errorMessage);
@@ -70,7 +64,7 @@ export function LoginForm() {
               // Redirect to the existing verification page
               router.push(`/verify-request?email=${encodeURIComponent(data.email)}`);
             },
-            onError: (ctx) => {
+            onError: (ctx: any) => {
               toast.error(ctx.error.message || "Failed to send OTP");
             }
           }
@@ -82,20 +76,20 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md border-border/50 shadow-xl bg-card/50 backdrop-blur-md">
+    <Card className="auth-card">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
-        <CardDescription>Sign in to your account</CardDescription>
+        <CardTitle className="text-2xl font-bold tracking-tight"><h1>Welcome back</h1></CardTitle>
+        <CardDescription>Sign in to continue your Knovest journey.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
-                type="email"
+                type="email" autoComplete="email" required
                 placeholder="name@example.com"
                 className="pl-9"
                 {...form.register("email")}
@@ -144,8 +138,8 @@ export function LoginForm() {
               </>
             ) : (
               <>
-                <IconBrandGoogle className="mr-2 h-4 w-4" />
-                Login with Google
+                <Image src="/google.svg" width={18} height={18} alt="" aria-hidden="true" className="mr-1 size-[18px]" />
+                Continue with Google
               </>
             )}
           </Button>

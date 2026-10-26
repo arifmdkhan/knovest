@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/premium-tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, FileText, Grid } from "lucide-react";
 import { ProfileFeed } from "../_components/ProfileFeed";
 import { ProfileCourses } from "../_components/ProfileCourses";
@@ -27,14 +27,14 @@ export default async function ProfilePage({ params }: PageProps) {
   if (!profile) return notFound();
 
   return (
-    <div className="w-full min-h-screen pb-20">
+    <div className="w-full space-y-6 pb-10">
       <ProfileHeader profile={profile as unknown as ProfileData} />
 
-      <div className="container max-w-4xl mx-auto px-4 mt-6">
+      <div className="max-w-4xl mx-auto w-full">
         <Tabs defaultValue="posts" className="w-full">
-          {/* Responsive Tabs List: Scrollable on mobile */}
-          <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
-            <TabsList>
+          {/* Responsive Tabs List- horizontally Scrollable on mobile device*/}
+          <div className="mx-auto w-full max-w-2xl overflow-x-auto pb-2 scrollbar-hide">
+            <TabsList className="w-full justify-start [&>button]:flex-none">
               <TabsTrigger value="posts">
                 <Grid className="w-4 h-4 mr-2" /> Posts
               </TabsTrigger>
@@ -47,7 +47,7 @@ export default async function ProfilePage({ params }: PageProps) {
             </TabsList>
           </div>
 
-          <TabsContent value="posts" className="mt-6">
+          <TabsContent value="posts" className="mt-6 mx-auto w-full min-w-0 max-w-2xl">
             <ProfileFeed authorId={profile.id} />
           </TabsContent>
 

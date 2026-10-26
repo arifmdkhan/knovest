@@ -1,29 +1,22 @@
-// src/app/metadata.ts
 import type { Metadata } from "next";
 
-export const APP_NAME = "CONSENSUS";
-export const APP_TAGLINE =
-  "A social and learning platform for traders, investors, and financial creators.";
-export const APP_DESCRIPTION =
-  "CONSENSUS helps traders, investors and creators share insights, learn, connect, and grow together. Courses, premium groups, analytics, and a powerful social feed - all in one platform.";
+const APP_NAME = "KNOVEST";
+const APP_DESCRIPTION =
+  "Knovest is a financial learning community for traders, investors, and creators. Explore educational content, courses, and shared perspectives.";
 
-export const BASE_URL =
-  process.env.NODE_ENV === "production"
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL || "http://localhost:3000";
+const BASE_URL = new URL(
+  /^https?:\/\//.test(configuredUrl) ? configuredUrl : `https://${configuredUrl}`
+).origin;
 
 export function createMetadata(override: Metadata): Metadata {
-  const title =
-    typeof override.title === "string"
-      ? `${override.title} | ${APP_NAME}`
-      : override.title;
+  // The root title template adds the brand once.
+  const title = override.title;
 
   const description =
     override.description ?? APP_DESCRIPTION;
 
-  const ogImage = override.openGraph?.images ?? [
-    `${BASE_URL}/og-default.png`,
-  ];
+  const ogImage = override.openGraph?.images ?? [{ url: "/images/landing/hero-laptop.webp", width: 1280, height: 853, alt: "Knovest financial learning community" }];
 
   return {
     title,
@@ -37,14 +30,10 @@ export function createMetadata(override: Metadata): Metadata {
       "analysis",
       "courses",
       "financial education",
-      "CONSENSUS",
-      "Consensus"
+      "KNOVEST",
+      "Knovest"
     ],
-    icons: {
-      icon: "/favicon.ico",
-      shortcut: "/favicon.ico",
-      apple: "/apple-touch-icon.png",
-    },
+    // Root app icon files provide the shared browser and Apple icons.
 
 
     openGraph: {
@@ -53,7 +42,7 @@ export function createMetadata(override: Metadata): Metadata {
       type: "website",
       locale: "en_US",
       siteName: APP_NAME,
-      url: override.openGraph?.url ?? BASE_URL,
+      url: override.openGraph?.url ?? (typeof override.alternates?.canonical === "string" ? new URL(override.alternates.canonical, BASE_URL).href : BASE_URL),
       images: ogImage,
       ...override.openGraph,
     },
@@ -61,18 +50,10 @@ export function createMetadata(override: Metadata): Metadata {
     // Twitter Cards
     twitter: {
       card: "summary_large_image",
-      creator: "@consensus", // change if needed
       title: title ?? undefined,
       description,
       images: ogImage,
       ...override.twitter,
-    },
-
-    // Optional extensions
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: { index: true, follow: true },
     },
 
     category: "finance",

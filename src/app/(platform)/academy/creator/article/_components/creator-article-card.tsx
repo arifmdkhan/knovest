@@ -1,16 +1,12 @@
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { constructUrl } from "@/lib/construct-url";
 import { Article, User } from "@/generated/prisma/client";
-import { Edit, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Edit, MoreVertical, Pencil } from "lucide-react";
 import { SafeImage } from "@/components/ui/safe-image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { DeleteArticleButton } from "./delete-article-button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 

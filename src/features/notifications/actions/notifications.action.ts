@@ -5,18 +5,23 @@ import { getServerSession } from "@/lib/get-sessions";
 import { revalidatePath } from "next/cache";
 import { ApiResponse } from "@/types/api";
 
-export async function getNotifications(page: number = 1, limit: number = 20): Promise<ApiResponse<{ data: any[]; unreadCount: number }>> {
+export async function getNotifications(page: number = 1, limit: number = 20, filter: "all" | "mentions" | "community" | "platform" = "all"): Promise<ApiResponse<{ data: any[]; unreadCount: number; hasMore: boolean }>> {
     try {
         const session = await getServerSession();
         if (!session?.user?.id) return { status: "error", message: "Unauthorized" };
 
-        const fetchLimit = limit * 3;
-        const skip = (page - 1) * limit;
+        const pageSize = Math.min(50, Math.max(1, limit));
+        const skip = (Math.max(1, page) - 1) * pageSize;
 
         const rawNotifications = await prisma.notification.findMany({
-            where: { recipientId: session.user.id },
-            orderBy: { createdAt: "desc" },
-            take: fetchLimit,
+            where: {
+                recipientId: session.user.id,
+                ...(filter === "mentions" ? { type: "MENTION" as const } : {}),
+                ...(filter === "platform" ? { type: "SYSTEM" as const } : {}),
+                ...(filter === "community" ? { type: { notIn: ["SYSTEM", "MENTION"] as ("SYSTEM" | "MENTION")[] } } : {}),
+            },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: pageSize + 1,
             skip: skip,
             include: {
                 actor: {
@@ -42,7 +47,7 @@ export async function getNotifications(page: number = 1, limit: number = 20): Pr
         const groupedMap = new Map<string, NotificationGroup>();
         const result: NotificationGroup[] = [];
 
-        for (const notif of rawNotifications) {
+        for (const notif of rawNotifications.slice(0, pageSize)) {
             const dateKey = notif.createdAt.toDateString();
             const key = notif.entityId
                 ? `${notif.type}-${notif.entityId}-${dateKey}`
@@ -102,13 +107,11 @@ export async function getNotifications(page: number = 1, limit: number = 20): Pr
             }
         }
 
-        const slicedResult = result.slice(0, limit);
-
         const unreadCount = await prisma.notification.count({
             where: { recipientId: session.user.id, isRead: false },
         });
 
-        return { status: "success", message: "Notifications fetched successfully", data: { data: slicedResult, unreadCount } };
+        return { status: "success", message: "Notifications fetched successfully", data: { data: result, unreadCount, hasMore: rawNotifications.length > pageSize } };
     } catch (error) {
         console.error("Get Notifications Error:", error);
         return { status: "error", message: "Failed to fetch notifications" };
@@ -137,38 +140,6 @@ export async function markAsRead(notificationId?: string): Promise<ApiResponse> 
     } catch (error) {
         console.error("Mark Read Error:", error);
         return { status: "error", message: "Failed to update notification" };
-    }
-}
-
-export async function createNotification({
-    recipientId,
-    actorId,
-    type,
-    entityId,
-    message
-}: {
-    recipientId: string;
-    actorId?: string;
-    type: "LIKE" | "FOLLOW" | "COMMENT" | "REPLY" | "SYSTEM" | "MENTION" | "REPOST";
-    entityId?: string;
-    message?: string;
-}) {
-    if (type !== "SYSTEM" && recipientId === actorId) {
-        return;
-    }
-
-    try {
-        await prisma.notification.create({
-            data: {
-                recipientId,
-                actorId,
-                type,
-                entityId,
-                message
-            }
-        });
-    } catch (error) {
-        console.error("Create Notification Error:", error);
     }
 }
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { Call } from "@stream-io/video-react-sdk";
-import { usePathname, useRouter } from "next/navigation";
-import { Mic, MicOff, X, Maximize2 } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
+import { X, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useActiveCall } from "../providers/ActiveCallProvider";
 
 export const MiniPlayer = ({ call }: { call: Call }) => {
@@ -18,7 +18,7 @@ export const MiniPlayer = ({ call }: { call: Call }) => {
     if (isOnCallPage) return null;
 
     return (
-        <div className="fixed bottom-20 right-4 z-[100] w-72 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-4 flex flex-col gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-20 right-4 z-100 w-72 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-4 flex flex-col gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0" />

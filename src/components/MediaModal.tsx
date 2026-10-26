@@ -24,6 +24,7 @@ export function MediaModal({ isOpen, onClose, media }: MediaModalProps) {
                 <div className="relative w-full h-full flex items-center justify-center p-4">
                     {/* Close Button acting as overlay action */}
                     <button
+                        aria-label="Close media viewer"
                         onClick={onClose}
                         className="absolute top-4 right-4 z-50 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors backdrop-blur-sm"
                     >

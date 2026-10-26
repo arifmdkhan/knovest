@@ -1,0 +1,14 @@
+allowBuilds:
+  '@prisma/engines': true
+  ffmpeg-static: true
+  prisma: true
+  sharp: true
+  stream-chat: false
+  unrs-resolver: true
+
+# Patched transitive versions. Prisma/Better Auth also include the MySQL driver.
+overrides:
+  deepmerge-ts: ^8.0.2
+  mysql2: ^3.24.6
+  postcss-selector-parser: ^7.1.6
+

@@ -1,28 +1,22 @@
 "use client";
 
-import { Call, StreamVideoParticipant } from "@stream-io/video-react-sdk";
+import { useCall, StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { Mic, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface MenuProps {
     children: React.ReactNode;
     participant: StreamVideoParticipant;
-    call: Call;
     isHost: boolean;
 }
 
-export const ParticipantMenu = ({ children, participant, call, isHost }: MenuProps) => {
+export const ParticipantMenu = ({ children, participant, isHost }: MenuProps) => {
+    const call = useCall();
     if (!isHost) return <>{children}</>;
 
     const handleGrantSpeaker = async () => {
+        if (!call) return;
         try {
             await call.updateCallMembers({
                 update_members: [{ user_id: participant.userId, role: 'speaker' }]
@@ -54,13 +48,15 @@ export const ParticipantMenu = ({ children, participant, call, isHost }: MenuPro
     );
 };
 
-export const SpeakerMenu = ({ children, participant, call, isHost }: MenuProps) => {
-    const isCreator = participant.userId === call.state.createdBy?.id;
+export const SpeakerMenu = ({ children, participant, isHost }: MenuProps) => {
+    const call = useCall();
+    const isCreator = participant.userId === call?.state.createdBy?.id;
 
     // Can't manage the creator/host
-    if (!isHost || isCreator) return <>{children}</>;
+    if (!isHost || isCreator || !call) return <>{children}</>;
 
     const handleDemoteToAudience = async () => {
+        if (!call) return;
         try {
             await call.revokePermissions(participant.userId, ['send-audio', 'screenshare']);
             await call.updateCallMembers({

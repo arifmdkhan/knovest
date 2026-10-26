@@ -74,7 +74,7 @@ export function InfiniteFeed({ type = 'FOR_YOU', initialData }: { type?: FeedTyp
   );
 }
 
-// Skeleton Loader (Initial Load only)
+// Skeleton Loader for Initial Load only.
 export function FeedSkeleton() {
   return (
     <div className="space-y-6">

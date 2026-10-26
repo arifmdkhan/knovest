@@ -5,59 +5,27 @@ import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Trash2, Link, Edit, Globe, Lock, Mic, Headphones } from "lucide-react";
+import { Trash2, Link, Edit, Globe, Lock, Mic, Headphones } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { deleteStream } from "@/features/media/actions/stream.action";
 import { CreateAudioRoomDialog } from "./CreateAudioRoomDialog";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { useTradeRoomContext } from "./TradeRoomContext";
+
+import { useRoomHosts } from "./useRoomHosts";
+import { openRoomTab } from "@/lib/open-room-tab";
 
 interface AudioRoomListProps {
     type: "live" | "upcoming" | "my-rooms";
     initialData?: Call[];
 }
 
-export function AudioRoomCardSkeleton() {
-    return (
-        <Card className="overflow-hidden border-zinc-200/50 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
-            <div className="h-40 bg-zinc-100 dark:bg-zinc-900/50 relative flex items-center justify-center">
-                <Skeleton className="h-16 w-16 rounded-full" />
-            </div>
-            <CardHeader className="p-4 space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-6 w-12 rounded-full" />
-                </div>
-                <div className="flex items-center gap-3">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <div className="flex flex-col gap-1.5 flex-1">
-                        <Skeleton className="h-3 w-24" />
-                        <Skeleton className="h-2 w-16" />
-                    </div>
-                </div>
-            </CardHeader>
-            <CardFooter className="p-4 pt-0 gap-2">
-                <Skeleton className="h-9 flex-1 rounded-md" />
-                <Skeleton className="h-9 w-9 rounded-md" />
-            </CardFooter>
-        </Card>
-    );
-}
+
 
 export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
     const client = useStreamVideoClient();
@@ -69,34 +37,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
 
-    // Store manually fetched user data to ensure valid usernames/badges
-    const [creatorsData, setCreatorsData] = useState<Record<string, any>>({});
-
-    // Fetch creator details from Chat Client to ensure fresh data (username, badges)
-    useEffect(() => {
-        if (!chatClient || calls.length === 0) return;
-
-        const fetchCreators = async () => {
-            const creatorIds = Array.from(new Set(calls.map(c => (c.state.createdBy as any)?.id).filter(Boolean)));
-            // Only fetch what we don't have
-            const missingIds = creatorIds.filter(id => !creatorsData[id]);
-
-            if (missingIds.length === 0) return;
-
-            try {
-                const { users } = await chatClient.queryUsers({ id: { $in: missingIds } });
-                setCreatorsData(prev => {
-                    const next = { ...prev };
-                    users.forEach(u => next[u.id] = u);
-                    return next;
-                });
-            } catch (err) {
-                console.error("Failed to fetch audio room creators", err);
-            }
-        };
-
-        fetchCreators();
-    }, [calls, chatClient]);
+    const creatorsData = useRoomHosts(calls);
 
     useEffect(() => {
         if (!client || !chatClient || (type !== 'my-rooms' && isLoadingGroups)) return;
@@ -149,18 +90,15 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                         const currentUserId = session?.user?.id;
                         const streamUserId = chatClient?.userID;
 
-                        // 1. Creator always has access
+                        // Creator always has access
                         if (creatorId && (creatorId === currentUserId || creatorId === streamUserId)) return true;
-
-                        // 2. 'Everyone' permission
+                        // 'Everyone' permission
                         if (!custom || !custom.permissionType || custom.permissionType === 'everyone') return true;
-
-                        // 3. 'Group' permission
+                        // 'Group' permission
                         if (custom.permissionType === 'group') {
                             // Check Groups
                             const allowedGroups = custom.allowedGroups as string[] || [];
                             if (allowedGroups.some(groupId => myGroupIds.includes(groupId))) return true;
-
                             // Check specific users
                             let allowedUserIds: any[] = [];
                             if (Array.isArray(custom.allowedUserIds)) {
@@ -195,7 +133,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
 
     const handleDelete = async (call: Call) => {
         try {
-            await deleteStream({ type: call.type, id: call.id }); // Reusing deleteStream action
+            await deleteStream({ type: call.type, id: call.id });
             toast.success("Audio room deleted successfully");
             setCalls((prev) => prev.filter((c) => c.id !== call.id));
         } catch (error) {
@@ -212,7 +150,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
 
     if (isLoading) {
         return (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="session-grid">
                 {Array.from({ length: 4 }).map((_, i) => (
                     <AudioRoomCardSkeleton key={i} />
                 ))}
@@ -221,16 +159,20 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
     }
 
     if (calls.length === 0) {
-        return <div className="text-sm text-muted-foreground">No {type.replace('-', ' ')} found.</div>;
+        return <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
+            <Headphones className="size-7 text-primary" />
+            <h3 className="font-semibold">{type === "my-rooms" ? "No audio rooms yet" : "No audio rooms available"}</h3>
+            <p className="max-w-xs text-sm text-muted-foreground">{type === "my-rooms" ? "Your audio discussions will appear here once you create a room." : "Check back for the next conversation."}</p>
+        </div>;
     }
 
     return (
         <>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="session-grid">
                 {calls.map((call) => {
                     const isCreator = call.state.createdBy?.id === chatClient?.userID;
                     return (
-                        <Card key={call.id} className="group overflow-hidden border-zinc-200/80 bg-white hover:bg-zinc-50 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-violet-500/30 dark:hover:bg-zinc-900 dark:hover:shadow-2xl dark:hover:shadow-violet-900/20 transition-all duration-300 p-0 gap-2.5 h-full flex flex-col">
+                        <Card key={call.id} className="session-card group min-w-0 overflow-hidden border-zinc-200/80 bg-white hover:bg-zinc-50 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-violet-500/30 dark:hover:bg-zinc-900 dark:hover:shadow-2xl dark:hover:shadow-violet-900/20 transition-all duration-300 p-0 gap-2.5 h-full flex flex-col">
                             {/* Visual Header */}
                             <div className="h-40 bg-linear-to-br from-violet-500/5 to-purple-500/5 dark:from-violet-950/20 dark:to-purple-900/10 relative flex items-center justify-center border-b border-border/40 overflow-hidden">
                                 {/* Animated Background Pattern */}
@@ -281,7 +223,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-1.5 bg-blue-600/90 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md shadow-lg">
-                                            SCHEDULED
+                                            {call.state.endedAt ? "ENDED" : "SCHEDULED"}
                                         </div>
                                     )}
                                 </div>
@@ -302,15 +244,16 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                                     </p>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-1">
+                                <div className="flex min-w-0 items-center justify-between pt-1">
                                     {(() => {
                                         const creatorId = (call.state.createdBy as any)?.id;
                                         const creator = (creatorId && creatorsData[creatorId]) || call.state.createdBy;
 
                                         return (
                                             <UserAvatarWithInfo
-                                                name={creator?.name || "Unknown"}
-                                                username={creator?.username || creator?.custom?.username || "user"}
+                                                className="min-w-0 flex-1"
+                                                name={creator?.name || "Host"}
+                                                username={creator?.username || creator?.custom?.username || null}
                                                 image={creator?.image || null}
                                                 expertVerificationType={creator?.expertVerificationType || creator?.custom?.expertVerificationType}
                                                 accountVerificationType={creator?.accountVerificationType || creator?.custom?.accountVerificationType}
@@ -321,9 +264,9 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                                 </div>
                             </CardHeader>
 
-                            <CardFooter className="p-4 pt-0 gap-2">
-                                <Button className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/20 border-0 h-9 text-sm" onClick={() => window.open(`/trade-room/audio-room/${call.id}`, '_blank')}>
-                                    Join Room
+                            <CardFooter className="session-card-footer p-4 pt-0 gap-2">
+                                <Button className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/20 border-0 h-9 text-sm" disabled={!!call.state.endedAt} onClick={() => { if (!openRoomTab(`/trade-room/audio-room/${call.id}`)) toast.error("Allow Knovest to open a new tab, then try again."); }}>
+                                    {call.state.endedAt ? "Ended" : "Join Room"}
                                 </Button>
 
                                 <div className="flex gap-1">
@@ -371,5 +314,33 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                 editCall={editingCall || undefined}
             />
         </>
+    );
+}
+
+//Audioroom Skeleton
+function AudioRoomCardSkeleton() {
+    return (
+        <Card className="overflow-hidden border-zinc-200/50 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+            <div className="h-40 bg-zinc-100 dark:bg-zinc-900/50 relative flex items-center justify-center">
+                <Skeleton className="h-16 w-16 rounded-full" />
+            </div>
+            <CardHeader className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-6 w-12 rounded-full" />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex flex-col gap-1.5 flex-1">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-2 w-16" />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardFooter className="session-card-footer p-4 pt-0 gap-2">
+                <Skeleton className="h-9 flex-1 rounded-md" />
+                <Skeleton className="h-9 w-9 rounded-md" />
+            </CardFooter>
+        </Card>
     );
 }

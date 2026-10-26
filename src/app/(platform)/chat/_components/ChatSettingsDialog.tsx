@@ -7,31 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Channel } from "stream-chat";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useChatContext } from "stream-chat-react";
-import { CustomChannelData, StreamChatGenerics } from "@/lib/chat-types";
+import { CustomChannelData } from "@/lib/chat-types";
 import { AvatarUploader } from "@/components/handle-media/avatar-uploader";
 import { UploadIntent } from "@/lib/storage/types";
 import { AddMembersDialog } from "./AddMembersDialog";
 import { ViewMembersDialog } from "./ViewMembersDialog";
-import { useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useRouter } from "@/components/NavigationProvider";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 interface ChatSettingsProps {
@@ -39,27 +23,30 @@ interface ChatSettingsProps {
   onOpenChange: (open: boolean) => void;
   channel: Channel;
   isGroup?: boolean;
-  isSubscriptionEnabled?: boolean;
 }
 
-export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = false, isSubscriptionEnabled = false }: ChatSettingsProps) {
+export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = false }: ChatSettingsProps) {
   const { client } = useChatContext();
   const router = useRouter();
-  const [name, setName] = useState((channel.data as CustomChannelData)?.name || "");
-  const [sendMessagesPermission, setSendMessagesPermission] = useState((channel.data as CustomChannelData)?.permissions?.send_messages || "everyone");
-  const [viewMembersPermission, setViewMembersPermission] = useState((channel.data as CustomChannelData)?.permissions?.view_members || "everyone");
+  const channelData = channel.data as CustomChannelData | undefined;
+  const channelName = channelData?.name || "";
+  const channelSendPermissions = channelData?.permissions?.send_messages || "everyone";
+  const channelViewPermissions = channelData?.permissions?.view_members || "everyone";
+
+  const [name, setName] = useState(channelName);
+  const [sendMessagesPermission, setSendMessagesPermission] = useState(channelSendPermissions);
+  const [viewMembersPermission, setViewMembersPermission] = useState(channelViewPermissions);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [showViewMembers, setShowViewMembers] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Sync local state when channel changes
   useEffect(() => {
-    setName((channel.data as CustomChannelData)?.name || "");
-    setSendMessagesPermission((channel.data as CustomChannelData)?.permissions?.send_messages || "everyone");
-    setViewMembersPermission((channel.data as CustomChannelData)?.permissions?.view_members || "everyone");
-  }, [channel.id, (channel.data as CustomChannelData)?.name, (channel.data as CustomChannelData)?.permissions]);
+    setName(channelName);
+    setSendMessagesPermission(channelSendPermissions);
+    setViewMembersPermission(channelViewPermissions);
+  }, [channelName, channelSendPermissions, channelViewPermissions]);
 
   const isCreator = channel.data?.created_by?.id === client.userID;
   const userRole = channel.state.members[client.userID!]?.role;
@@ -87,7 +74,7 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
       });
       toast.success("Channel updated");
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update channel");
     } finally {
       setIsUpdating(false);
@@ -117,11 +104,9 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
 
   const handleDelete = async () => {
     // Check if this is the subscription group and subscription is enabled
-    // We can identify the subscription group by its ID format or name
     const isSubscriptionGroup = channel.id === `subscription-group-${client.userID}`;
 
     if (isSubscriptionGroup) {
-      // Robust check: fetch latest status from server
       try {
         const { getSubscriptionStatus } = await import("@/features/subscriptions/actions/get-subscription-status.action");
         const enabled = await getSubscriptionStatus();
@@ -133,12 +118,6 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
         }
       } catch (e) {
         console.error("Failed to check subscription status", e);
-        // If check fails, maybe allow deletion or block? 
-        // Safest to block if unsure, but user might be stuck. 
-        // Let's assume if it fails, we fall back to prop or allow. 
-        // But here we just return to be safe if we can't verify.
-        // toast.error("Could not verify permissions. Please try again.");
-        // return;
       }
     }
 
@@ -155,7 +134,6 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
     }
   };
 
-  // If 1-1 chat, show minimal options (or different ones)
   if (!isGroup) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -170,7 +148,7 @@ export function ChatSettingsDialog({ open, onOpenChange, channel, isGroup = fals
             <Button variant="secondary" className="w-full justify-start" onClick={() => toast.info("Mute logic here")}>
               Mute Notifications
             </Button>
-            {/* Add Block/Report logic here */}
+            {/* TO Add Block/Report logic*/}
           </div>
         </DialogContent>
       </Dialog>

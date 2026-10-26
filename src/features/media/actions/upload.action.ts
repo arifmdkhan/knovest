@@ -7,14 +7,16 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 import { safeAction } from "@/lib/safe-action";
+import { constructUrl } from "@/lib/construct-url";
+import { BucketType, UPLOAD_CONFIGS } from "@/lib/storage/types";
+import { enforceUploadQuota } from "@/lib/rate-limit";
 
-// --- Schemas ---
 
 const GetPresignedUrlSchema = z.object({
     intent: z.nativeEnum(UploadIntent),
     params: z.record(z.string(), z.string()),
     contentType: z.string(),
-    size: z.number().max(5 * 1024 * 1024 * 1024), // Max 5GB generic limit? Or granular.
+    size: z.number().int().positive().max(5 * 1024 * 1024 * 1024),
 });
 
 const ConfirmUploadSchema = z.object({
@@ -23,19 +25,19 @@ const ConfirmUploadSchema = z.object({
     params: z.record(z.string(), z.string()),
 });
 
-// --- Actions ---
+
 
 export const getPresignedUploadUrlAction = safeAction(
     GetPresignedUrlSchema,
     async ({ intent, params, contentType, size }, { user }) => {
+        if (intent === UploadIntent.COURSE_LESSON_VIDEO && process.env.NODE_ENV === "production" && process.env.VIDEO_PROCESSING_ENABLED !== "true") return { status: "error", message: "Lesson video uploads are unavailable until video processing is enabled" };
+        params.userId = user!.id;
         const userScopedIntents = [UploadIntent.USER_AVATAR, UploadIntent.VERIFICATION_DOC, UploadIntent.BROKER_PNL];
 
-        // 1. Force User ID for user-scoped intents
-        // 1. Force User ID for user-scoped intents
         if (userScopedIntents.includes(intent)) {
             params.userId = user!.id;
         }
-        // 2. Verify Post Ownership
+        // 1. Verify Post Ownership
         else if (intent === UploadIntent.POST_MEDIA) {
             if (!params.postId) return { status: "error", message: "Missing postId" };
 
@@ -51,7 +53,7 @@ export const getPresignedUploadUrlAction = safeAction(
                     return { status: "error", message: "Unauthorized: Not your post" };
                 }
             } else {
-                // Post doesn't exist yet (Draft). Allow.
+                // Post doesn't exist yet (Draft)
             }
 
         }
@@ -72,6 +74,8 @@ export const getPresignedUploadUrlAction = safeAction(
         }
 
         try {
+            // Charge the intent maximum: a client cannot evade its quota by understating size.
+            await enforceUploadQuota(user!.id, UPLOAD_CONFIGS[intent].maxSize);
             const { url, tempKey } = await StorageService.getPresignedUploadUrl(intent, params as Record<string, string>, contentType, size);
             return { status: "success", message: "URL generated", data: { url, tempKey } };
         } catch (error: any) {
@@ -86,12 +90,40 @@ export const getPresignedUploadUrlAction = safeAction(
 export const confirmUploadAction = safeAction(
     ConfirmUploadSchema,
     async ({ tempKey, intent, params }, { user }) => {
+        if (intent === UploadIntent.COURSE_LESSON_VIDEO && process.env.NODE_ENV === "production" && process.env.VIDEO_PROCESSING_ENABLED !== "true") return { status: "error", message: "Lesson video uploads are unavailable until video processing is enabled" };
+        params.userId = user!.id;
+        for (const id of Object.values(params)) {
+            if (id.includes("/") || id.includes("..")) return { status: "error", message: "Invalid upload identifier" };
+        }
+        if (intent.startsWith("COURSE_")) {
+            const course = await prisma.course.findUnique({ where: { id: params.courseId }, select: { userId: true } });
+            if (course && course.userId !== user!.id) return { status: "error", message: "You do not own this course" };
+        }
+        if (intent.startsWith("ARTICLE_")) {
+            const article = await prisma.article.findUnique({ where: { id: params.articleId }, select: { authorId: true } });
+            if (article && article.authorId !== user!.id) return { status: "error", message: "You do not own this article" };
+        }
+        if (intent === UploadIntent.POST_MEDIA) {
+            const post = await prisma.post.findUnique({ where: { id: params.postId }, select: { authorId: true } });
+            if (post && post.authorId !== user!.id) return { status: "error", message: "You do not own this post" };
+        }
+        if (intent === UploadIntent.CHAT_GROUP_IMAGE) {
+            const { StreamChat } = await import("stream-chat");
+            const client = StreamChat.getInstance(process.env.NEXT_PUBLIC_STREAM_API_KEY!, process.env.STREAM_API_SECRET!);
+            const { channel } = await client.channel("messaging", params.channelId).query({ watch: false, state: true });
+            if (channel.created_by?.id !== user!.id) return { status: "error", message: "Only the group creator can change its image" };
+        }
         const userScopedIntents = [UploadIntent.USER_AVATAR, UploadIntent.VERIFICATION_DOC, UploadIntent.BROKER_PNL];
         if (userScopedIntents.includes(intent)) {
             params.userId = user!.id;
         }
 
         try {
+            const isPublic = UPLOAD_CONFIGS[intent].bucket === BucketType.PUBLIC;
+            if (isPublic && !constructUrl("storage-check")) return { status: "error", message: "Public storage URL is not configured" };
+            // Confirmation is charged too, preventing reuse of a signed PUT from
+            // creating unlimited permanent copies under different post IDs.
+            await enforceUploadQuota(user!.id, UPLOAD_CONFIGS[intent].maxSize);
             const finalKey = await StorageService.confirmUpload(tempKey, intent, params as Record<string, string>);
 
             if (intent === UploadIntent.USER_AVATAR) {
@@ -115,7 +147,8 @@ export const confirmUploadAction = safeAction(
                 revalidatePath(`/profile/${user!.username}`);
             }
 
-            return { status: "success", message: "Upload confirmed", data: { key: finalKey } };
+            const previewUrl = intent === UploadIntent.POST_MEDIA ? await StorageService.getPresignedDownloadUrl(finalKey, 300) : undefined;
+            return { status: "success", message: "Upload confirmed", data: { key: finalKey, url: isPublic ? constructUrl(finalKey) : previewUrl } };
         } catch (error: any) {
             console.error("Confirm Error:", error);
             const message = error.message || "Failed to confirm upload";

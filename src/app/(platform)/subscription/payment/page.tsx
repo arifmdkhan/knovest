@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { confirmSubscription } from "@/features/subscriptions/actions/confirm-subscription.action";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { useState } from "react";
 import { toast } from "sonner";
 
+//Dummy payments
 export default function SubscriptionPaymentPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const router = useRouter();
@@ -15,15 +16,12 @@ export default function SubscriptionPaymentPage() {
     const handlePayment = async () => {
         setIsProcessing(true);
 
-        // Simulate payment processing
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
         // Call confirmSubscription action
         const creatorId = new URLSearchParams(window.location.search).get("creatorId");
         if (creatorId) {
             const result = await confirmSubscription(creatorId);
             if (result.status === "success") {
-                toast.success("Payment successful! Subscription active.");
+                toast.success("Subscription active.");
                 router.back();
             } else {
                 toast.error(result.message);
@@ -46,10 +44,10 @@ export default function SubscriptionPaymentPage() {
                 <CardContent className="space-y-4">
                     <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        <span className="font-medium">Secure Payment</span>
+                        <span className="font-medium">Confirm access</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        You are about to subscribe. This will charge your payment method.
+                        Free subscriptions are supported. Paid checkout is not available yet.
                     </p>
                 </CardContent>
                 <CardFooter>
@@ -64,7 +62,7 @@ export default function SubscriptionPaymentPage() {
                                 Processing...
                             </>
                         ) : (
-                            "Pay Now"
+                            "Confirm"
                         )}
                     </Button>
                 </CardFooter>

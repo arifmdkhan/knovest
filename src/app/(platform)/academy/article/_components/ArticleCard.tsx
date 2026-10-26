@@ -1,21 +1,18 @@
 "use client";
 
+import { SaveArticleButton } from "./SaveArticleButton";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { Article, User } from "@/generated/prisma/client";
 import { constructUrl } from "@/lib/construct-url";
 import { calculateReadTime } from "@/lib/utils";
 
-import { ArrowRight, Bookmark } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { SafeImage } from "@/components/ui/safe-image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 
 interface ArticleCardProps {
     article: Article & {
@@ -35,8 +32,8 @@ export function ArticleCard({ article }: ArticleCardProps) {
     const description = stripHtml(article.content).slice(0, 150) + "...";
 
     return (
-        <Card className="overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow group border-none shadow-sm bg-card/50 backdrop-blur-sm py-0 gap-0">
-            <div className="relative aspect-video w-full bg-muted overflow-hidden">
+        <Card className="overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow group border shadow-sm bg-card/50 backdrop-blur-sm py-0 gap-0">
+            <Link href={`/academy/article/${article.slug}`} aria-label={`Read ${article.title}`} className="relative block aspect-video w-full bg-muted overflow-hidden">
                 {article.thumbnailKey ? (
                     <SafeImage
                         src={thumbnailUrl}
@@ -54,7 +51,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
                         {article.category}
                     </Badge>
                 </div>
-            </div>
+            </Link>
             <CardHeader className="p-5 pb-2 space-y-3">
                 <UserAvatarWithInfo
                     name={article.author.name}
@@ -84,12 +81,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
                         <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
                     </Button>
                 </Link>
-                <Button variant="outline" size="icon" className="shrink-0" onClick={(e) => {
-                    e.preventDefault();
-                    // TODO: Implement save functionality
-                }}>
-                    <Bookmark className="w-4 h-4" />
-                </Button>
+                <SaveArticleButton articleId={article.id} />
             </CardFooter>
         </Card>
     );

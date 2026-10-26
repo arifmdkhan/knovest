@@ -1,14 +1,23 @@
-"use client"
+"use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, AlertCircle, Timer } from "lucide-react";
-
+import { Loader2, RefreshCw, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { authClient } from "@/lib/auth-client";
 import { updateProfileAfterLogin } from "@/features/auth/actions/register.action";
 
@@ -19,169 +28,149 @@ export function OTPForm() {
 
   const [otp, setOtp] = useState("");
   const [isPending, startTransition] = useTransition();
-  // Lazy initialization for attempts
-  const [attempts, setAttempts] = useState(() => {
-    if (typeof window === 'undefined' || !email) return 0;
-    const stored = localStorage.getItem(`otp_attempts_${email}`);
-    return stored ? parseInt(stored) : 0;
-  });
+  const [timeLeft, setTimeLeft] = useState(30);
 
-  // Lazy initialization for locked state
-  const [isLocked, setIsLocked] = useState(() => {
-    if (typeof window === 'undefined' || !email) return false;
-    const stored = localStorage.getItem(`otp_attempts_${email}`);
-    return stored ? parseInt(stored) >= 3 : false;
-  });
-
-  // Lazy initialization for timer
-  const [timeLeft, setTimeLeft] = useState(() => {
-    if (typeof window === 'undefined' || !email) return 30;
-    const lastResend = localStorage.getItem(`otp_last_resend_${email}`);
-
-    if (lastResend) {
-      const lastTime = parseInt(lastResend);
-      const diffInSeconds = Math.floor((Date.now() - lastTime) / 1000);
-      if (diffInSeconds < 30) return 30 - diffInSeconds;
-    }
-    return 30;
-  });
-
-  // Effect to ensure start timestamp exists if we have timeLeft > 0
-  useEffect(() => {
-    if (email && timeLeft > 0) {
-      const lastResend = localStorage.getItem(`otp_last_resend_${email}`);
-      if (!lastResend) {
-        localStorage.setItem(`otp_last_resend_${email}`, Date.now().toString());
-      }
-    }
-  }, [email, timeLeft]);
-
-  // Timer countdown effect
   useEffect(() => {
     if (timeLeft <= 0) return;
-
-    const intervalId = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(intervalId);
+    const timer = setTimeout(
+      () => setTimeLeft((value) => Math.max(0, value - 1)),
+      1000,
+    );
+    return () => clearTimeout(timer);
   }, [timeLeft]);
 
   const verifyOtp = () => {
     if (!email) return;
 
     startTransition(async () => {
-      await authClient.signIn.emailOtp({
-        email,
-        otp,
-        fetchOptions: {
-          onSuccess: async () => {
-            const pendingReg = sessionStorage.getItem("pending_reg");
-            if (pendingReg) {
-              const data = JSON.parse(pendingReg);
-              await updateProfileAfterLogin({
-                name: data.name,
-                username: data.username
-              });
-              sessionStorage.removeItem("pending_reg");
-            }
-            localStorage.removeItem(`otp_attempts_${email}`);
-            localStorage.removeItem(`otp_last_resend_${email}`);
-
-            toast.success("Welcome!");
-            router.push("/home");
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message || "Invalid OTP");
-          }
+      try {
+        const result = await authClient.signIn.emailOtp({ email, otp });
+        if (result.error) {
+          toast.error(result.error.message || "Invalid OTP");
+          return;
         }
-      });
+        // Auth changes the server session. Start a fresh document after the
+        // response completes so prefetched anonymous routes cannot be reused.
+        let destination = "/home";
+        try {
+          const pendingReg = sessionStorage.getItem("pending_reg");
+          if (pendingReg) {
+            const draft: unknown = JSON.parse(pendingReg);
+            if (draft && typeof draft === "object" && "email" in draft && draft.email === email && "name" in draft && typeof draft.name === "string" && "username" in draft && typeof draft.username === "string") {
+              const result = await updateProfileAfterLogin({ name: draft.name, username: draft.username });
+              if (result.status === "error") {
+                toast.error(result.message || "Finish your profile in account settings.");
+                destination = "/settings/account?onboarding=1";
+              }
+            }
+            sessionStorage.removeItem("pending_reg");
+          }
+        } catch {
+          toast.error("You are signed in. Finish your profile in account settings.");
+          destination = "/settings/account?onboarding=1";
+        }
+
+        if (destination === "/home") toast.success("Welcome!");
+        window.location.replace(destination);
+      } catch {
+        toast.error("We couldn’t verify your code. Please try again.");
+      }
     });
   };
 
   const handleResend = () => {
-    if (!email || isLocked || timeLeft > 0) return;
-
+    if (!email || timeLeft > 0 || isPending) return;
     startTransition(async () => {
-      await authClient.emailOtp.sendVerificationOtp({
-        email,
-        type: "sign-in",
-        fetchOptions: {
-          onSuccess: () => {
-            const newCount = attempts + 1;
-            setAttempts(newCount);
-
-            // Persist State
-            localStorage.setItem(`otp_attempts_${email}`, newCount.toString());
-            localStorage.setItem(`otp_last_resend_${email}`, Date.now().toString());
-
-            // Start Timer
-            setTimeLeft(30);
-
-            if (newCount >= 3) {
-              setIsLocked(true);
-              toast.error("Max attempts reached. Please try again later.");
-            } else {
-              toast.success(`Code resent. ${3 - newCount} attempts left.`);
-            }
-          },
-          onError: (ctx) => {
-            toast.error(ctx.error.message);
-          }
+      try {
+        const result = await authClient.emailOtp.sendVerificationOtp({
+          email,
+          type: "sign-in",
+        });
+        if (result.error) {
+          toast.error(
+            result.error.message ||
+              "We couldn’t send your code. Please try again.",
+          );
+          return;
         }
-      });
+        setOtp("");
+        setTimeLeft(30);
+        toast.success("A new verification code has been sent.");
+      } catch {
+        toast.error("We couldn’t send your code. Please try again.");
+      }
     });
   };
 
+  if (!email || !email.includes("@")) return <Card className="auth-card"><CardHeader><CardTitle><h1>Start a new sign-in request</h1></CardTitle><CardDescription>Enter your email first so we can send you a verification code.</CardDescription></CardHeader><CardContent><Button onClick={() => router.push("/login")}>Return to sign in</Button></CardContent></Card>;
+
   return (
-    <Card className="w-full max-w-sm border-border/50 shadow-xl bg-card/50 backdrop-blur-md">
+    <Card className="auth-card">
       <CardHeader className="text-center">
-        <CardTitle>Verify Email</CardTitle>
-        <CardDescription>Enter code sent to {email}</CardDescription>
+        <CardTitle><h1>Verify your email</h1></CardTitle>
+        <CardDescription>
+          Enter the 6-digit code sent to
+          <br />
+          <span className="font-medium text-foreground break-all">{email}</span>
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-6">
-        <InputOTP value={otp} onChange={setOtp} maxLength={6} disabled={isPending}>
+        <InputOTP
+          aria-label="Email verification code"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="one-time-code"
+          value={otp}
+          onChange={setOtp}
+          maxLength={6}
+          disabled={isPending}
+        >
           <InputOTPGroup className="gap-2">
             {[...Array(6)].map((_, i) => (
-              <InputOTPSlot key={i} index={i} className="h-12 w-10 text-lg border-primary/20" />
+              <InputOTPSlot
+                key={i}
+                index={i}
+                className="h-12 w-10 text-lg border-primary/20"
+              />
             ))}
           </InputOTPGroup>
         </InputOTP>
 
-        <Button className="w-full" onClick={verifyOtp} disabled={otp.length !== 6 || isPending}>
-          {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify"}
+        <Button
+          className="auth-verify w-full"
+          onClick={verifyOtp}
+          disabled={otp.length !== 6 || isPending}
+        >
+          {isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            "Verify email"
+          )}
         </Button>
 
         <div className="text-center w-full">
-          {isLocked ? (
-            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center justify-center gap-2">
-              <AlertCircle className="w-4 h-4" /> Max resend attempts reached
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleResend}
-              disabled={isPending || timeLeft > 0}
-              className="w-full text-muted-foreground hover:text-foreground"
-            >
-              {timeLeft > 0 ? (
-                <span className="flex items-center gap-2">
-                  <Timer className="w-3 h-3" /> Resend available in {timeLeft}s
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <RefreshCw className={`w-3 h-3 ${isPending ? "animate-spin" : ""}`} />
-                  Resend Code
-                </span>
-              )}
-            </Button>
-          )}
-          {!isLocked && (
-            <p className="text-[10px] text-muted-foreground mt-2">
-              {3 - attempts} resend attempts remaining
-            </p>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResend}
+            disabled={!email || isPending || timeLeft > 0}
+            className="w-full text-muted-foreground hover:text-foreground"
+          >
+            {timeLeft > 0 ? (
+              <span className="flex items-center gap-2">
+                <Timer className="size-3" />
+                Resend available in {timeLeft}s
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <RefreshCw className="size-3" />
+                Resend code
+              </span>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Check your spam folder. Codes expire after 10 minutes.
+          </p>
         </div>
       </CardContent>
     </Card>

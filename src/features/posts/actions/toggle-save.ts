@@ -1,5 +1,7 @@
 "use server";
 
+import { requireVisiblePost } from "@/features/posts/access";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 
 import { ApiResponse } from "@/types/api";
@@ -11,12 +13,15 @@ export async function toggleSave(data: ToggleSaveSchemaType): Promise<ApiRespons
     try {
         const session = await getServerSession();
         if (!session?.user) return { status: "error", message: "Unauthorized" };
+        await enforceRateLimit(`mutations:${session.user.id}`, 60);
 
         const parsed = toggleSaveSchema.safeParse(data);
         if (!parsed.success) return { status: "error", message: "Invalid data" };
 
         const { postId } = parsed.data;
         const userId = session.user.id;
+        const visiblePost = await requireVisiblePost(postId, userId);
+        void visiblePost;
 
         const existingSave = await prisma.savedPost.findUnique({
             where: {

@@ -86,7 +86,7 @@ export async function getSearchRecommendations() {
 
     return {
         experts,
-        courses: courses as unknown as PublicCourseType[], // Casting to match existing type
+        courses: courses as unknown as PublicCourseType[], 
         articles
     };
 }

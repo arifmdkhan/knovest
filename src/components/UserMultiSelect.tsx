@@ -6,19 +6,8 @@ import { useChatContext } from "stream-chat-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { searchUsers } from "@/features/user/user.action";
 import { Button } from "@/components/ui/button";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -74,8 +63,6 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
         const performSearch = async () => {
             setLoading(true);
             try {
-                // Use server action for reliable user search (Postgres)
-                // This ensures we get username, verification badges, etc. correctly
                 const result = await searchUsers({ query: debouncedQuery });
 
                 if (result.status === "success" && result.data) {
@@ -96,7 +83,7 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
         };
 
         performSearch();
-    }, [debouncedQuery]); // Removed client dependency as we don't use it for search anymore
+    }, [debouncedQuery]); 
 
     const handleSelect = (user: UserResult) => {
         if (selectedUserIds.includes(user.id)) return;
@@ -133,7 +120,7 @@ export function UserMultiSelect({ selectedUserIds, onSelectedUserIdsChange }: Us
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[400px] p-0" align="start">
-                    <Command shouldFilter={false}> {/* We stick to server-side filtering */}
+                    <Command shouldFilter={false}> 
                         <CommandInput
                             placeholder="Search users by name or username..."
                             value={query}

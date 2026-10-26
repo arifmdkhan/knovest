@@ -1,16 +1,18 @@
 "use server";
 
+import { requireVisiblePost } from "@/features/posts/access";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "@/lib/get-sessions";
 import { z } from "zod";
 
 import { revalidatePath } from "next/cache";
 import { ApiResponse } from "@/types/api";
-import { createNotification } from "@/features/notifications/actions/notifications.action";
+import { createNotification } from "@/features/notifications/services/create-notification";
 
 const createCommentSchema = z.object({
   postId: z.string(),
-  content: z.string().min(1, "Comment cannot be empty"),
+  content: z.string().trim().min(1, "Comment cannot be empty").max(5000),
   parentId: z.string().optional(), // For nested replies
 });
 
@@ -18,11 +20,14 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
   try {
     const session = await getServerSession();
     if (!session?.user) return { status: "error", message: "Unauthorized" };
+        await enforceRateLimit(`mutations:${session.user.id}`, 60);
 
     const parsed = createCommentSchema.safeParse(data);
     if (!parsed.success) return { status: "error", message: "Invalid data" };
 
     const { postId, content, parentId } = parsed.data;
+    await requireVisiblePost(postId, session.user.id);
+    if (parentId && !await prisma.comment.findFirst({ where: { id: parentId, postId }, select: { id: true } })) return { status: "error", message: "Reply target unavailable" };
 
     const newComment = await prisma.comment.create({
       data: {
@@ -67,7 +72,7 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
       }
     }
 
-    revalidatePath("/feed"); // Or more specific path if applicable
+    revalidatePath("/home");
 
     return {
       status: "success",
@@ -83,6 +88,9 @@ export async function createComment(data: z.infer<typeof createCommentSchema>): 
 
 export async function getComments(postId: string, parentId?: string, cursor?: string, limit = 5): Promise<ApiResponse<{ comments: any[]; nextCursor: string | undefined }>> {
   try {
+    const session = await getServerSession();
+    await requireVisiblePost(postId, session?.user.id);
+    limit = Math.min(50, Math.max(1, Math.trunc(limit) || 5));
     const comments = await prisma.comment.findMany({
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,

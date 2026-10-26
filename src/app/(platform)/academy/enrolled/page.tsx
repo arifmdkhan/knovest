@@ -1,12 +1,14 @@
+import { AppHero } from "@/components/AppHero";
+import { SavedArticlesTab } from "../../bookmark/_components/SavedArticlesTab";
 import { EmptyState } from "@/components/EmptyState";
-import Link from "next/link"
-import { EnrolledCourseCard } from "./_components/EnrolledCourseCard"
-import { PublicCourseCard } from "../course/_components/PublicCourseCard"
-import { getEnrolledCourses } from "@/features/user/queries/get-enrolled-courses"
-import { getAllCourses } from "@/features/courses/queries/get-all-courses"
+import Link from "@/components/AppLink"
+import { EnrolledCourseCard } from "./_components/EnrolledCourseCard";
+import { PublicCourseCard } from "../course/_components/PublicCourseCard";
+import { getEnrolledCourses } from "@/features/user/queries/get-enrolled-courses";
+import { getAllCourses } from "@/features/courses/queries/get-all-courses";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, GraduationCap, LayoutGrid } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookOpen, GraduationCap, LayoutGrid } from "lucide-react";
 
 export default async function EnrolledPage() {
     const [allCourses, enrolledCourses] = await Promise.all([
@@ -17,11 +19,8 @@ export default async function EnrolledPage() {
     const recommendedCourses = allCourses.filter((course) => !enrolledCourses.some(({ course: enrolled }) => enrolled.id === course.id));
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">My Learning</h1>
-                <p className="text-muted-foreground">Manage your courses and track your progress</p>
-            </div>
+        <div className="w-full space-y-7">
+            <AppHero title={<>My <span className="text-primary">learning</span></>} description="A little progress, every day. Continue your courses and explore something new." />
 
             <Tabs defaultValue="courses" className="w-full space-y-8">
                 <TabsList className="bg-muted/50 p-1 h-auto">
@@ -77,13 +76,7 @@ export default async function EnrolledPage() {
                 </TabsContent>
 
                 <TabsContent value="articles" className="space-y-6 outline-none animate-in fade-in-50 duration-500">
-                    <EmptyState
-                        title="No Articles Saved"
-                        description="You haven't saved any articles yet. Explore our library to find interesting reads."
-                        buttonText="Browse Articles"
-                        href="/academy/article"
-                        icon={BookOpen}
-                    />
+                    <SavedArticlesTab />
                 </TabsContent>
             </Tabs>
         </div>

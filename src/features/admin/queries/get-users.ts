@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/client";
 
-export interface AdminUser {
+interface AdminUser {
     id: string;
     name: string;
     email: string;

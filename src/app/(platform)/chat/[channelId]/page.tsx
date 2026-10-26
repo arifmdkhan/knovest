@@ -2,19 +2,9 @@
 
 import { useEffect, useState, use } from "react";
 import { Channel as StreamChannel, Event } from "stream-chat";
-import {
-    Channel,
-    Window,
-    MessageList,
-    MessageInput,
-    Thread,
-    MessageSimple,
-    MessageUIComponentProps,
-    useMessageContext,
-    useChatContext,
-} from "stream-chat-react";
+import { Channel, Window, MessageList, MessageInput, Thread, MessageSimple, MessageUIComponentProps, useMessageContext, useChatContext } from "stream-chat-react";
 import "stream-chat-react/dist/css/v2/index.css";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { CustomChannelHeader } from "../_components/ChannelHeader";
 import { CustomChannelData } from "@/lib/chat-types";
 import { ChatSkeleton } from "../_components/ChatSkeleton";
@@ -26,16 +16,12 @@ import { User } from "@/generated/prisma/client";
 interface PageProps {
     params: Promise<{ channelId: string }>;
 }
-
-// Custom Message Component to handle time-based actions
 const CustomMessage = (props: MessageUIComponentProps) => {
     const messageContext = useMessageContext();
     const { client } = useChatContext();
-    const [tick, setTick] = useState(0); // Used to force re-render
+    const [tick, setTick] = useState(0);
 
     const message = messageContext?.message || props.message;
-
-    // Set up timers to force re-render when permissions expire
     useEffect(() => {
         if (!message?.created_at) return;
 
@@ -76,12 +62,10 @@ const CustomMessage = (props: MessageUIComponentProps) => {
 
     if (isOwner) {
         const now = new Date();
-        // Fallback to now if created_at is missing (e.g. optimistic message), 
-        // but prefer message.created_at. If it's effectively "now", it's editable.
         const created = message.created_at ? new Date(message.created_at) : now;
         const diffInMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
 
-        // Edit: 5 minute limit
+        // Edit message: 5 minute limit
         if (diffInMinutes <= 5) {
             actions.push('edit');
         }
@@ -106,9 +90,7 @@ export default function ChannelPage({ params }: PageProps) {
 
     useEffect(() => {
         if (!client || !channelId) return;
-
         const loadChannel = async () => {
-            // Check if channel is already active in client to avoid re-fetching
             const existingChannel = client.activeChannels[channelId];
             if (existingChannel) {
                 setChannel(existingChannel);
@@ -116,13 +98,10 @@ export default function ChannelPage({ params }: PageProps) {
             }
 
             const newChannel = client.channel("messaging", channelId);
-            // Only watch if not already initialized
             if (!newChannel.initialized) {
                 await newChannel.watch();
             }
             setChannel(newChannel);
-
-            // Handle channel deletion while viewing
             const handleEvent = (event: Event) => {
                 if (event.type === 'channel.deleted') {
                     setChannel(null);
@@ -157,7 +136,6 @@ export default function ChannelPage({ params }: PageProps) {
         return false;
     })();
 
-    // Type guard/assertion for subscription (assuming it's on the user object extended)
     const isSubscriptionEnabled = (session?.user as User)?.isSubscriptionEnabled ?? false;
 
     return (

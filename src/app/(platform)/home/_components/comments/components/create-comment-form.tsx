@@ -9,8 +9,8 @@ interface FeedPage {
 }
 import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea"; // Or Input if single line preference
-import { createComment } from "@/features/comments/actions/comment.action"; // Use server action wrapper if preferred for types
+import { Textarea } from "@/components/ui/textarea"; 
+import { createComment } from "@/features/comments/actions/comment.action"; 
 import { toast } from "sonner";
 
 interface CreateCommentFormProps {
@@ -26,7 +26,6 @@ export function CreateCommentForm({ postId, parentId, onSuccess, autoFocus }: Cr
 
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
-      // Call server action directly
       const res = await createComment({ postId, content, parentId });
       if (res.status === "error") throw new Error(res.message);
       return res.data;
@@ -37,14 +36,6 @@ export function CreateCommentForm({ postId, parentId, onSuccess, autoFocus }: Cr
 
       // Invalidating queries to refresh the list of comments
       queryClient.invalidateQueries({ queryKey: ["comments", postId, parentId] });
-
-      // Update feed cache to increment comment count
-      // We only do this for top-level comments (no parentId) or if we want to track all comments
-      // Usually feed shows total comments, so any comment adds to count.
-      // Update feed cache to increment comment count
-      // We only do this for top-level comments (no parentId) or if we want to track all comments
-      // Usually feed shows total comments, so any comment adds to count.
-      // We assume the feed query key is similar to useGetPosts
       queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts"] }, (oldData) => {
         if (!oldData) return oldData;
         return {
@@ -102,7 +93,7 @@ export function CreateCommentForm({ postId, parentId, onSuccess, autoFocus }: Cr
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={parentId ? "Write a reply..." : "Write a comment..."}
-          className="min-h-[40px] max-h-[120px] py-2 resize-none bg-muted/30 border-transparent focus:bg-background transition-all pr-10 text-sm"
+          className="min-h-10 max-h-[120px] py-2 resize-none bg-muted/30 border-transparent focus:bg-background transition-all pr-10 text-sm"
           autoFocus={autoFocus}
         />
         <Button

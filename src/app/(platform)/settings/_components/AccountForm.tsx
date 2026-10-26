@@ -6,24 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-
+import { useRouter } from "@/components/NavigationProvider";
 import { Button } from "@/components/ui/button";
-import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { checkUsernameAvailability } from "@/features/auth/actions/register.action";
 
-// Define minimal User type to avoid Prisma import issues
 interface User {
     id: string;
     name?: string | null;
@@ -49,6 +39,8 @@ interface AccountFormProps {
 
 export function AccountForm({ user }: AccountFormProps) {
     const router = useRouter();
+    const { refetch: refreshSession } = authClient.useSession();
+    const [savedUsername, setSavedUsername] = useState(user.username || "");
     const [isPending, startTransition] = useTransition();
     const [usernameAvailability, setUsernameAvailability] = useState<{
         status: "idle" | "loading" | "available" | "taken" | "error";
@@ -66,48 +58,32 @@ export function AccountForm({ user }: AccountFormProps) {
 
     const watchedUsername = form.watch("username");
 
-    // Custom debounce implementation if hook doesn't exist
-    const [debouncedUsername, setDebouncedUsername] = useState(watchedUsername);
     useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedUsername(watchedUsername);
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [watchedUsername]);
+        let cancelled = false;
+        if (form.getFieldState("username").error?.type === "availability") form.clearErrors("username");
+        setUsernameAvailability({ status: "idle" });
+        if (!watchedUsername || watchedUsername.toLowerCase() === savedUsername.toLowerCase()
+            || !accountFormSchema.shape.username.safeParse(watchedUsername).success) return;
 
-
-    useEffect(() => {
-        const checkAvailability = async () => {
-            const currentUsername = debouncedUsername;
-
-            // Don't check if empty or same as current
-            if (!currentUsername || currentUsername === (user.displayUsername || user.username)) {
-                setUsernameAvailability({ status: "idle" });
-                return;
-            }
-
-            // Don't check if invalid format (let zod handle it)
-            const isValidFormat = /^[a-zA-Z0-9_]+$/.test(currentUsername);
-            if (!isValidFormat || currentUsername.length < 3) {
-                setUsernameAvailability({ status: "idle" });
-                return;
-            }
-
+        const timer = setTimeout(async () => {
             setUsernameAvailability({ status: "loading" });
-            const result = await checkUsernameAvailability(currentUsername);
-
-            if (result.status === "success") {
-                setUsernameAvailability({ status: "available", message: "Username is available" });
-            } else {
-                setUsernameAvailability({ status: "taken", message: result.message });
-                // Optionally set form error manually
-                form.setError("username", { type: "manual", message: result.message });
+            try {
+                const result = await checkUsernameAvailability({ username: watchedUsername });
+                if (cancelled) return;
+                if (result.status === "success") {
+                    setUsernameAvailability({ status: "available", message: "Username is available" });
+                } else if (result.message === "Username is already taken") {
+                    setUsernameAvailability({ status: "taken", message: result.message });
+                    form.setError("username", { type: "availability", message: result.message });
+                } else {
+                    setUsernameAvailability({ status: "error", message: "Could not check availability. You can still save." });
+                }
+            } catch {
+                if (!cancelled) setUsernameAvailability({ status: "error", message: "Could not check availability. You can still save." });
             }
-        };
-
-        checkAvailability();
-    }, [debouncedUsername, user.username, user.displayUsername, form]);
-
+        }, 500);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [watchedUsername, savedUsername, form]);
 
     function onSubmit(data: AccountFormValues) {
         if (usernameAvailability.status === "taken") {
@@ -117,7 +93,7 @@ export function AccountForm({ user }: AccountFormProps) {
 
         startTransition(async () => {
             try {
-                // Use our wrapper action to ensure Stream sync
+                // Use wrapper action to ensure Stream sync
                 const { updateAccountSettings } = await import("@/features/user/user.action");
                 const res = await updateAccountSettings({
                     name: data.name,
@@ -128,21 +104,15 @@ export function AccountForm({ user }: AccountFormProps) {
                     toast.error(res.message || "Failed to update profile");
                     return;
                 }
-
-                // Also update client-side session if possible, or force refresh
-                // authClient.updateUser might update local session state, but since we did it server side, 
-                // we might need to refresh session. 
-                // However, router.refresh() should pull fresh data.
-
-                // Optional: Call authClient.refreshSession() if available, or just reload.
+                setSavedUsername(res.data!.username);
+                form.reset({ name: res.data!.name, username: res.data!.username });
+                setUsernameAvailability({ status: "idle" });
+                await refreshSession({ query: { disableCookieCache: true } });
 
                 toast.success("Profile updated successfully");
                 router.refresh(); // Refresh server components
 
-                // If username changed, we might want to redirect? 
-                // For now, refresh is enough as the form is on /settings/account not /profile/[username]
-
-            } catch (err) {
+            } catch  {
                 toast.error("An error occurred");
             }
         });
@@ -166,7 +136,7 @@ export function AccountForm({ user }: AccountFormProps) {
                                 <FormItem>
                                     <FormLabel>Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Your name" {...field} />
+                                        <Input placeholder="Your name" disabled={isPending} {...field} />
                                     </FormControl>
                                     <FormDescription>
                                         This is the name that will be displayed on your profile and in emails.
@@ -184,16 +154,18 @@ export function AccountForm({ user }: AccountFormProps) {
                                     <FormLabel>Username</FormLabel>
                                     <FormControl>
                                         <div className="relative">
-                                            <Input placeholder="username" {...field} />
+                                            <Input placeholder="username" disabled={isPending} {...field} />
                                             <div className="absolute right-3 top-2.5 h-4 w-4">
                                                 {usernameAvailability.status === "loading" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                                                {usernameAvailability.status === "available" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                                                {usernameAvailability.status === "error" && <span className="block mt-1 text-xs">{usernameAvailability.message}</span>}
+                                        {usernameAvailability.status === "available" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                                                 {usernameAvailability.status === "taken" && <XCircle className="h-4 w-4 text-destructive" />}
                                             </div>
                                         </div>
                                     </FormControl>
                                     <FormDescription>
                                         This is your public display name. It can be your real name or a pseudonym.
+                                        {usernameAvailability.status === "error" && <span className="block mt-1 text-xs">{usernameAvailability.message}</span>}
                                         {usernameAvailability.status === "available" && <span className="text-green-600 block mt-1 text-xs">Username is available!</span>}
                                     </FormDescription>
                                     <FormMessage />

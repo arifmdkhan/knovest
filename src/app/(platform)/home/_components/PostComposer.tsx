@@ -1,43 +1,30 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { ConnectionUser } from "@/features/user/queries/get-connections";
 import { Globe, Lock, Users, Loader2, Send, UserStar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { MediaUploader, UploadedMedia } from "@/components/handle-media/media-uploader";
 import { UploadIntent } from "@/lib/storage/types";
-import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useCreatePost } from "@/hooks/use-post";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 
 export function PostComposer() {
   const { data: session } = authClient.useSession();
   const { mutate: createPost, isPending: isPosting } = useCreatePost();
 
-  /* State */
   const [content, setContent] = useState("");
   const [media, setMedia] = useState<UploadedMedia[]>([]);
   const [visibility, setVisibility] = useState<"PUBLIC" | "FOLLOWERS" | "PRIVATE" | "SUBSCRIBER">("PUBLIC");
-  // Generate a stable ID for the session (re-gen on submit)
-  // We need to import uuid/cuid. Since "uuid" is likely used elsewhere, let's dynamic import or move to top if available.
-  // Actually, standard practice for client-side ID:
-  // Initialize synchronously to ensure it's never empty during first render
   const [postId, setPostId] = useState<string>(() => crypto.randomUUID());
 
-  // useEffect removed as valid ID is generated on mount via initializer
-
   const [uploaderKey, setUploaderKey] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSubmit = async () => {
     if (!content.trim() && media.length === 0) return;
@@ -51,6 +38,7 @@ export function PostComposer() {
           .filter((m) => m.type === "IMAGE" || m.type === "VIDEO")
           .map((m) => ({
             url: m.url,
+            key: m.key,
             type: m.type as "IMAGE" | "VIDEO",
             width: (m as any).width,
             height: (m as any).height,
@@ -68,31 +56,26 @@ export function PostComposer() {
   };
 
   /* State for Mentions */
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionResults, setMentionResults] = useState<ConnectionUser[]>([]);
   const [showMentions, setShowMentions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  // Debounced search effect could be added, but for now direct call on slow typing is okay or use manual debounce
-  // Since we are using server action, we should probably debounce.
-  // Using a simple timeout for debounce
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mentionQueryRef = useRef("");
+  useEffect(() => () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); mentionQueryRef.current = ""; }, []);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    mentionQueryRef.current = "";
     const val = e.target.value;
     const pos = e.target.selectionStart;
     setContent(val);
     setCursorPosition(pos);
-
-    // Check for mention trigger
-    // Look for @ followed by word characters up to cursor
-    // 1. Get text up to cursor
     const textUpToCursor = val.slice(0, pos);
-    // 2. Find last @
     const lastAtPos = textUpToCursor.lastIndexOf('@');
 
     if (lastAtPos !== -1) {
-      // Check if there is a space before @ (or it's start of string)
+      // Check if there is a space before @ 
       const isStartOfWord = lastAtPos === 0 || /[\s\n]/.test(textUpToCursor[lastAtPos - 1]);
 
       if (isStartOfWord) {
@@ -100,16 +83,16 @@ export function PostComposer() {
         const query = textUpToCursor.slice(lastAtPos + 1);
         // If query contains space, stop mentioning
         if (!/\s/.test(query) && query.length < 20) {
-          setMentionQuery(query);
+          mentionQueryRef.current = query;
           setShowMentions(true);
 
           // Debounce Search
-          if (searchTimeout) clearTimeout(searchTimeout);
-          const timeout = setTimeout(async () => {
+          searchTimeout.current = setTimeout(async () => {
             if (query.length > 0) {
               const { searchUsers } = await import("@/features/user/user.action");
               // searchUsers returns correct shape matching ConnectionUser mostly
-              const res = await searchUsers({ query: mentionQuery || "" });
+              const res = await searchUsers({ query });
+              if (mentionQueryRef.current !== query) return;
               if (res.status === "success" && res.data) {
                 setMentionResults(res.data as ConnectionUser[]);
               } else {
@@ -119,19 +102,15 @@ export function PostComposer() {
               setMentionResults([]);
             }
           }, 300);
-          setSearchTimeout(timeout);
           return;
         }
       }
     }
-
-    // Fallback: close mentions
     setShowMentions(false);
-    setMentionQuery(null);
+    mentionQueryRef.current = "";
   };
 
   const insertMention = (username: string) => {
-    // Find the active mention position again to be safe
     const textUpToCursor = content.slice(0, cursorPosition);
     const lastAtPos = textUpToCursor.lastIndexOf('@');
 
@@ -139,7 +118,6 @@ export function PostComposer() {
       const newContent = content.slice(0, lastAtPos) + `@${username} ` + content.slice(cursorPosition);
       setContent(newContent);
       setShowMentions(false);
-      // Focus back might be needed if we lost it (but clicking button keeps focus usually if prevented default, simplified here)
     }
   };
 
@@ -148,93 +126,41 @@ export function PostComposer() {
 
   if (!session) return null;
 
+  const user = session.user as typeof session.user & {
+    username: string;
+    isSubscriptionEnabled: boolean
+  };
+
   return (
-    <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm relative z-10">
-      {/* ... (rest of the component structure remains same, just updating MediaUploader usage) */}
-      <div className="flex gap-4">
-        <Link href={`/profile/${session.user.username}`}>
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={session.user.image || ""} />
-            <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
-          </Avatar>
+    <div className="app-panel post-composer relative z-10 w-full p-4">
+      <div className="flex items-start gap-3">
+        <Link href={`/profile/${user.username}`} className="shrink-0" aria-label="Your profile">
+          <Avatar className="size-10"><AvatarImage src={user.image || ""} alt={user.name} /><AvatarFallback>{user.name?.charAt(0)}</AvatarFallback></Avatar>
         </Link>
-        <div className="flex-1 space-y-4 relative">
-          {/* ... top section ... */}
-          <div className="flex justify-between items-center">
-            <Link href={`/profile/${session.user.username}`}>
-              <span className="font-semibold text-sm">{session.user.name}</span></Link>
-            <Select value={visibility} onValueChange={(v: "PUBLIC" | "FOLLOWERS" | "PRIVATE" | "SUBSCRIBER") => setVisibility(v)}>
-              <SelectTrigger className="w-[130px] h-8 text-xs border-none bg-muted/50">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PUBLIC"><div className="flex items-center"><Globe className="w-3 h-3 mr-2" /> Public</div></SelectItem>
-                <SelectItem value="FOLLOWERS"><div className="flex items-center"><Users className="w-3 h-3 mr-2" /> Followers</div></SelectItem>
-                {/* @ts-ignore */}
-                {session.user.isSubscriptionEnabled && (
-                  <SelectItem value="SUBSCRIBER"><div className="flex items-center"><UserStar className="w-3 h-3 mr-2 text-purple-500" /> Subscribers</div></SelectItem>
-                )}
-                <SelectItem value="PRIVATE"><div className="flex items-center"><Lock className="w-3 h-3 mr-2" /> Private</div></SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="relative">
-            <Textarea
-              placeholder="Share your market analysis... (Type @ to mention)"
-              className="min-h-20 border-none resize-none p-2 focus-visible:ring-0 text-base bg-transparent shadow-none placeholder:text-muted-foreground/70"
-              value={content}
-              onChange={handleContentChange}
-            />
-
-            {showMentions && mentionResults.length > 0 && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-popover text-popover-foreground border border-border rounded-md shadow-md z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                {/* ... Mentions List ... */}
-                <div className="p-1">
-                  <div className="text-xs font-semibold text-muted-foreground px-2 py-1.5">Suggested Users</div>
-                  {mentionResults.map(user => (
-                    <button
-                      key={user.id}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-left transition-colors"
-                      onClick={() => insertMention(user.username || "")}
-                    >
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={user.image || undefined} />
-                        <AvatarFallback>{user.name?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col overflow-hidden">
-                        <span className="font-medium truncate">{user.name}</span>
-                        <span className="text-xs text-muted-foreground truncate">@{user.username}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <MediaUploader
-            key={uploaderKey}
-            onChange={setMedia}
-            existingMedia={media}
-            maxFiles={4}
-            allowedTypes={allowedTypes}
-            maxSizeMB={30}
-            intent={UploadIntent.POST_MEDIA}
-            uploadParams={uploadParams}
-          />
-
-          <div className="flex justify-end pt-2 border-t border-border/50">
-            <Button
-              onClick={handleSubmit}
-              disabled={isPosting || (!content && media.length === 0)}
-              className="rounded-full px-6 font-semibold"
-            >
-              {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Post <Send className="w-4 h-4 ml-2" /></>}
-            </Button>
-          </div>
+        <div className="relative min-w-0 flex-1">
+          <Textarea aria-label="Share a post" placeholder="Share your market analysis, ideas or questions…" rows={1}
+            className="composer-input min-h-[52px] w-full resize-none rounded-none border-0 bg-transparent p-2 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+            value={content} onChange={handleContentChange} disabled={isPosting} />
+          {showMentions && mentionResults.length > 0 && <div className="absolute top-full left-0 z-50 mt-2 w-64 max-w-full overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg">
+            <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Suggested people</p>
+            {mentionResults.map(person => <button key={person.id} type="button" className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-accent" onClick={() => insertMention(person.username || "")}>
+              <Avatar className="size-7"><AvatarImage src={person.image || undefined} alt="" /><AvatarFallback>{person.name?.[0]}</AvatarFallback></Avatar>
+              <span className="min-w-0"><span className="block truncate font-medium">{person.name}</span><span className="block truncate text-xs text-muted-foreground">@{person.username}</span></span>
+            </button>)}
+          </div>}
         </div>
+        <Select value={visibility} onValueChange={(value: typeof visibility) => setVisibility(value)} disabled={isPosting}>
+          <SelectTrigger aria-label={`Post visibility: ${visibility.toLowerCase()}`} className="composer-visibility w-[116px] shrink-0 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="PUBLIC"><Globe className="size-3.5" /><span className="composer-option-label">Public</span></SelectItem>
+            <SelectItem value="FOLLOWERS"><Users className="size-3.5" /><span className="composer-option-label">Followers</span></SelectItem>
+            {user.isSubscriptionEnabled && <SelectItem value="SUBSCRIBER"><UserStar className="size-3.5" /><span className="composer-option-label">Subscribers</span></SelectItem>}
+            <SelectItem value="PRIVATE"><Lock className="size-3.5" /><span className="composer-option-label">Private</span></SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+      <MediaUploader key={uploaderKey} variant="compact" className="mt-3" onChange={setMedia} existingMedia={media} maxFiles={4} allowedTypes={allowedTypes} maxSizeMB={30} intent={UploadIntent.POST_MEDIA} uploadParams={uploadParams} disabled={isPosting} onUploadingChange={setIsUploading}
+        footerAction={<Button onClick={handleSubmit} disabled={isPosting || isUploading || (!content.trim() && media.length === 0)} className="rounded-full px-5 font-medium">{isPosting ? <><Loader2 className="size-4 animate-spin" />Posting…</> : <>Post<Send className="size-4" /></>}</Button>} />
     </div>
   );
 }

@@ -1,22 +1,27 @@
 "use server";
 
+import { requireVisiblePost } from "@/features/posts/access";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 
 import { ApiResponse } from "@/types/api";
 import { toggleLikeSchema, ToggleLikeSchemaType } from "@/features/posts/schemas";
 import { getServerSession } from "@/lib/get-sessions";
-import { createNotification } from "@/features/notifications/actions/notifications.action";
+import { createNotification } from "@/features/notifications/services/create-notification";
 
 export async function toggleLike(data: ToggleLikeSchemaType): Promise<ApiResponse<{ liked: boolean; count: number }>> {
     try {
         const session = await getServerSession();
         if (!session?.user) return { status: "error", message: "Unauthorized" };
+        await enforceRateLimit(`mutations:${session.user.id}`, 60);
 
         const parsed = toggleLikeSchema.safeParse(data);
         if (!parsed.success) return { status: "error", message: "Invalid data" };
 
         const { postId } = parsed.data;
         const userId = session.user.id;
+        const visiblePost = await requireVisiblePost(postId, userId);
+        void visiblePost;
 
         const existingLike = await prisma.like.findUnique({
             where: {

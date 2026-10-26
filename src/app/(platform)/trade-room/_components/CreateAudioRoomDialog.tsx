@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
-import { useRouter } from "next/navigation";
+import { openRoomTab } from "@/lib/open-room-tab";
 import { toast } from "sonner";
 import { Loader2, Mic } from "lucide-react";
 import { CustomChannelData } from "@/lib/chat-types";
@@ -28,7 +28,6 @@ interface CreateAudioRoomDialogProps {
 export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = false, editCall }: CreateAudioRoomDialogProps) {
     const client = useStreamVideoClient();
     const { client: chatClient } = useChatContext();
-    const router = useRouter();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [permissionType, setPermissionType] = useState<"everyone" | "group">("everyone");
@@ -47,14 +46,13 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
                 setTitle(custom.title || "");
                 setDescription(custom.description || "");
                 setPermissionType(custom.permissionType || "everyone");
-                setPermissionType(custom.permissionType || "everyone");
                 setSelectedGroups(custom.allowedGroups || []);
 
                 let allowedIds: string[] = [];
                 if (custom.allowedUserIds) {
                     if (Array.isArray(custom.allowedUserIds)) allowedIds = custom.allowedUserIds as string[];
                     else if (typeof custom.allowedUserIds === 'string') {
-                        try { allowedIds = JSON.parse(custom.allowedUserIds); } catch (e) { }
+                        try { allowedIds = JSON.parse(custom.allowedUserIds); } catch  { }
                     }
                 }
                 setSelectedUserIds(allowedIds);
@@ -64,7 +62,6 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
             } else {
                 setTitle("");
                 setDescription("");
-                setPermissionType("everyone");
                 setPermissionType("everyone");
                 setSelectedGroups([]);
                 setSelectedUserIds([]);
@@ -114,14 +111,18 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
             return;
         }
 
+        const roomWindow = !editCall && !isScheduled ? openRoomTab("about:blank") : null;
+        if (!editCall && !isScheduled && !roomWindow) {
+            toast.error("Allow Knovest to open a new tab, then try again.");
+            return;
+        }
         setIsLoading(true);
         try {
-            // Prepare custom data with permissions
             const customData: { [key: string]: any } = {
                 title,
                 description,
                 permissionType,
-                type: 'audio_room' // Explicit tag
+                type: 'audio_room' 
             };
 
             if (permissionType === "group") {
@@ -141,6 +142,8 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
                 const callId = crypto.randomUUID();
                 const call = client.call("audio_room", callId);
 
+                await call.camera.disable();
+                await call.microphone.disable();
                 await call.getOrCreate({
                     data: {
                         starts_at,
@@ -150,13 +153,14 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
                 toast.success(isScheduled ? "Audio Room scheduled successfully" : "Audio Room started successfully");
 
                 if (!isScheduled) {
-                    router.push(`/trade-room/audio-room/${callId}`);
+                    roomWindow?.location.replace(`/trade-room/audio-room/${callId}`);
                 }
             }
 
             onOpenChange(false);
 
         } catch (error: unknown) {
+            roomWindow?.close();
             console.error("Failed to save audio room", error);
             if (error instanceof Error && error.message?.includes("User token is not set")) {
                 toast.error("Connection lost. Please refresh the page.");

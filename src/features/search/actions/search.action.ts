@@ -7,6 +7,7 @@ import { ApiResponse } from "@/types/api";
 import { User, Course, Article } from "@/generated/prisma/client";
 
 export async function searchGlobal(query: string): Promise<ApiResponse<{ users: Partial<User>[], courses: (Partial<Course> & { isSaved: boolean })[], articles: Partial<Article>[] }>> {
+    query = typeof query === "string" ? query.trim().slice(0, 200) : "";
     if (!query || query.length < 2) {
         return {
             status: "success",

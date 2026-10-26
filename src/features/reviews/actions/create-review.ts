@@ -84,7 +84,7 @@ export async function createReview(formData: FormData): Promise<ApiResponse> {
         // 3. Create Review
         await prisma.review.create({
             data: {
-                rating: parentId ? 0 : rating, // Replies don't have a rating
+                rating: parentId ? 0 : rating, 
                 comment,
                 userId: user.id,
                 courseId,

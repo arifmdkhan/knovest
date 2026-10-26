@@ -22,7 +22,12 @@
 
 # misc
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.pem
+*.key
+*.p12
+*.pfx
 
 # debug
 npm-debug.log*
@@ -30,8 +35,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# Local credentials; keep the setup template trackable
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -41,3 +47,13 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Local verification artifacts and transcode scratch files
+/output/
+/.playwright-cli/
+/.auth/
+/playwright/.auth/
+/playwright-report/
+/test-results/
+/tmp/
+*.log

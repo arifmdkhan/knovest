@@ -1,13 +1,9 @@
 "use client";
 
-import { Call } from "@stream-io/video-react-sdk";
+import { useCall } from "@stream-io/video-react-sdk";
 import { Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const REACTIONS = [
     { emoji: "👍", label: "Thumbs Up" },
@@ -18,10 +14,11 @@ const REACTIONS = [
     { emoji: "🎉", label: "Party" },
 ];
 
-export const ReactionControls = ({ call, onReaction }: { call: Call, onReaction?: (emoji: string) => void }) => {
+export const ReactionControls = () => {
+    const call = useCall();
     const sendReaction = async (emoji: string) => {
+        if (!call) return;
         try {
-            if (onReaction) onReaction(emoji);
             await call.sendReaction({
                 type: "reaction",
                 emoji,
@@ -35,18 +32,18 @@ export const ReactionControls = ({ call, onReaction }: { call: Call, onReaction?
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 gap-2">
+                <Button variant="outline" aria-label="Send a reaction" className="gap-2">
                     <Smile className="h-4 w-4" />
                     <span className="hidden sm:inline">React</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 bg-zinc-900 border-zinc-800" side="top" sideOffset={10}>
-                <div className="flex gap-2">
+            <PopoverContent className="w-auto max-w-[calc(100vw-24px)] p-2 bg-popover border-border" side="top" sideOffset={10}>
+                <div className="flex flex-wrap gap-1">
                     {REACTIONS.map(({ emoji, label }) => (
                         <button
                             key={label}
                             onClick={() => sendReaction(emoji)}
-                            className="text-2xl hover:scale-125 transition-transform p-2 rounded-lg hover:bg-white/10"
+                            className="text-2xl hover:scale-125 transition-transform p-2 rounded-lg hover:bg-accent"
                             title={label}
                         >
                             {emoji}

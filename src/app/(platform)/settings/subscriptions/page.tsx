@@ -26,10 +26,10 @@ export default async function SubscriptionSettingsPage() {
             </div>
             <Separator />
 
-            {/* Creator Settings: Only show if verified/sebi_verified (handled inside component but helpful to know context) */}
+            {/* Only show if SEBI verified expert */}
             <SubscriptionSettings user={user} />
 
-            {/* User Subscriptions: Reusing the management component */}
+            {/* User Subscriptions */}
             <ManageSubscriptions subscriptions={mySubscriptions} />
         </div>
     );

@@ -7,9 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import { SafeImage } from "@/components/ui/safe-image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { notFound } from "next/navigation";
-
 import { calculateReadTime } from "@/lib/utils";
 import { constructUrl } from "@/lib/construct-url";
 
@@ -32,11 +31,9 @@ export default async function ArticleDetailPage({ params }: ArticleDetailPagePro
 
     return (
         <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
-            {/* Background Ambient Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-pink-500/10 rounded-full blur-[120px] animate-pulse" />
             </div>
-
             <div className="relative z-10 max-w-4xl mx-auto space-y-8">
                 <Link
                     href="/academy/article"

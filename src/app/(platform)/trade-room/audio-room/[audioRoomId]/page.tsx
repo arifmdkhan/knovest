@@ -1,11 +1,14 @@
 "use client";
 
-import { use, useEffect, useState, useMemo } from "react";
-import { useStreamVideoClient, Call, StreamTheme, useCallStateHooks, ParticipantView, StreamVideoParticipant } from "@stream-io/video-react-sdk";
+import { use, useEffect, useState, useMemo, useRef } from "react";
+import { useStreamVideoClient, Call, StreamTheme, StreamCall, useCallStateHooks, ParticipantView, StreamVideoParticipant, useCall } from "@stream-io/video-react-sdk";
+import { loadRoomCall } from "@/lib/load-room-call";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Mic, MicOff, Users, Hand, LogOut, Settings, ChevronDown, Check } from "lucide-react";
+import { Loader2, Mic, MicOff, Users, Hand, LogOut, Settings, ChevronDown, Check, ChevronLeft, ChevronRight, Radio, Share2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { KnovestLogo } from "@/components/KnovestLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -28,6 +31,27 @@ const ActiveRoom = ({ call }: { call: Call }) => {
     const { backstage, members } = useCallState();
     const { leaveRoom } = useActiveCall();
 
+    const bodyRef = useRef<HTMLDivElement>(null);
+    const [pageSize, setPageSize] = useState({ speakers: 4, audience: 4 });
+    useEffect(() => {
+        const body = bodyRef.current;
+        if (!body) return;
+        const observer = new ResizeObserver(([entry]) => {
+            const mobile = window.innerWidth < 768;
+            const short = window.innerHeight < 650;
+            const available = Math.max(0, entry.contentRect.height - 120);
+            setPageSize({
+                speakers: Math.min(6, Math.max(1, Math.floor(available / (short ? 96 : 138))) * (mobile ? 2 : 3)),
+                audience: Math.min(8, Math.max(1, Math.floor(available / 50))),
+            });
+        });
+        observer.observe(body);
+        return () => observer.disconnect();
+    }, []);
+    const [speakerPage, setSpeakerPage] = useState(0);
+    const [audiencePage, setAudiencePage] = useState(0);
+    const [activePanel, setActivePanel] = useState("speakers");
+    const [isBroadcastBusy, setBroadcastBusy] = useState(false);
     const [hasMedia, setHasMedia] = useState(false);
     useEffect(() => {
         setHasMedia(typeof navigator !== 'undefined' && !!navigator.mediaDevices);
@@ -35,27 +59,10 @@ const ActiveRoom = ({ call }: { call: Call }) => {
 
     const [isBackstage, setIsBackstage] = useState(backstage);
     const [showSettings, setShowSettings] = useState(false);
-
-    // Manage reactions locally
     const [latestReactions, setLatestReactions] = useState<Record<string, { emoji: string; type: string }>>({});
-    // Manage raised hands locally
     const [raisedHands, setRaisedHands] = useState<string[]>([]);
 
-    const showReaction = (userId: string, reaction: { emoji: string; type: string }) => {
-        setLatestReactions(prev => ({ ...prev, [userId]: reaction }));
-        setTimeout(() => {
-            setLatestReactions(prev => {
-                const next = { ...prev };
-                delete next[userId];
-                return next;
-            });
-        }, 4000);
-    };
 
-    const handleLocalReaction = (emoji: string) => {
-        if (!localParticipant?.userId) return;
-        showReaction(localParticipant.userId, { emoji, type: 'reaction' });
-    };
 
     const customData = (call.state.custom || {}) as CustomCallData;
 
@@ -111,14 +118,13 @@ const ActiveRoom = ({ call }: { call: Call }) => {
     }, [call]);
 
     const participants = useMemo(() => {
-        // Simple dedupe by userId, preferring the one with tracks if duplicate
-        const unique = new Map();
+
+        const unique = new Map<string, StreamVideoParticipant>();
         rawParticipants.forEach(p => {
             if (!unique.has(p.userId)) {
                 unique.set(p.userId, p);
             } else {
-                const current = unique.get(p.userId);
-
+                const current = unique.get(p.userId)!;
                 // Compare join times to keep the latest session
                 const currentJoined = current.joinedAt ? new Date(String(current.joinedAt)).getTime() : 0;
                 const newJoined = p.joinedAt ? new Date(String(p.joinedAt)).getTime() : 0;
@@ -156,18 +162,13 @@ const ActiveRoom = ({ call }: { call: Call }) => {
         if (!call) return;
 
         const handleReaction = (event: any) => {
-            const reaction = (event as any).reaction; // Type assertion needed as CallEvent is generic
+            const reaction = (event as any).reaction;
             const user = reaction?.user || (event as any).user;
 
-            // Debug Remote Events
-            const isLocal = user?.id === call.state.localParticipant?.userId;
-
             if (user && reaction) {
-                // Robust extraction
+               
                 const emoji = reaction.emoji || reaction.custom?.emoji;
                 if (!emoji) return;
-
-                // Normalize for UI
                 const normalizedReaction = { ...reaction, emoji };
 
                 setLatestReactions(prev => ({
@@ -211,7 +212,7 @@ const ActiveRoom = ({ call }: { call: Call }) => {
         if (!isHost) return;
 
         const handlePermissionRequest = (event: any) => {
-            const { user, permissions } = event as any; // Type assertion for specific event properties
+            const { user, permissions } = event as any; 
             if (permissions.includes('send-audio')) {
                 setRaisedHands(prev => [...prev, user.id]);
 
@@ -304,193 +305,84 @@ const ActiveRoom = ({ call }: { call: Call }) => {
         return 'user';
     };
 
-    if (isBackstage && !isHost) {
-        return (
-            <div className="flex flex-col h-full bg-background dark:bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] dark:from-slate-900/50 dark:via-slate-950 dark:to-black items-center justify-center p-6 text-center transition-colors">
-                <div className="relative mb-8">
-                    <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-xl animate-pulse"></div>
-                    <div className="relative bg-card dark:bg-black/50 p-6 rounded-full border border-violet-500/30">
-                        <Loader2 className="h-12 w-12 text-violet-500 animate-spin" />
-                    </div>
-                </div>
-                <h2 className="text-2xl font-bold text-foreground mb-2">Room Starting Soon</h2>
-                <p className="text-muted-foreground max-w-md">The host is currently backstage getting ready.</p>
-            </div>
-        );
-    }
+    const speakers = participants.filter(p => getMainRole(p) !== "user");
+    const audience = participants.filter(p => getMainRole(p) === "user");
+    const speakerPages = Math.max(1, Math.ceil(speakers.length / pageSize.speakers));
+    const audiencePages = Math.max(1, Math.ceil(audience.length / pageSize.audience));
+    const currentSpeakerPage = Math.min(speakerPage, speakerPages - 1);
+    const currentAudiencePage = Math.min(audiencePage, audiencePages - 1);
 
-    return (
-        <div className="flex flex-col h-full bg-background dark:bg-black dark:bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] dark:from-slate-900/50 dark:via-slate-950 dark:to-black transition-colors duration-500">
-            {/* Header */}
-            <div className="p-6 border-b border-border dark:border-white/5 flex justify-between items-center backdrop-blur-md sticky top-0 z-10">
-                <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
-                        <div className={cn("h-3 w-3 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]", isBackstage ? "bg-yellow-500 shadow-yellow-500/50" : "bg-red-500 shadow-red-500/50")}></div>
-                        {customData.title || "Untitled Room"}
-                        {isBackstage && <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30">Backstage</span>}
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-1 pl-6">{customData.description || "Live Audio Discussion"}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="bg-zinc-200/50 dark:bg-white/5 px-3 py-1.5 rounded-full flex items-center gap-2 border border-border dark:border-white/10">
-                        <Users className="h-4 w-4 text-violet-500 dark:text-violet-400" />
-                        <span className="text-sm font-medium text-foreground dark:text-slate-200">
-                            {participants.length} Listening
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Stage Area */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-10">
-                <div className="max-w-6xl mx-auto">
-                    {/* Speakers Section */}
-                    <div className="mb-12">
-                        <h2 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                            <span className="bg-violet-500/20 p-1 rounded-sm"><Mic className="h-3 w-3" /></span>
-                            Speakers & Host
-                        </h2>
-                        <div className="flex flex-wrap justify-center gap-10 md:gap-16">
-                            {participants
-                                .filter(p => getMainRole(p) === 'host' || getMainRole(p) === 'speaker')
-                                .map((p) => (
-                                    <div key={p.sessionId}>
-                                        <SpeakerMenu participant={p} call={call} isHost={isHost}>
-                                            <div>
-                                                <AudioParticipant participant={p} reaction={latestReactions[p.userId]} role={getMainRole(p)} />
-                                            </div>
-                                        </SpeakerMenu>
-                                    </div>
-                                ))}
-                            {participants.filter(p => getMainRole(p) === 'host' || getMainRole(p) === 'speaker').length === 0 && (
-                                <div className="text-slate-500 text-sm italic py-10">Waiting for speakers...</div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-white/10 to-transparent my-10"></div>
-
-                    {/* Listeners Section */}
-                    <div>
-                        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-                            <Hand className="h-3 w-3" /> Audience
-                        </h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {participants
-                                .filter(p => getMainRole(p) === 'user')
-                                .map((p) => (
-                                    <div key={p.sessionId}>
-                                        <ParticipantMenu participant={p} call={call} isHost={isHost}>
-                                            <div className={cn("flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer group select-none",
-                                                raisedHands.includes(p.userId) ? "bg-violet-500/10 dark:bg-violet-900/20 border border-violet-500/30" : "")}>
-                                                <div className="relative">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={p.image} />
-                                                        <AvatarFallback className="text-xs bg-zinc-200 dark:bg-zinc-800">{p.name?.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-
-                                                    {latestReactions[p.userId] && (
-                                                        <div className="absolute -top-1 -right-1 text-lg z-30 animate-bounce">
-                                                            {latestReactions[p.userId].emoji}
-                                                        </div>
-                                                    )}
-
-                                                    {raisedHands.includes(p.userId) && (
-                                                        <div className="absolute -bottom-1 -right-1 bg-violet-500 text-white rounded-full p-0.5 z-30">
-                                                            <Hand className="w-3 h-3" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <span className="text-sm text-muted-foreground truncate group-hover:text-foreground dark:group-hover:text-white transition-colors">{p.name}</span>
-                                            </div>
-                                        </ParticipantMenu>
-                                    </div>
-                                ))}
-                            {participants.filter(p => getMainRole(p) === 'user').length === 0 && (
-                                <div className="text-muted-foreground text-sm col-span-full">The audience is quiet...</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Controls Bar */}
-            <div className="p-4 border-t border-border dark:border-white/10 bg-white/80 dark:bg-black/40 backdrop-blur-xl">
-                <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/10" onClick={() => setShowSettings(true)}>
-                            <Settings className="h-5 w-5" />
-                        </Button>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        {isHost && isBackstage && (
-                            <Button size="sm" onClick={handleGoLive} className="bg-green-600 hover:bg-green-700 text-white border-none rounded-full px-6 shadow-lg shadow-green-500/20">
-                                Go Live
-                            </Button>
-                        )}
-                        {isHost && !isBackstage && (
-                            <Button size="sm" variant="destructive" onClick={handleEndSession} className="rounded-full px-6 shadow-lg shadow-red-500/20">
-                                End Session
-                            </Button>
-                        )}
-
-                        <ReactionControls call={call} onReaction={handleLocalReaction} />
-
-                        <div className="flex items-center gap-2">
-                            {hasMedia && (getMainRole(localParticipant) === 'host' || getMainRole(localParticipant) === 'speaker') && (
-                                <MicControl call={call} />
-                            )}
-
-                            <Button
-                                size="sm"
-                                variant="destructive"
-                                className="rounded-full h-10 w-10 p-0 shadow-lg shadow-red-500/20"
-                                onClick={handleLeaveRoom}
-                            >
-                                <LogOut className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        {getMainRole(localParticipant) === 'user' && (
-                            <Button variant="ghost" className="text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/10 gap-2" onClick={requestMicrophone}>
-                                <Hand className="h-4 w-4" />
-                                <span className="hidden sm:inline">Raise Hand</span>
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <DeviceSettings open={showSettings} onOpenChange={setShowSettings} call={call} />
-
-            {/* Global Audio Subscription - Hidden but in DOM for audio playback */}
-            <div className="absolute top-0 left-0 w-[1px] h-[1px] opacity-0 overflow-hidden pointer-events-none">
-                {participants.map(p => (
-                    <ParticipantView
-                        key={p.sessionId}
-                        participant={p}
-                    // Only mount audio/video tracks. We can disable video if we only want audio, 
-                    // but Stream Video SDK usually needs video track enabled for "ParticipantView" to work fully, 
-                    // or we use <Audio> component if available. 
-                    // ParticipantView handles both.
-                    />
-                ))}
-            </div>
+    return <div className="audio-studio">
+        <header className="room-header">
+            <KnovestLogo className="size-8" />
+            <div className="room-heading"><h1 title={customData.title}>{customData.title || "Audio discussion"}</h1><p>Listen, learn and share your perspective</p></div>
+            <span className="room-status" data-live={!isBackstage}><Radio size={13} />{isBackstage ? "Backstage" : "Live audio"}</span>
+            <span className="room-attendance"><Users size={15} />{participants.length}</span>
+            <ThemeToggle />
+        </header>
+        <div className="audio-panel-tabs" role="tablist" aria-label="Room participants">
+            <button role="tab" id="speakers-tab" aria-controls="audio-speakers" aria-selected={activePanel === "speakers"} onClick={() => setActivePanel("speakers")}>Speakers · {speakers.length}</button>
+            <button role="tab" id="audience-tab" aria-controls="audio-audience" aria-selected={activePanel === "audience"} onClick={() => setActivePanel("audience")}>Audience · {audience.length}</button>
         </div>
-    );
+        <div ref={bodyRef} className="audio-room-body" data-panel={activePanel}>
+            <section className="audio-speaker-panel" id="audio-speakers" aria-label="Speakers and host">
+                <div className="audio-panel-heading"><div><h2><Mic size={16} />Speakers & host</h2><p>{isBackstage ? "The host is preparing the room" : "The conversation is happening here"}</p></div><span>{speakers.length}</span></div>
+                <div className="audio-speaker-grid">
+                    {speakers.slice(currentSpeakerPage * pageSize.speakers, (currentSpeakerPage + 1) * pageSize.speakers).map(p => <SpeakerMenu key={p.sessionId} participant={p} isHost={isHost}>
+                        <button className="audio-speaker-card" aria-label={`${p.name || "Participant"}, ${getMainRole(p)}. Participant options`}><AudioParticipant participant={p} reaction={latestReactions[p.userId]} role={getMainRole(p)} /></button>
+                    </SpeakerMenu>)}
+                    {speakers.length === 0 && <div className="audio-empty"><span className="room-empty-icon"><Mic /></span><h3>Waiting for the conversation</h3><p>Speakers will appear here when they join.</p></div>}
+                </div>
+                <div className="audio-panel-footer"><span>Microphones start muted</span>{speakerPages > 1 && <div className="audio-pagination">
+                    <Button variant="ghost" size="icon" aria-label="Previous speakers" disabled={currentSpeakerPage === 0} onClick={() => setSpeakerPage(currentSpeakerPage - 1)}><ChevronLeft size={16} /></Button>
+                    <span>{currentSpeakerPage + 1} / {speakerPages}</span>
+                    <Button variant="ghost" size="icon" aria-label="Next speakers" disabled={currentSpeakerPage + 1 >= speakerPages} onClick={() => setSpeakerPage(currentSpeakerPage + 1)}><ChevronRight size={16} /></Button>
+                </div>}</div>
+            </section>
+            <section className="audio-audience-panel" id="audio-audience" aria-label="Audience">
+                <div className="audio-panel-heading"><div><h2><Users size={16} />Audience</h2><p>Raise your hand to request the mic</p></div><span>{audience.length}</span></div>
+                <div className="audio-audience-list">
+                    {audience.slice(currentAudiencePage * pageSize.audience, (currentAudiencePage + 1) * pageSize.audience).map(p => <ParticipantMenu key={p.sessionId} participant={p} isHost={isHost}>
+                        <button className="audio-audience-person" aria-label={`${p.name || "Listener"}. Participant options`}>
+                            <Avatar className="size-9 shrink-0"><AvatarImage src={p.image} /><AvatarFallback>{p.name?.charAt(0) || "L"}</AvatarFallback></Avatar>
+                            <span>{p.name || "Listener"}</span>
+                            {raisedHands.includes(p.userId) && <Hand className="size-4 text-primary" />}
+                            {latestReactions[p.userId] && <span className="audio-person-reaction">{latestReactions[p.userId].emoji}</span>}
+                        </button>
+                    </ParticipantMenu>)}
+                    {audience.length === 0 && <div className="audio-empty"><span className="room-empty-icon"><Users /></span><h3>Make room for new voices</h3><p>Listeners will appear here as they join.</p></div>}
+                </div>
+                {audiencePages > 1 && <div className="audio-panel-footer audio-pagination"><Button variant="ghost" size="icon" aria-label="Previous listeners" disabled={currentAudiencePage === 0} onClick={() => setAudiencePage(currentAudiencePage - 1)}><ChevronLeft size={16} /></Button><span>{currentAudiencePage + 1} / {audiencePages}</span><Button variant="ghost" size="icon" aria-label="Next listeners" disabled={currentAudiencePage + 1 >= audiencePages} onClick={() => setAudiencePage(currentAudiencePage + 1)}><ChevronRight size={16} /></Button></div>}
+            </section>
+        </div>
+        <footer className="room-toolbar audio-toolbar">
+            <Button variant="outline" size="icon" aria-label="Audio settings" onClick={() => setShowSettings(true)}><Settings size={18} /></Button>
+            <Button variant="outline" size="icon" aria-label="Copy room link" onClick={() => navigator.clipboard.writeText(window.location.href).then(() => toast.success("Room link copied")).catch(() => toast.error("Unable to copy the link"))}><Share2 size={18} /></Button>
+            <ReactionControls />
+            {hasMedia && getMainRole(localParticipant) !== "user" && <MicControl />}
+            {getMainRole(localParticipant) === "user" && <Button variant="outline" onClick={requestMicrophone}><Hand size={17} />Raise hand</Button>}
+            <Button variant="destructive" size="icon" aria-label="Leave audio room" onClick={handleLeaveRoom}><LogOut size={17} /></Button>
+            {isHost && <Button className="room-broadcast-button" variant={isBackstage ? "default" : "destructive"} disabled={isBroadcastBusy} onClick={async () => {
+                setBroadcastBusy(true);
+                try { await (isBackstage ? handleGoLive() : handleEndSession()); } finally { setBroadcastBusy(false); }
+            }}>{isBroadcastBusy && <Loader2 className="size-4 animate-spin" />}{isBackstage ? "Go live" : "End session"}</Button>}
+        </footer>
+        <DeviceSettings open={showSettings} onOpenChange={setShowSettings} />
+        <div className="absolute size-px overflow-hidden opacity-0 pointer-events-none" aria-hidden="true">
+            {participants.map(p => <ParticipantView key={p.sessionId} participant={p} trackType="none" ParticipantViewUI={null} />)}
+        </div>
+    </div>;
+
 };
 
-const MicControl = ({ call }: { call: Call }) => {
+const MicControl = () => {
+    const call = useCall();
     const { useMicrophoneState } = useCallStateHooks();
     const { status: micStatus } = useMicrophoneState();
-    // Use manual device enumeration
-    const { audioInputs: audioDevices, refreshDevices, requestPermissions } = useMediaDevices();
+    const { audioInputs: audioDevices, refreshDevices, requestPermissions } = useMediaDevices({ audioOnly: true });
 
     const toggleMic = async () => {
+        if (!call) return;
         try {
             await call.microphone.toggle();
         } catch (err) {
@@ -499,6 +391,8 @@ const MicControl = ({ call }: { call: Call }) => {
         }
     }
 
+    if (!call) return null;
+
     return (
         <div className="flex items-center rounded-full bg-zinc-200/50 dark:bg-white/10 p-0.5 border border-border dark:border-white/5">
             <Button
@@ -506,6 +400,7 @@ const MicControl = ({ call }: { call: Call }) => {
                 variant={micStatus === 'enabled' ? "secondary" : "destructive"}
                 className={cn("rounded-l-full rounded-r-none h-9 pl-3 pr-2 transition-colors border-r border-border dark:border-black/10",
                     micStatus === 'enabled' ? "bg-white dark:bg-zinc-200 text-zinc-900 hover:bg-zinc-100" : "bg-red-600 text-white hover:bg-red-700")}
+                aria-label={micStatus === "enabled" ? "Mute microphone" : "Unmute microphone"}
                 onClick={toggleMic}
             >
                 {micStatus === 'enabled' ? <Mic className="h-4 w-4 mr-2" /> : <MicOff className="h-4 w-4 mr-2" />}
@@ -518,6 +413,7 @@ const MicControl = ({ call }: { call: Call }) => {
                         variant={micStatus === 'enabled' ? "secondary" : "destructive"}
                         className={cn("rounded-r-full rounded-l-none h-9 px-2 transition-colors",
                             micStatus === 'enabled' ? "bg-white dark:bg-zinc-200 text-zinc-900 hover:bg-zinc-100" : "bg-red-600 text-white hover:bg-red-700")}
+                        aria-label="Select microphone"
                         onClick={() => refreshDevices()}
                     >
                         <ChevronDown className="h-3 w-3" />
@@ -578,13 +474,18 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
             try {
                 // Permission Check
                 const call = client.call("audio_room", audioRoomId);
-                await call.get();
+                await loadRoomCall(call);
+                if (call.state.endedAt) {
+                    toast.info("This audio room has ended.");
+                    router.push("/trade-room");
+                    return;
+                }
 
                 const custom = (call.state.custom || {}) as CustomCallData;
                 const creatorId = call.state.createdBy?.id;
                 const currentUserId = session.user.id;
 
-                // 1. Creator always has access
+                // Creator always has access
                 const isCreator = (creatorId === currentUserId);
 
                 if (!isCreator && custom?.permissionType === 'group') {
@@ -616,11 +517,10 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
                 }
 
                 await joinRoom(audioRoomId);
-                setIsWaitingForHost(false); // Reset if successful
+                setIsWaitingForHost(false); 
             } catch (error: any) {
                 console.error("Failed to join room", error);
 
-                // Handle Backstage permission error (code 17)
                 if (error?.code === 17) {
                     setIsWaitingForHost(true);
                     return;
@@ -637,7 +537,7 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
     if (!session || !client || isJoining || !activeCall || activeCall.id !== audioRoomId) {
         if (isWaitingForHost) {
             return (
-                <div className="flex h-screen w-full items-center justify-center bg-background dark:bg-black flex-col gap-6 text-foreground dark:text-white p-6 text-center transition-colors duration-500">
+                <div className="flex h-full w-full items-center justify-center bg-background dark:bg-black flex-col gap-6 text-foreground dark:text-white p-6 text-center transition-colors duration-500">
                     <div className="relative">
                         <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-xl animate-pulse"></div>
                         <div className="relative bg-card dark:bg-zinc-900 p-6 rounded-full border border-violet-500/30 shadow-xl shadow-violet-500/10">
@@ -645,8 +545,8 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
                         </div>
                     </div>
                     <div className="space-y-2 max-w-md">
-                        <h2 className="text-2xl font-bold">Room hasn't started yet</h2>
-                        <p className="text-muted-foreground">The host is currently backstage or hasn't started the session. Please wait or try again later.</p>
+                        <h2 className="text-2xl font-bold">Room hasn&apos;t started yet</h2>
+                        <p className="text-muted-foreground">The host is currently backstage or hasn&apos;t started the session. Please wait or try again later.</p>
                     </div>
                     <div className="flex gap-4">
                         <Button variant="outline" onClick={() => window.location.reload()} className="border-border hover:bg-muted">
@@ -661,7 +561,7 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
         }
 
         return (
-            <div className="flex h-screen w-full items-center justify-center bg-background dark:bg-black flex-col gap-4 text-foreground dark:text-white transition-colors duration-500">
+            <div className="flex h-full w-full items-center justify-center bg-background dark:bg-black flex-col gap-4 text-foreground dark:text-white transition-colors duration-500">
                 <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
                 <p>{isJoining ? "Joining Audio Room..." : "Loading..."}</p>
             </div>
@@ -669,10 +569,12 @@ export default function AudioRoomPage({ params }: { params: Promise<{ audioRoomI
     }
 
     return (
-        <StreamTheme className="h-screen w-full bg-black text-white">
-            <div className="fixed inset-0 z-50 bg-background">
-                <ActiveRoom call={activeCall} />
-            </div>
+        <StreamTheme className="room-theme audio-room-theme">
+            <StreamCall call={activeCall}>
+                <div className="h-full min-h-0 overflow-hidden bg-background">
+                    <ActiveRoom call={activeCall} />
+                </div>
+            </StreamCall>
         </StreamTheme>
     );
 }

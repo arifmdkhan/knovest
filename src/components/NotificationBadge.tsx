@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getUnreadCount } from "@/features/notifications/actions/notifications.action";
-import { motion, AnimatePresence } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 
 export function NotificationBadge() {
     const { data } = useQuery({
@@ -15,18 +15,17 @@ export function NotificationBadge() {
         staleTime: 10000,
     });
 
+    const count = data ?? 0;
+    if (count <= 0) return null;
+
     return (
-        <AnimatePresence>
-            {data !== undefined && data > 0 && (
-                <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="w-auto min-w-[14px] h-3.5 px-0.5 flex items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white shadow-sm border border-background"
-                >
-                    {data > 99 ? "99" : data}
-                </motion.div>
-            )}
-        </AnimatePresence>
+        <Badge
+            variant="destructive"
+            role="status"
+            aria-label={`${count} unread ${count === 1 ? "notification" : "notifications"}`}
+            className="ml-auto h-5 min-w-5 shrink-0 justify-center rounded-full border-0 px-1.5 text-[11px] leading-none font-semibold tabular-nums group-data-[collapsible=icon]:hidden"
+        >
+            <span aria-hidden="true">{count > 99 ? "99+" : count}</span>
+        </Badge>
     );
 }

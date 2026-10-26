@@ -36,8 +36,8 @@ export const UPLOAD_CONFIGS: Record<UploadIntent, UploadConfig> = {
     },
     [UploadIntent.POST_MEDIA]: {
         intent: UploadIntent.POST_MEDIA,
-        bucket: BucketType.PUBLIC,
-        allowedMimeTypes: ["image/webp", "image/png", "image/jpeg", "video/mp4"],
+        bucket: BucketType.PRIVATE,
+        allowedMimeTypes: ["image/webp", "image/png", "image/jpeg", "image/avif", "video/mp4", "video/webm"],
         maxSize: 50 * 1024 * 1024, // 50MB
     },
     [UploadIntent.ARTICLE_THUMBNAIL]: {

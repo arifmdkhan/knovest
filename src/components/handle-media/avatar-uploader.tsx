@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 import { Camera, Loader2, User } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -29,13 +28,11 @@ export function AvatarUploader({
 }: AvatarUploaderProps) {
     const [cropperOpen, setCropperOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-    // New Hook Usage
     const { uploadFile, isUploading } = useMediaUpload({
         intent,
-        onUploadComplete: (key) => {
-            // constructUrl handles keys gracefully
-            const url = constructUrl(key);
+        onUploadComplete: (key, publicUrl) => {
+            const url = publicUrl || constructUrl(key);
+            if (!url) throw new Error("The uploaded image has no public URL");
             onChange(url);
             toast.success("Image updated");
             setCropperOpen(false);
@@ -69,7 +66,7 @@ export function AvatarUploader({
     const handleUpload = async (fileBlob: Blob) => {
         // Create a temporary file
         const tempFile = new File([fileBlob], "avatar.png", { type: "image/png" });
-        // Compress and convert to WebP using our utility
+        // Compress and convert to WebP using compress utility
         const compressedFile = await compressImage(tempFile);
 
         await uploadFile(compressedFile, uploadParams);

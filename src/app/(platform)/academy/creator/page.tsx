@@ -1,8 +1,9 @@
+import { AppHero } from "@/components/AppHero";
 import { creatorGetCourses } from "@/features/creator/queries/creator-get-courses";
 import { getCreatorArticles } from "@/features/creator/queries/get-creator-articles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { Plus, BookOpen, Rocket } from "lucide-react";
 import { Suspense } from "react";
 import { CreatorCourseCardSkeletonLayout, RenderCourses } from "./courses/_components/creator-render-course";
@@ -13,15 +14,8 @@ export default async function CreatorPage() {
   const articles = await getCreatorArticles();
 
   return (
-    <div className="container mx-auto py-10 px-4 md:px-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Creator Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your courses and articles from one place.
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-7">
+      <AppHero title="Creator studio" description="Share what you know. Create and manage your courses and articles." />
 
       <Tabs defaultValue="courses" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-8">
@@ -40,7 +34,7 @@ export default async function CreatorPage() {
           </div>
 
           {courses.length === 0 ? (
-            <div className="text-center py-20 border-2 border-dashed rounded-xl bg-muted/20">
+            <div className="app-panel text-center py-20 px-6">
               <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-4 text-lg font-semibold">No courses yet</h3>
               <p className="text-muted-foreground mb-6">
@@ -68,7 +62,7 @@ export default async function CreatorPage() {
           </div>
 
           {articles.length === 0 ? (
-            <div className="text-center py-20 border-2 border-dashed rounded-xl bg-muted/20">
+            <div className="app-panel text-center py-20 px-6">
               <Rocket className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-4 text-lg font-semibold">No articles yet</h3>
               <p className="text-muted-foreground mb-6">

@@ -12,7 +12,7 @@ import { PublicCourseCard, PublicCourseCardSkeleton } from "@/app/(platform)/aca
 
 export const metadata: Metadata = createMetadata({
   title: "Home",
-  description: "Stay ahead of the market with your personalized Consensus dashboard. Connect with top traders, track your courses, and get real-time insights tailored to your strategy.",
+  description: "Stay ahead of the market with your personalized Knovest dashboard. Connect with top traders, track your courses, and get real-time insights tailored to your strategy.",
 });
 
 async function FeedLoader({ userId }: { userId?: string }) {
@@ -35,18 +35,18 @@ export default async function Home() {
   const session = await getServerSession();
 
   return (
-    <div className="max-w-6xl mx-auto w-full py-8 px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {/* MAIN FEED AREA (Center/Left) */}
-      <div className="lg:col-span-7 xl:col-span-8">
+      {/* MAIN FEED AREA*/}
+      <div className="min-w-0 lg:col-span-8">
         <Suspense fallback={<FeedSkeleton />}>
           <FeedLoader userId={session?.user?.id} />
         </Suspense>
       </div>
 
       {/* RIGHT SIDEBAR (Desktop Only) */}
-      <div className="hidden lg:block lg:col-span-5 xl:col-span-4 space-y-6">
-        <div className="top-14">
+      <div className="hidden lg:block lg:col-span-4 space-y-6">
+        <div className="space-y-6">
           <Suspense fallback={<FollowSuggestionsSkeleton />}>
             <FollowSuggestionsContainer />
           </Suspense>

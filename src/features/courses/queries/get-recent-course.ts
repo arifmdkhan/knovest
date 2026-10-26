@@ -72,4 +72,4 @@ export async function getRecentPublicCourse(currentUserId: string) {
     };
 }
 
-export type RecentCourseType = Awaited<ReturnType<typeof getRecentPublicCourse>>;
+

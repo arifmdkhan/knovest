@@ -22,6 +22,9 @@ export const HLSPlayer = ({ src, poster, className, autoPlay = false }: HLSPlaye
         if (!video) return;
 
         let hls: Hls | null = null;
+        let recoveries = 0;
+        const onMetadata = () => { setIsLoading(false); if (autoPlay) void video.play().catch(() => {}); };
+        const onError = () => { setError("Playback unavailable. Reload this lesson to try again."); setIsLoading(false); };
 
         const initPlayer = () => {
             setIsLoading(true);
@@ -52,6 +55,7 @@ export const HLSPlayer = ({ src, poster, className, autoPlay = false }: HLSPlaye
 
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     if (data.fatal) {
+                        if (++recoveries > 3) { onError(); hls?.destroy(); return; }
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
                                 console.error("HLS Network Error", data);
@@ -70,16 +74,10 @@ export const HLSPlayer = ({ src, poster, className, autoPlay = false }: HLSPlaye
                     }
                 });
             } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-                // Native HLS support (Safari)
+                // Native HLS support 
                 video.src = src;
-                video.addEventListener("loadedmetadata", () => {
-                    setIsLoading(false);
-                    if (autoPlay) video.play();
-                });
-                video.addEventListener("error", () => {
-                    setError("Playback error");
-                    setIsLoading(false);
-                });
+                video.addEventListener("loadedmetadata", onMetadata);
+                video.addEventListener("error", onError);
             } else {
                 setError("HLS is not supported in this browser.");
                 setIsLoading(false);
@@ -93,7 +91,9 @@ export const HLSPlayer = ({ src, poster, className, autoPlay = false }: HLSPlaye
                 hls.destroy();
             }
             if (video) {
-                // Cleanup listeners if added manually
+                video.removeEventListener("loadedmetadata", onMetadata);
+                video.removeEventListener("error", onError);
+              
                 video.removeAttribute("src");
                 video.load();
             }

@@ -12,18 +12,21 @@ interface ShareSectionProps {
 
 export function ShareSection({ title, slug }: ShareSectionProps) {
     const [copied, setCopied] = useState(false);
-
-    // Construct full URL (handled client side to get origin safely or fallback)
     const getShareUrl = () => {
         if (typeof window !== "undefined") {
             return `${window.location.origin}/academy/article/${slug}`;
         }
-        return `https://consensus.com/academy/article/${slug}`; // Fallback domain
+        return `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/academy/article/${slug}`;
     };
 
-    const handleCopy = () => {
+    const handleCopy = async () => {
         const url = getShareUrl();
-        navigator.clipboard.writeText(url);
+        try {
+            await navigator.clipboard.writeText(url);
+        } catch {
+            toast.error("Could not copy the link. Please copy it from your address bar.");
+            return;
+        }
         setCopied(true);
         toast.success("Link copied to clipboard");
         setTimeout(() => setCopied(false), 2000);

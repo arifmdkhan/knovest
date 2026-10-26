@@ -9,11 +9,13 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import { EditorToolbar } from "./toolbar";
 
-export function TextEditor({ field }: { field: any }) {
+export function TextEditor({ field }: { field: { value?: string; onChange: (value: string) => void } }) {
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
             StarterKit.configure({
+                link: false,
+                underline: false,
                 heading: {
                     levels: [1, 2, 3],
                 },
@@ -38,7 +40,7 @@ export function TextEditor({ field }: { field: any }) {
                 types: ["heading", "paragraph"],
             }),
         ],
-        content: field.value,
+        content: field.value ?? "",
         onUpdate: ({ editor }) => {
             field.onChange(editor.getHTML());
         },

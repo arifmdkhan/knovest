@@ -1,12 +1,12 @@
-import { PublicCourseType } from "@/features/courses/queries/get-all-courses";
+
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { constructUrl } from "@/lib/construct-url";
 import { BarChart, Clock, PlayCircle } from "lucide-react";
 import { SafeImage } from "@/components/ui/safe-image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ export function EnrolledCourseCard({ data, progress }: EnrolledCourseCardProps) 
     return (
         <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:border-primary/20 flex flex-col h-full p-0">
             {/* Image Section */}
-            <div className="relative aspect-video overflow-hidden">
+            <Link href={`/academy/enrolled/${data.slug}`} aria-label={`Continue ${data.title}`} className="relative block aspect-video overflow-hidden">
                 <SafeImage
                     width={600}
                     height={400}
@@ -39,7 +39,7 @@ export function EnrolledCourseCard({ data, progress }: EnrolledCourseCardProps) 
                         {data.category}
                     </Badge>
                 </div>
-            </div>
+            </Link>
 
             <CardContent className="flex-1 p-4 space-y-2">
                 {/* Title & Description */}

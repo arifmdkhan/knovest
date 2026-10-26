@@ -4,6 +4,7 @@ import { requireUser } from "@/features/user/queries/require-user";
 import { prisma } from "@/lib/db";
 import { StorageService } from "@/lib/storage/storage-service";
 import { ApiResponse } from "@/types/api";
+import { isLessonAssetKey } from "@/lib/storage/asset-keys";
 
 export async function getSecureResourceUrl(resourceId: string): Promise<ApiResponse<{ url: string }>> {
     try {
@@ -28,6 +29,9 @@ export async function getSecureResourceUrl(resourceId: string): Promise<ApiRespo
         }
 
         const courseId = resource.lesson.chapter.courseId;
+        if (!isLessonAssetKey(resource.url, courseId, resource.lessonId, "resources")) {
+            return { status: "error", message: "Resource unavailable" };
+        }
 
         // 2. Check Enrollment
         const enrollment = await prisma.enrollment.findUnique({
@@ -40,9 +44,8 @@ export async function getSecureResourceUrl(resourceId: string): Promise<ApiRespo
         });
 
         if (!enrollment || enrollment.status !== "Active") {
-            // Also check if user is the course creator? 
-            // The requirement says "Only enrolled users", but creators should probably access too.
-            // Let's check course owner.
+         
+            // check course owner.
             const course = await prisma.course.findUnique({
                 where: { id: courseId },
                 select: { userId: true }

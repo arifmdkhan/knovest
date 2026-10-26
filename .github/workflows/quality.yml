@@ -1,0 +1,61 @@
+name: Quality and production build
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic_ci_password
+          POSTGRES_DB: knovest_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:synthetic_ci_password@localhost:5432/knovest_ci
+      CI_DATABASE_TESTS: "true"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: synthetic-ci-only-secret-never-use-in-production-2026
+      GOOGLE_CLIENT_ID: ci-google-client
+      GOOGLE_CLIENT_SECRET: ci-google-secret
+      NEXT_PUBLIC_STREAM_API_KEY: ci-stream-key
+      STREAM_API_SECRET: ci-stream-secret
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24.19.0
+      - run: npm install --global pnpm@12.5.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+      - run: pnpm db:generate
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm lint --max-warnings 174
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm build
+      - name: Smoke production server
+        shell: bash
+        run: |
+          pnpm start > /tmp/knovest-start.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:3000/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:3000/ > /dev/null
+          curl --fail --silent http://localhost:3000/login > /dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/api/cron/cleanup)" = 401

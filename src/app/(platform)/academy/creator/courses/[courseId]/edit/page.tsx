@@ -1,10 +1,10 @@
 
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-import { creatorGetCourse } from '@/features/creator/queries/creator-get-course'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import Link from "@/components/AppLink"
+import { creatorGetCourse } from '@/features/creator/queries/creator-get-course';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EditCourseForm from './_components/edit-course-form'
 import CourseStructure from './_components/course-structure'
 

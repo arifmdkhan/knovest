@@ -10,14 +10,14 @@ interface ChatProviderProps {
         name: string;
         image?: string | null;
         email?: string | null;
+        expertVerificationType?: string | null;
     };
-    streamToken: string;
 }
 
-export function ChatProvider({ children, user, streamToken }: ChatProviderProps) {
+export function ChatProvider({ children, user }: ChatProviderProps) {
     return (
-        <div className="h-[calc(100vh-4rem)] w-full bg-background rounded-lg">
-            <StreamChatProvider user={user} streamToken={streamToken} themePrefix="team-chat-theme">
+        <div className="h-[calc(100svh-8rem)] min-h-[480px] w-full bg-background rounded-2xl">
+            <StreamChatProvider themePrefix="team-chat-theme">
                 <ChatLayout sessionUser={user}>
                     {children}
                 </ChatLayout>

@@ -3,16 +3,6 @@
 import { requireUser } from "@/features/user/queries/require-user";
 import { prisma } from "@/lib/db";
 import { ApiResponse } from "@/types/api";
-import arcjet, { fixedWindow } from "@/lib/arcjet";
-import { request } from "@arcjet/next";
-
-const aj = arcjet.withRule(
-  fixedWindow({
-    mode: "LIVE",
-    window: "1m",
-    max: 8,
-  })
-);
 
 export async function enrollCourse(
   courseId: string
@@ -20,33 +10,18 @@ export async function enrollCourse(
   const user = await requireUser();
 
   try {
-    const req = await request();
-    const decision = await aj.protect(req, {
-      fingerprint: user.id,
-    });
-
-    if (decision.isDenied()) {
-      if (decision.reason.isRateLimit()) {
-        return {
-          status: "error",
-          message: "Too many requests. Please try again later.",
-        };
-      } else {
-        return {
-          status: "error",
-          message:
-            "You are a bot! If this is a mistake, please contact support.",
-        };
-      }
-    }
 
     const course = await prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, price: true, userId: true },
+      select: { id: true, price: true, offerPrice: true, userId: true, status: true, deletedAt: true },
     });
 
-    if (!course) {
+    if (!course || course.deletedAt || course.status !== "Published") {
       return { status: "error", message: "Course not found" };
+    }
+
+    if ((course.offerPrice ?? course.price) > 0) {
+      return { status: "error", message: "Payments are not available yet. Please try again later." };
     }
 
     if (course.userId === user.id) {
@@ -85,7 +60,7 @@ export async function enrollCourse(
           data: {
             userId: user.id,
             courseId: course.id,
-            amount: course.price,
+            amount: course.offerPrice ?? course.price,
             status: "Pending",
           },
         });

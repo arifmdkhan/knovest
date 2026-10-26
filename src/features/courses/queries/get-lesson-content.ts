@@ -3,6 +3,7 @@ import { requireUser } from "@/features/user/queries/require-user";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { StorageService } from "@/lib/storage/storage-service";
+import { isLessonAssetKey } from "@/lib/storage/asset-keys";
 
 export async function getLessonContent(lessonId: string) {
   const user = await requireUser();
@@ -55,16 +56,14 @@ export async function getLessonContent(lessonId: string) {
   });
 
   let videoUrl: string | undefined;
-  if (lesson.videoKey) {
+  if (lesson.videoKey && isLessonAssetKey(lesson.videoKey, lesson.chapter.courseId, lessonId, "video")) {
     if (lesson.videoStatus === "READY") {
       // Use HLS Proxy URL
       // /api/courses/[courseId]/lessons/[lessonId]/hls/master.m3u8
       videoUrl = `/api/courses/${lesson.chapter.courseId}/lessons/${lesson.id}/hls/master.m3u8`;
     } else {
-      // Fallback to raw signed URL (if allowed) or leave undefined if processing
-      // For now, let's allow raw playback if not processed yet (e.g. for preview or legacy)
-      // BUT if it's "PROCESSING", maybe we should just wait.
-      // Let's fallback to S3 signed URL for "UPLOADED" or "FAILED" (if raw key exists) so it's not broken.
+     
+    
       videoUrl = await StorageService.getPlaybackUrl(lesson.videoKey);
     }
   }
@@ -72,12 +71,12 @@ export async function getLessonContent(lessonId: string) {
   const resources = lesson.resources.map((r) => ({
     id: r.id,
     name: r.name,
-    url: "", // Secure: Do not expose raw S3 key
+    url: "", 
   }));
 
   return {
     ...lesson,
-    videoUrl, // Pass signed URL
+    videoUrl,
     resources,
     isCompleted: progress?.isCompleted ?? false,
   };

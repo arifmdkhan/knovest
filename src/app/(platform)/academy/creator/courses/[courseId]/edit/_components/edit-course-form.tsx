@@ -1,27 +1,27 @@
 
 "use client"
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { courseSchema, CourseSchemaType, courseCategories, courseLevels, CourseStatus } from "@/features/courses/schemas";
-import { UploadIntent } from '@/lib/storage/types'
-import { Loader2, PlusIcon, SparkleIcon } from 'lucide-react'
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, UseFormProps } from "react-hook-form"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
+import { UploadIntent } from '@/lib/storage/types';
+import { Loader2, PlusIcon, SparkleIcon } from 'lucide-react';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, UseFormProps } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import slugify from 'slugify'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useTransition } from 'react'
-import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
-import { CreatorCourseSingularType } from '@/features/creator/queries/creator-get-course'
-import { tryCatch } from '@/helper/try-catch'
-import { editCourse } from '@/features/courses/actions/edit-course'
-import { TextEditor } from '@/components/shared/text-editor/editor'
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTransition } from 'react';
+import { toast } from 'sonner';
+import { useRouter } from "@/components/NavigationProvider";
+import { CreatorCourseSingularType } from '@/features/creator/queries/creator-get-course';
+import { tryCatch } from '@/helper/try-catch';
+import { editCourse } from '@/features/courses/actions/edit-course';
+import { TextEditor } from '@/components/shared/text-editor/editor';
 
-import { MediaUploader } from '@/components/handle-media/media-uploader'
-import { constructUrl } from '@/lib/construct-url'
+import { MediaUploader } from '@/components/handle-media/media-uploader';
+import { constructUrl } from '@/lib/construct-url';
 
 
 interface EditCourseFormProps {
@@ -196,7 +196,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                                                 field.onChange("")
                                                             }
                                                         }}
-                                                        existingMedia={field.value ? [{ url: `${constructUrl(field.value)}?t = ${Date.now()} `, key: field.value, type: "IMAGE" }] : []}
+                                                        existingMedia={field.value ? [{ url: constructUrl(field.value), key: field.value, type: "IMAGE" }] : []}
                                                     />
                                                 </div>
                                             </FormControl>
@@ -267,7 +267,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                             <FormItem>
                                                 <FormLabel>Duration (h)</FormLabel>
                                                 <FormControl>
-                                                    <Input type='number' {...field} />
+                                                    <Input type='number' {...field} max={0} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -278,7 +278,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                         name='price'
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Price (₹)</FormLabel>
+                                                <FormLabel>Price (₹) — set to 0 for this release</FormLabel>
                                                 <FormControl>
                                                     <Input type='number' {...field} />
                                                 </FormControl>
@@ -293,7 +293,7 @@ export default function EditCourseForm({ data }: EditCourseFormProps) {
                                             <FormItem>
                                                 <FormLabel>Offer Price (Optional)</FormLabel>
                                                 <FormControl>
-                                                    <Input type='number' placeholder='e.g. 499' {...field} value={field.value ?? ''} />
+                                                    <Input type='number' placeholder='Free or empty' max={0} {...field} value={field.value ?? ''} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

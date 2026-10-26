@@ -1,13 +1,8 @@
 "use client";
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { ShieldCheck, Award, TrendingUp, ExternalLink, Calendar, FileText } from "lucide-react";
+import { ShieldCheck, Award, TrendingUp, ExternalLink, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -64,13 +59,13 @@ export function VerificationDetailsModal({
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Registration Number</p>
                                         <p className="text-lg font-mono font-bold text-foreground">{verificationApplication.sebiRegNumber}</p>
                                     </div>
-                                    <Badge variant="outline" className="bg-background text-green-600 border-green-200">Active</Badge>
+                                    <Badge variant="outline" className="bg-background">Reviewed</Badge>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 pt-2">
                                     <div>
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Type</p>
-                                        <p className="font-medium">{verificationApplication.sebiLicenseType || "Research Analyst"}</p>
+                                        <p className="font-medium">{verificationApplication.sebiLicenseType || "Not specified"}</p>
                                     </div>
                                     {verificationApplication.sebiExpiry && (
                                         <div>
@@ -90,7 +85,7 @@ export function VerificationDetailsModal({
                             )}
 
                             <p className="text-xs text-muted-foreground text-center">
-                                This verification status indicates that the user currently holds a valid registration with the Securities and Exchange Board of India (SEBI).
+                                Knovest reviewed the submitted registration documents. This badge does not guarantee current registration, investment suitability, or returns. Check the regulator’s current register independently.
                             </p>
                         </div>
                     )}
@@ -129,7 +124,7 @@ export function VerificationDetailsModal({
                         <div className="space-y-4">
                             <div className="bg-purple-50 dark:bg-purple-900/10 rounded-lg p-4 border border-purple-100 dark:border-purple-800/30">
                                 <p className="text-sm text-purple-800 dark:text-purple-300 font-medium text-center">
-                                    This user has verified their trading performance through broker API integration or P&L statement analysis.
+                                    Knovest reviewed trading records submitted by this user. This is not a live broker integration or a guarantee of future performance.
                                 </p>
                             </div>
 
@@ -141,11 +136,11 @@ export function VerificationDetailsModal({
                                             <TrendingUp className="w-5 h-5 text-purple-500" />
                                             <span className="font-medium text-sm">{pnl.brokerName}</span>
                                         </div>
-                                        <Button variant="ghost" size="sm" asChild className="h-8 gap-1.5 text-xs">
+                                        {pnl.pnlLink && <Button variant="ghost" size="sm" asChild className="h-8 gap-1.5 text-xs">
                                             <a href={pnl.pnlLink} target="_blank" rel="noopener noreferrer">
-                                                View P&L <ExternalLink className="w-3 h-3" />
+                                                View public record <ExternalLink className="w-3 h-3" />
                                             </a>
-                                        </Button>
+                                        </Button>}
                                     </div>
                                 ))}
                             </div>

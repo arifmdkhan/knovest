@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { Loader2, Lock, CreditCard } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { CustomCallData } from "@/types/stream";
 interface PaymentPageProps {
     params: Promise<{ streamId: string }>;
 }
-
+//Dummy payemt
 export default function PaymentPage({ params }: PaymentPageProps) {
     const { streamId } = use(params);
     const client = useStreamVideoClient();
@@ -49,7 +49,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
 
         try {
             setIsProcessing(true);
-            const result = await purchaseStreamAccess(streamId, price);
+            const result = await purchaseStreamAccess(streamId);
 
             if (result.status === "success") {
                 toast.success("Payment Successful! Access granted.");
@@ -122,7 +122,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
 
                 <CardFooter className="flex flex-col gap-3 pt-2">
                     <Button
-                        className="w-full h-12 text-base font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-500/20"
+                        className="w-full h-12 text-base font-semibold bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-500/20"
                         onClick={handlePayment}
                         disabled={isProcessing}
                     >

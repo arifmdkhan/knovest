@@ -44,7 +44,7 @@ export function ChatSkeleton() {
 
             {/* Input Skeleton */}
             <div className="p-4 pt-2">
-                <Skeleton className="h-12 w-full rounded-[24px]" />
+                <Skeleton className="h-12 w-full rounded-3xl" />
             </div>
         </div>
     );

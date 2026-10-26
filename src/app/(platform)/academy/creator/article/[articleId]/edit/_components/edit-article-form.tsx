@@ -2,29 +2,10 @@
 
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploader } from "@/components/handle-media/media-uploader";
 import { UploadIntent } from "@/lib/storage/types";
 import { TextEditor } from "@/components/shared/text-editor/editor";
@@ -33,8 +14,8 @@ import { articleCategories, articleSchema, ArticleSchemaType } from "@/features/
 import { UpdateArticle } from "@/features/articles/actions/update-article";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Save, SparkleIcon } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/AppLink";
+import { useRouter } from "@/components/NavigationProvider";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
@@ -208,7 +189,7 @@ export function EditArticleForm({ article }: { article: Article }) {
                                                             uploadParams={{ articleId: article.id }}
                                                             existingMedia={
                                                                 field.value
-                                                                    ? [{ url: `${constructUrl(field.value)}?t=${Date.now()}`, key: field.value, type: "IMAGE" }]
+                                                                    ? [{ url: constructUrl(field.value), key: field.value, type: "IMAGE" }]
                                                                     : []
                                                             }
                                                             onChange={(files) => {

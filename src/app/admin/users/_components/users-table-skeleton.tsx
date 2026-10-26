@@ -1,12 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function UsersTableSkeleton() {
     return (
@@ -43,7 +36,7 @@ export function UsersTableSkeleton() {
                                     </div>
                                 </TableCell>
                                 <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
-                                <TableCell><Skeleton className="h-6 w-[80px] rounded-full" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                                 <TableCell><Skeleton className="h-6 w-[60px] rounded-full" /></TableCell>
                                 <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                                 <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>

@@ -33,7 +33,7 @@ export async function unbanUser(userId: string): Promise<ApiResponse> {
     await requireAdmin();
 
     try {
-        // Use better-auth admin plugin to unban user
+        
         await auth.api.unbanUser({
             body: {
                 userId,
@@ -78,7 +78,7 @@ export async function updateUserRole(userId: string, role: Role): Promise<ApiRes
         await auth.api.setRole({
             body: {
                 userId,
-                role: role.toLowerCase() as any
+                role
             },
             headers: await headers()
         });
@@ -87,18 +87,7 @@ export async function updateUserRole(userId: string, role: Role): Promise<ApiRes
         return { status: "success", message: "User role updated successfully" };
     } catch (error) {
         console.error("Failed to update user role:", error);
-        // Fallback to direct DB update
-        try {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { role },
-            });
-            revalidatePath("/admin/users");
-            return { status: "success", message: "User role updated successfully (DB fallback)" };
-        } catch (dbError) {
-            console.error("Fallback DB update failed:", dbError);
-            return { status: "error", message: "Failed to update user role" };
-        }
+        return { status: "error", message: "Failed to update user role" };
     }
 }
 
@@ -177,4 +166,3 @@ export async function updateAccountVerification(userId: string, type: AccountVer
     }
 }
 
-// Obsolete verification toggle Removed. Use specific update actions if needed.

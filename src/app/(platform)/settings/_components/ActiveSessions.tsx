@@ -1,24 +1,14 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { Loader2, Laptop, Smartphone, Globe, Trash2, ShieldAlert } from "lucide-react";
+import { Loader2, Laptop, Smartphone, Trash2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UAParser } from "ua-parser-js";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { useState, useCallback, useMemo } from "react";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useState, useMemo } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 
@@ -51,7 +41,7 @@ export function ActiveSessions() {
             await authClient.revokeSession({ token });
             toast.success("Session revoked successfully");
             refetch();
-        } catch (error) {
+        } catch  {
             toast.error("Failed to revoke session");
         } finally {
             setRevokingId(null);
@@ -64,7 +54,7 @@ export function ActiveSessions() {
             await authClient.revokeOtherSessions();
             toast.success("All other sessions revoked");
             refetch();
-        } catch (error) {
+        } catch {
             toast.error("Failed to revoke other sessions");
         } finally {
             setIsRevokingAll(false);

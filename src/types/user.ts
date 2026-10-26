@@ -35,3 +35,14 @@ export interface ProfileData {
         }[];
     } | null;
 }
+
+export interface SessionUser {
+    id: string;
+    email: string;
+    emailVerified: boolean;
+    name: string;
+    image?: string | null;
+    role?: "ADMIN" | "USER" | "SUPER_ADMIN" | string;
+    username?: string | null;
+    expertVerificationType?: string | null;
+}

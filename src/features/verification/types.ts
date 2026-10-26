@@ -1,4 +1,4 @@
-import { VerificationStatus } from "@/generated/prisma/enums";
+
 
 export type VerificationApplicationInput = {
     // Step 1: Identity

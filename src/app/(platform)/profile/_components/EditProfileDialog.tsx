@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "@/components/NavigationProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,13 +10,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +48,7 @@ interface ProfileProps {
 export function EditProfileDialog({ profile }: { profile: ProfileProps }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { refetch: refreshSession } = authClient.useSession();
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<ProfileFormValues>({
@@ -73,6 +69,8 @@ export function EditProfileDialog({ profile }: { profile: ProfileProps }) {
       const res = await updateProfile(data);
       if (res.status === "error") throw new Error(res.message);
 
+      await refreshSession({ query: { disableCookieCache: true } });
+      form.reset(data);
       toast.success("Profile updated");
       setOpen(false);
       router.refresh();
@@ -98,7 +96,7 @@ export function EditProfileDialog({ profile }: { profile: ProfileProps }) {
       }
       form.setValue("expertise", [...current, badge]);
     }
-    form.trigger("expertise"); // Trigger validation for immediate feedback if needed
+    form.trigger("expertise"); 
   };
 
   return (
@@ -113,7 +111,7 @@ export function EditProfileDialog({ profile }: { profile: ProfileProps }) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
 
-          {/* Avatar Upload */}
+          {/* Avatar Upload/ Profile image upload */}
           <div className="flex justify-center mb-6">
             <div className="w-24 h-24 relative">
               <AvatarUploader

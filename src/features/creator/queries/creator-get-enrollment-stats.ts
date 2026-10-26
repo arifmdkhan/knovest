@@ -11,7 +11,7 @@ export async function creatorGetEnrollmentStats() {
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
 
-  // SQL aggregation instead of returning thousands of rows
+ 
   const raw = await prisma.$queryRaw<
     { date: string; count: number }[]
   >`

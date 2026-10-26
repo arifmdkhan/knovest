@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { lessonSchema, lessonSchemaType } from "@/features/courses/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";

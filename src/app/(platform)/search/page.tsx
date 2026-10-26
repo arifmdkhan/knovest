@@ -1,19 +1,21 @@
+import { AppHero } from "@/components/AppHero";
+import { SearchDiscovery } from "@/components/search/SearchDiscovery";
 
 import { PublicCourseType } from "@/features/courses/queries/get-all-courses";
 import { searchGlobal } from "@/features/search/actions/search.action";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/premium-tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { PublicCourseCard } from "../academy/course/_components/PublicCourseCard";
 import { ArticleCard } from "../academy/article/_components/ArticleCard";
 import { GlobalSearchInput } from "@/components/GlobalSearchInput";
-import { Grid, BookOpen, FileText, Search as SearchIcon, Sparkles } from "lucide-react";
+import { Grid, BookOpen, FileText, Search as SearchIcon } from "lucide-react";
 import { SearchRecommendations } from "@/components/search/search-recommendations";
 import { createMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
 export const metadata: Metadata = createMetadata({
     title: "Search",
-    description: "Explore the Consensus ecosystem. Find expert mentors, comprehensive courses, trending articles, and verified community members to accelerate your trading success.",
+    description: "Explore the Knovest ecosystem. Find expert mentors, comprehensive courses, trending articles, and verified community members to accelerate your trading success.",
 });
 
 
@@ -47,30 +49,18 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const hasResults = users.length > 0 || courses.length > 0 || articles.length > 0;
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Hero Search Section */}
-            <div className="relative border-b bg-muted/30">
-                <div className="absolute inset-0 bg-linear-to-b from-background/50 to-background/80 backdrop-blur-sm" />
-                <div className="container relative max-w-5xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center space-y-8">
-                    <div className="space-y-4 max-w-2xl">
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70 leading-normal">
-                            Find what you&apos;re looking for
-                        </h1>
-                        <p className="text-lg text-muted-foreground">
-                            Search across people, courses, and articles to find exactly what you need.
-                        </p>
-                    </div>
-
-                    <div className="w-full max-w-2xl relative z-10">
-                        <GlobalSearchInput className="max-w-full h-14 text-lg shadow-lg border-primary/20 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all rounded-xl" />
-                    </div>
+        <div className="w-full space-y-7">
+            <AppHero centered title={<>Find what you&apos;re <span className="text-primary">looking for</span></>} description="Discover people, courses, and ideas. Your next insight starts here.">
+                <div className="mx-auto mt-7 w-full max-w-2xl">
+                    <GlobalSearchInput className="max-w-full h-14 text-base shadow-sm border-border rounded-xl bg-card" />
                 </div>
-            </div>
+            </AppHero>
 
             {/* Results Section */}
-            <div className="container max-w-6xl mx-auto px-4 py-12">
+            <div className="max-w-6xl mx-auto w-full">
                 {!query ? (
-                    <div className="py-8">
+                    <div className="space-y-8 py-3">
+                        <SearchDiscovery />
                         <SearchRecommendations />
                     </div>
                 ) : !hasResults ? (

@@ -9,7 +9,7 @@ import { getComments } from "@/features/comments/actions/comment.action";
 
 interface CommentListProps {
   postId: string;
-  parentId?: string; // Optional: if provided, loads replies for a specific comment
+  parentId?: string;
 }
 
 import { QueryFunctionContext } from "@tanstack/react-query";
@@ -49,7 +49,6 @@ export function CommentList({ postId, parentId }: CommentListProps) {
 
   if (comments.length === 0) {
     if (parentId) return <div className="text-xs text-muted-foreground py-2 pl-2">No replies yet.</div>;
-    // For root list, maybe show nothing or "Be the first to comment"
     return <div className="text-center text-sm text-muted-foreground py-8">No comments yet. Be the first to share your thoughts!</div>;
   }
 

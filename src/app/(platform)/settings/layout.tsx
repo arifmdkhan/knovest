@@ -1,5 +1,5 @@
 
-import { Separator } from "@/components/ui/separator";
+import { AppHero } from "@/components/AppHero";
 import { SidebarNav } from "./_components/SettingsSidebar";
 
 const sidebarNavItems = [
@@ -19,19 +19,13 @@ interface SettingsLayoutProps {
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
     return (
-        <div className="space-y-6 p-4 pb-16 md:p-10 md:pb-16 w-full">
-            <div className="space-y-0.5">
-                <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-                <p className="text-muted-foreground">
-                    Manage your account settings and preferences.
-                </p>
-            </div>
-            <Separator className="my-6" />
-            <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-32 lg:space-y-0">
-                <aside className="lg:mx-0 lg:w-64 shrink-0 overflow-x-auto px-4 lg:pr-4">
+        <div className="space-y-7 pb-10 w-full">
+            <AppHero title="Settings" description="Make Knovest yours. Manage your account and preferences." />
+            <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-8 lg:space-y-0">
+                <aside className="lg:w-48 shrink-0 overflow-x-auto">
                     <SidebarNav items={sidebarNavItems} />
                 </aside>
-                <div className="flex-1 lg:max-w-2xl">{children}</div>
+                <div className="app-panel min-w-0 flex-1 p-6 lg:max-w-3xl">{children}</div>
             </div>
         </div>
     );

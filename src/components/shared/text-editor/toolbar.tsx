@@ -1,33 +1,10 @@
 "use client";
 
 import { type Editor } from "@tiptap/react";
-import {
-    Bold,
-    Italic,
-    Underline,
-    Strikethrough,
-    List,
-    ListOrdered,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    Link as LinkIcon,
-    Image as ImageIcon,
-    Undo,
-    Redo,
-    Heading1,
-    Heading2,
-    Heading3,
-    Pilcrow,
-} from "lucide-react";
+import { Bold, Italic, Underline, Strikethrough, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Link as LinkIcon, Image as ImageIcon, Undo, Redo, Heading1, Heading2, Heading3, Pilcrow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { LinkModal } from "./link-modal";
 

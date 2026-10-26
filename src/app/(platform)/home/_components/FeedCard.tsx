@@ -1,45 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, memo } from "react";
+import Link from "@/components/AppLink";
 import { SafeImage } from "@/components/ui/safe-image";
-// import { MediaModal } from "@/components/MediaModal";
-// import { ShareDialog } from "@/components/ShareDialog";
-import {
-  MoreHorizontal,
-  Heart,
-  MessageCircle,
-  Repeat2,
-  Bookmark,
-  Globe,
-  Users,
-  Lock,
-  Link as LinkIcon,
-  Trash2,
-  Flag,
-  Share2,
-  UserStar
-} from "lucide-react";
+import { MoreHorizontal, Heart, MessageCircle, Repeat2, Bookmark, Globe, Users, Lock, Link as LinkIcon, Trash2, Flag, Share2, UserStar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-
 import { useToggleLike, useToggleSave, useDeletePost, useToggleRepost } from "@/hooks/use-post";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -64,7 +32,6 @@ interface FeedCardProps {
   priority?: boolean;
 }
 
-// --- Helper Components ---
 const VisibilityIcon = ({ visibility }: { visibility: string }) => {
   switch (visibility) {
     case "FOLLOWERS": return <Users className="w-3 h-3 text-muted-foreground" />;
@@ -76,8 +43,7 @@ const VisibilityIcon = ({ visibility }: { visibility: string }) => {
 
 const LinkifiedText = ({ text }: { text: string }) => {
   if (!text) return null;
-  // Match URLs, Mentions (@username), or Hashtags (#tag)
-  // Use capturing group for split to include the separators
+  // Match URLs, Mentions (@username) or Hashtags (#tag)
   const regex = /((?:https?:\/\/[^\s]+)|(?:\B@[a-zA-Z0-9_]+)|(?:\B#[a-zA-Z0-9_]+))/g;
   const parts = text.split(regex);
 
@@ -110,9 +76,7 @@ const LinkifiedText = ({ text }: { text: string }) => {
   );
 };
 
-import { memo } from "react";
 
-// ... previous imports
 
 export const FeedCard = memo(function FeedCard({ post, onDelete, priority = false }: FeedCardProps) {
   const { data: session } = authClient.useSession();
@@ -126,13 +90,8 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
   // Determine if this is a repost wrapper
   const isRepost = !!post.originalPostId;
   const hasContent = !!post.content && post.content.trim().length > 0;
-  // Use optional chaining for safety, though type says array
   const hasMedia = post.media && post.media.length > 0;
-
-  // If original post is deleted, originalPostId becomes null (SetNull behavior).
-  // So we detect "Ghost Reposts" by checking for empty content + empty media + no originalPostId.
   const isOrphaned = !isRepost && !hasContent && !hasMedia;
-
   const isOriginalDeleted = (isRepost && !post.originalPost) || isOrphaned;
   const isRepostWrapper = !!post.originalPost;
   const displayPost = isRepostWrapper ? post.originalPost! : post;
@@ -145,7 +104,7 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
   const { mutate: toggleRepost, isPending: isReposting } = useToggleRepost();
 
-  // --- Optimistic State ---
+ 
   const [optimisticLike, setOptimisticLike] = useState({
     liked: displayPost.hasLiked,
     count: displayPost._count.likes
@@ -193,10 +152,8 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
     }
 
     if (optimisticRepost.reposted) {
-      // If already reposted, show dialog to remove
       setShowRepostDialog(true);
     } else {
-      // Repost immediately
       performRepostToggle();
     }
   };
@@ -210,7 +167,6 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
       count: newReposted ? optimisticRepost.count + 1 : optimisticRepost.count - 1
     });
 
-    // We toggle repost on the DISPLAYED post (the original content)
     toggleRepost({ postId: displayPost.id }, {
       onSuccess: (data) => {
         setOptimisticRepost({ reposted: data.reposted, count: data.count });
@@ -239,9 +195,8 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
 
   return (
     <>
-      <article className={cn("bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm transition-all duration-200", isRepostWrapper && "border-primary/20 bg-primary/5")}>
+      <article className={cn("w-full min-w-0 bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm transition-all duration-200", isRepostWrapper && "border-primary/20 bg-primary/5")}>
 
-        {/* REPOST HEADER */}
         {isRepostWrapper && (
           <div className="px-4 pt-3 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
             <Repeat2 className="w-3 h-3" />
@@ -252,7 +207,6 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
           </div>
         )}
 
-        {/* HEADER */}
         <div className={cn("p-4 flex justify-between items-start", isRepostWrapper && "pt-2")}>
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 w-full sm:w-auto">
             <UserAvatarWithInfo
@@ -337,7 +291,7 @@ export const FeedCard = memo(function FeedCard({ post, onDelete, priority = fals
                 {displayPost.media.map((media, idx) => {
                   const isFeatured = displayPost.media.length === 3 && idx === 0;
                   return (
-                    <div key={media.id} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedMedia({ url: media.url, type: media.type }); }} className={cn("relative bg-muted/30 cursor-pointer overflow-hidden group/media", isFeatured ? "row-span-2 aspect-[4/5]" : "aspect-square", displayPost.media.length === 1 && "aspect-video max-h-[500px]")}>
+                    <div key={media.id} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedMedia({ url: media.url, type: media.type }); }} className={cn("relative bg-muted/30 cursor-pointer overflow-hidden group/media", isFeatured ? "row-span-2 aspect-4/5" : "aspect-square", displayPost.media.length === 1 && "aspect-video max-h-[500px]")}>
                       {media.type === 'IMAGE' ? (
                         <SafeImage
                           src={media.url}

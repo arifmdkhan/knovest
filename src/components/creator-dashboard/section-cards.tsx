@@ -1,17 +1,5 @@
-import {
-  Users,
-  UserCheck,
-  BookOpen,
-  PlayCircle
-} from "lucide-react";
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Users, UserCheck, BookOpen } from "lucide-react";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { creatorGetDashboardStats } from "@/features/creator/queries/creator-get-dashboard-stats";
 
 
@@ -53,7 +41,7 @@ export async function SectionCards() {
         </CardFooter>
       </Card>
 
-      {/* Card 3: Total Courses */}
+      {/* Card3: Total Courses */}
       <Card className="@container/card">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">

@@ -1,17 +1,19 @@
 import { Role } from "@/generated/prisma/client";
 import { getServerSession } from "@/lib/get-sessions";
 import { redirect } from "next/navigation";
-// Access control definitions moved to src/lib/access-control.ts
 
-export async function requireRole(allowedRoles: Role[]) {
+
+async function requireRole(allowedRoles: Role[]) {
   const session = await getServerSession();
 
   if (!session || !session.user) {
-    redirect("/sign-in");
+    redirect("/login");
   }
 
+  if (session.user.banned) redirect("/banned");
+
   if (!allowedRoles.includes(session.user.role as Role)) {
-    redirect("/403"); // Or some unauthorized page
+    redirect("/home?error=forbidden");
   }
 
   return session;
@@ -23,6 +25,4 @@ export async function requireAdmin() {
   return requireRole([Role.ADMIN, Role.SUPER_ADMIN]);
 }
 
-export function hasRole(user: { role: string }, role: Role) {
-  return user.role === role;
-}
+

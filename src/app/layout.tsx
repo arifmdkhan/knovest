@@ -1,35 +1,26 @@
+
+
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google"; // [NEW] Import fonts
+import { Inter } from "next/font/google";
 
 import "./globals.css";
+import "./application.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
-import { QueryProvider } from "@/components/providers/query-provider";
+import { NavigationProvider } from "@/components/NavigationProvider";
 import { createMetadata } from "@/lib/metadata";
 
-// [NEW] Configure fonts
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-serif",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = createMetadata({
   title: {
-    template: "%s | CONSENSUS",
-    default: "CONSENSUS",
+    template: "%s | KNOVEST",
+    default: "KNOVEST",
   },
   description:
     "A social and learning platform for traders, investors, and financial creators.",
@@ -44,16 +35,14 @@ export default function RootLayout({
     <>
       <html lang="en" suppressHydrationWarning>
         <head />
-        <body className={`${inter.variable} ${playfair.variable} ${jetbrainsMono.variable} font-sans antialiased`} suppressHydrationWarning>
+        <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >
-            <QueryProvider>
-              {children}
-            </QueryProvider>
+            <NavigationProvider>{children}</NavigationProvider>
             <Toaster richColors closeButton />
           </ThemeProvider>
         </body>

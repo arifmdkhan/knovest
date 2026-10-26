@@ -35,6 +35,10 @@ export async function subscribeAction(
             };
         }
 
+        if (creator.subscriptionPrice > 0) {
+            return { status: "error", message: "Payments are not available yet. Please try again later." };
+        }
+
         const result = await prisma.$transaction(async (tx) => {
             const existingSubscription = await tx.subscription.findUnique({
                 where: {

@@ -7,17 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useInView } from "react-intersection-observer";
 import { FeedCard } from "../../home/_components/FeedCard";
 import { FeedPost } from "@/types/post";
-
 import { getFeedPostsAction } from "@/features/posts/actions/get-feed-posts-action";
-
-
-// Fetcher function updated to accept authorId
 import { QueryFunctionContext } from "@tanstack/react-query";
 
 type ProfileFeedQueryKey = ["posts", "user", string];
 
 const fetchUserPosts = async ({ pageParam, queryKey }: QueryFunctionContext) => {
-  const [_, __, authorId] = queryKey as ProfileFeedQueryKey; // Extract authorId from queryKey: ["posts", "user", authorId]
+  const [_, __, authorId] = queryKey as ProfileFeedQueryKey;
 
   const res = await getFeedPostsAction(
     pageParam as string | undefined,
@@ -38,7 +34,7 @@ export function ProfileFeed({ authorId }: { authorId: string }) {
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
-    queryKey: ["posts", "user", authorId], // Unique key for this user's feed
+    queryKey: ["posts", "user", authorId],
     queryFn: fetchUserPosts,
     getNextPageParam: (lastPage: any) => lastPage?.nextCursor,
     initialPageParam: undefined as string | undefined,
@@ -46,7 +42,7 @@ export function ProfileFeed({ authorId }: { authorId: string }) {
 
   const posts = data?.pages.flatMap((page: any) => page?.posts || []) || [];
 
-  // Infinite Scroll Trigger
+  // Infinite Scroll 
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage();
@@ -74,7 +70,7 @@ export function ProfileFeed({ authorId }: { authorId: string }) {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-6">
       {posts.map((post: FeedPost) => (
         <FeedCard key={post.id} post={post} />
       ))}

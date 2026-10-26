@@ -1,22 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Shield, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, LogOut, Trash2, RefreshCw, BadgeCheck } from "lucide-react";
 
@@ -25,7 +11,8 @@ import { Role, AccountVerificationType } from "@/generated/prisma/client";
 import { banUser, unbanUser, updateUserRole, revokeUserSessions, removeUser, updateAccountVerification } from "@/features/admin/admin.action";
 import { restoreStreamUsers } from "@/features/media/actions/stream.action";
 import { toast } from "sonner";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { Input } from "@/components/ui/input";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 
@@ -55,8 +42,6 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
-
-    // ... (useEffect same)
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -144,10 +129,6 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
         }
     };
 
-    // We removed manual toggling of individual verification bits in favor of updating the Type, 
-    // but the server action for that is not yet refactored. 
-    // For now, removing the broken verification toggle menu items.
-
     const handleRestoreStreamUser = async (userId: string) => {
         setIsLoading(userId);
         const res = await restoreStreamUsers({ userIds: [userId] });
@@ -173,7 +154,7 @@ export function UsersTable({ users, totalPages, currentPage }: UsersTableProps) 
 
     return (
         <div className="space-y-4">
-            {/* Search Bar - SAME */}
+            {/* Search Bar */}
             <div className="flex items-center justify-between">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />

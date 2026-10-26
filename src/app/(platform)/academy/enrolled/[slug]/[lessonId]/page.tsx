@@ -1,4 +1,4 @@
-import { getLessonContent } from "@/features/courses/queries/get-lesson-content"
+import { getLessonContent } from "@/features/courses/queries/get-lesson-content";
 import { CourseContent } from "./_components/CourseContent";
 
 type Params = Promise<{ lessonId: string }>

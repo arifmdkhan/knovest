@@ -4,9 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { constructUrl } from '@/lib/construct-url';
-import { ArrowRight, BarChart, Clock, Edit, Eye, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { BarChart, Clock, Edit, Eye, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from "@/components/AppLink";
 import { UserAvatarWithInfo } from '@/components/UserAvatarWithInfo';
 import { Badge } from '@/components/ui/badge';
 

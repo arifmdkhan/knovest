@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 
 interface BookmarkEmptyStateProps {
     icon: LucideIcon;
@@ -18,7 +18,7 @@ export function BookmarkEmptyState({
     actionLink,
 }: BookmarkEmptyStateProps) {
     return (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center animate-in fade-in zoom-in duration-500">
+        <div className="app-panel flex flex-col items-center justify-center py-16 px-5 text-center">
             <div className="relative mb-6 group">
                 <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative p-6 bg-secondary/30 rounded-2xl border border-secondary/50 shadow-sm backdrop-blur-sm">
@@ -36,7 +36,7 @@ export function BookmarkEmptyState({
 
             {actionLabel && actionLink && (
                 <Link href={actionLink}>
-                    <Button variant="outline" className="rounded-full px-8 hover:bg-primary hover:text-primary-foreground transition-all duration-300 border-primary/20 hover:border-primary/0 shadow-sm hover:shadow-primary/25">
+                    <Button variant="outline" className="rounded-lg px-6">
                         {actionLabel}
                     </Button>
                 </Link>

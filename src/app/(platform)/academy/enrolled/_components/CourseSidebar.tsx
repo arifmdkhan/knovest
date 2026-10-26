@@ -1,13 +1,13 @@
 'use client'
 
 import { CourseSidebarDataType } from "@/features/courses/queries/get-course-sidebar-data";
-import { ChevronDown, PlayCircle, Trophy } from "lucide-react";
+import { ChevronDown, Trophy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { LessonItem } from "./LessonItem";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+
 
 interface CourseSidebarProps {
     course: CourseSidebarDataType['course']

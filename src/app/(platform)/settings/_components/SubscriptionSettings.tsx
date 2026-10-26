@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@/generated/prisma/client";
 import { Loader2 } from "lucide-react";
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -18,6 +18,7 @@ const formSchema = z.object({
     isSubscriptionEnabled: z.boolean(),
     subscriptionPrice: z.coerce.number().min(0, "Price must be positive"),
 });
+type FormValues = z.infer<typeof formSchema>;
 
 interface SubscriptionSettingsProps {
     user: User;
@@ -26,15 +27,20 @@ interface SubscriptionSettingsProps {
 export function SubscriptionSettings({ user }: SubscriptionSettingsProps) {
     const [isPending, startTransition] = useTransition();
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema) as any,
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema) as Resolver<FormValues>,
         defaultValues: {
             isSubscriptionEnabled: !!user.isSubscriptionEnabled,
-            subscriptionPrice: Number(user.subscriptionPrice ?? 0),
+            subscriptionPrice: 0,
         },
     });
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    const isSubscriptionEnabled = useWatch({
+        control: form.control,
+        name: "isSubscriptionEnabled",
+    });
+
+    function onSubmit(values: FormValues) {
         startTransition(async () => {
             const res = await updateSubscriptionSettings(values);
             if (res.status === "success") {
@@ -81,7 +87,7 @@ export function SubscriptionSettings({ user }: SubscriptionSettingsProps) {
                             )}
                         />
 
-                        {form.watch("isSubscriptionEnabled") && (
+                        {isSubscriptionEnabled && (
                             <FormField
                                 control={form.control}
                                 name="subscriptionPrice"
@@ -89,10 +95,10 @@ export function SubscriptionSettings({ user }: SubscriptionSettingsProps) {
                                     <FormItem>
                                         <FormLabel>Monthly Subscription Price (₹)</FormLabel>
                                         <FormControl>
-                                            <Input type="number" {...field} />
+                                            <Input type="number" {...field} readOnly aria-describedby="payments-disabled" />
                                         </FormControl>
-                                        <FormDescription>
-                                            Set the monthly price for your subscription in Rupees.
+                                        <FormDescription id="payments-disabled">
+                                            Paid subscriptions are disabled for this release. Subscriptions are free.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>

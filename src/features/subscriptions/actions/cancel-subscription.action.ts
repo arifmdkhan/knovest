@@ -35,7 +35,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<ApiRes
         const subscriptionChannelId = updatedSubscription.subscribedTo.subscriptionChannelId;
         if (subscriptionChannelId) {
             try {
-                const { removeMemberFromChannel } = await import("@/features/media/actions/stream.action");
+                const { removeMemberFromChannel } = await import("@/features/media/services/subscription-channel");
                 await removeMemberFromChannel(subscriptionChannelId, userId);
             } catch (error) {
                 console.error("Failed to remove user from subscription group:", error);

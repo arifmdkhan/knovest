@@ -7,16 +7,16 @@ import { getPresignedUploadUrlAction, confirmUploadAction } from "@/features/med
 
 interface UseMediaUploadOptions {
     intent: UploadIntent;
-    onUploadComplete?: (key: string) => void;
+    onUploadComplete?: (key: string, url?: string) => void;
     onUploadError?: (error: Error) => void;
 }
 
 export function useMediaUpload({ intent, onUploadComplete, onUploadError }: UseMediaUploadOptions) {
     const [isUploading, setIsUploading] = useState(false);
-    const [progress, setProgress] = useState(0); // Simple progress state
+    const [progress, setProgress] = useState(0); 
 
 
-    // --- Upload Logic with XHR for Progress ---
+    
     const uploadFile = async (file: File, params: Record<string, string> = {}) => {
         setIsUploading(true);
         setProgress(0);
@@ -71,10 +71,10 @@ export function useMediaUpload({ intent, onUploadComplete, onUploadError }: UseM
             setProgress(100);
 
             if (onUploadComplete) {
-                onUploadComplete(confirmRes.data.key);
+                onUploadComplete(confirmRes.data.key, confirmRes.data.url);
             }
 
-            return confirmRes.data.key;
+            return { key: confirmRes.data.key, url: confirmRes.data.url };
 
         } catch (error: unknown) {
             console.error("Upload Error:", error);

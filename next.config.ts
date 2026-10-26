@@ -1,9 +1,32 @@
 import type { NextConfig } from "next";
 
+const publicStorageUrl = process.env.NEXT_PUBLIC_S3_PUBLIC_URL?.trim() || (
+  process.env.AWS_ENDPOINT_URL_S3 && process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES
+    ? `${process.env.AWS_ENDPOINT_URL_S3.replace(/\/$/, "")}/${encodeURIComponent(process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES)}`
+    : undefined
+);
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
+      { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://accounts.google.com" },
+      // Validate third-party destinations in staging before enforcing scripts.
+      { key: "Content-Security-Policy-Report-Only", value: "script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" },
+    ] }];
+  },
+  env: publicStorageUrl ? { NEXT_PUBLIC_S3_PUBLIC_URL: publicStorageUrl } : {},
   reactCompiler: true,
+  serverExternalPackages: ["ffmpeg-static"],
+  outputFileTracingIncludes: {
+    "/api/cron/transcode": ["./node_modules/ffmpeg-static/ffmpeg*"],
+  },
   experimental: {
+    cpus: 2,
     optimizePackageImports: [
       "lucide-react",
       "date-fns",
@@ -25,16 +48,9 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
-      {
-        hostname: `${process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES}.t3.storage.dev`,
-        protocol: 'https',
-        port: '',
-
-      },
-      {
-        protocol: "https",
-        hostname: "*.t3.storage.dev",
-      },
+      ...(publicStorageUrl
+        ? [new URL(`${publicStorageUrl.replace(/\/$/, "")}/**`)]
+        : []),
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com"

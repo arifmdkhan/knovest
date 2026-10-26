@@ -53,6 +53,8 @@ export async function updateSubscriptionSettings(
       };
     }
 
+    if (parsed.data.subscriptionPrice > 0) return { status: "error", message: "Paid subscriptions are disabled for this release. Set the price to zero." };
+
     let subscriptionChannelId = user.subscriptionChannelId;
 
     // Check if we need to create a subscription group
@@ -62,23 +64,20 @@ export async function updateSubscriptionSettings(
       // If we have an ID, verify it actually exists in Stream (it might have been deleted)
       if (subscriptionChannelId) {
         try {
-          const { checkChannelExists } = await import("@/features/media/actions/stream.action");
+          const { checkChannelExists } = await import("@/features/media/services/subscription-channel");
           const exists = await checkChannelExists(subscriptionChannelId);
           if (!exists) {
             shouldCreate = true;
           }
         } catch (error) {
           console.error("Failed to check channel existence:", error);
-          // If check fails, assume it might not exist or we want to be safe? 
-          // Actually if check fails due to network, maybe we shouldn't overwrite.
-          // But here we assume if it throws it might be an issue, let's just proceed with existing ID or handle logic safely.
-          // For now, if we can't verify, we keep the old ID to avoid creating duplicates on transient errors.
+
         }
       }
 
       if (shouldCreate) {
         try {
-          const { createSubscriptionGroup } = await import("@/features/media/actions/stream.action");
+          const { createSubscriptionGroup } = await import("@/features/media/services/subscription-channel");
           subscriptionChannelId = await createSubscriptionGroup(user.id, user.username || "User", user.image);
         } catch (error) {
           console.error("Failed to create subscription group:", error);

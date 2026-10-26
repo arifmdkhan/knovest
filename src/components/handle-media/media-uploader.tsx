@@ -1,15 +1,11 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef, type ReactNode } from "react";
 import { FileRejection, useDropzone, Accept } from "react-dropzone";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import {
-  X,
-  UploadCloud,
-  Loader2,
-  FileText
-} from "lucide-react";
+import { X, UploadCloud, Loader2, FileText, ImagePlus, Video } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,8 +14,9 @@ import { constructUrl } from "@/lib/construct-url";
 import { useMediaUpload } from "@/hooks/use-media-upload";
 import { UploadIntent } from "@/lib/storage/types";
 import { useChunkedUpload } from "@/hooks/use-chunked-upload";
+import { SafeImage } from "@/components/ui/safe-image";
 
-// --- Types ---
+
 interface MediaFile {
   id: string;
   file: File | null;
@@ -27,7 +24,7 @@ interface MediaFile {
   progress: number;
   uploading: boolean;
   error: boolean;
-  key?: string; // Add this definition if missing or implicit
+  key?: string; 
   type: "IMAGE" | "VIDEO" | "PDF";
 }
 
@@ -36,9 +33,10 @@ export interface UploadedMedia {
   name?: string;
   key?: string;
   type: "IMAGE" | "VIDEO" | "PDF";
+  previewUrl?: string;
 }
 
-export type MediaType = "image" | "video" | "pdf";
+type MediaType = "image" | "video" | "pdf";
 
 interface MediaUploaderProps {
   onChange: (files: UploadedMedia[]) => void;
@@ -50,6 +48,10 @@ interface MediaUploaderProps {
   intent?: UploadIntent;
   uploadParams?: Record<string, string>;
   lessonId?: string;
+  variant?: "dropzone" | "compact";
+  footerAction?: ReactNode;
+  disabled?: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 const EMPTY_ARRAY: UploadedMedia[] = [];
@@ -63,21 +65,32 @@ export function MediaUploader({
   maxSizeMB = 5,
   intent = UploadIntent.POST_MEDIA,
   uploadParams = {},
-  lessonId
+  lessonId,
+  variant = "dropzone",
+  footerAction,
+  disabled = false,
+  onUploadingChange,
 }: MediaUploaderProps) {
 
-  // --- State ---
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [completedFiles, setCompletedFiles] = useState<UploadedMedia[]>(existingMedia);
+  const completedFilesRef = useRef(completedFiles);
+  const previewUrls = useRef(new Map<string, string>());
+  useEffect(() => { const urls = previewUrls.current; return () => { urls.forEach(url => URL.revokeObjectURL(url)); }; }, []);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const uploading = files.some(file => file.uploading);
+  useEffect(() => { onUploadingChange?.(uploading); }, [uploading, onUploadingChange]);
 
-  // Sync prop changes (if parent updates existingMedia externally)
+  const appendMedia = (media: UploadedMedia) => {
+    const updated = [...completedFilesRef.current, media];
+    completedFilesRef.current = updated;
+    setCompletedFiles(updated);
+    onChange(updated);
+  };
+
   useEffect(() => {
-    // Deep compare or at least length/key check to avoid loop
+    completedFilesRef.current = existingMedia;
     if (existingMedia === completedFiles) return;
-
-    // Simple check: if lengths differ or if content differs (using JSON stringify for simple media objects is mostly fine)
-    // A better check:
     const isSame = existingMedia.length === completedFiles.length &&
       existingMedia.every((m, i) => m.url === completedFiles[i].url && m.key === completedFiles[i].key);
 
@@ -85,8 +98,6 @@ export function MediaUploader({
       setCompletedFiles(existingMedia);
     }
   }, [existingMedia, completedFiles]);
-
-  // --- Hooks ---
   const { uploadFile: startUpload, progress: uploadProgress } = useMediaUpload({
     intent,
   });
@@ -96,22 +107,19 @@ export function MediaUploader({
     toast.error(err);
   }, []);
 
-  const { uploadFile: startChunkedUpload, progress: chunkProgress } = useChunkedUpload({
+  const { uploadFile: startChunkedUpload, progress: chunkProgress, cancelUpload } = useChunkedUpload({
     lessonId: lessonId || uploadParams.lessonId || "",
     onUploadError: handleUploadError
   });
 
-  // Sync hook progress to the active uploading file
   useEffect(() => {
-    // Optimization: Skip if no files are currently being tracked/uploaded
+    // Skip if no files are currently being tracked/uploaded
     if (files.length === 0) return;
 
     const progress = intent === UploadIntent.COURSE_LESSON_VIDEO ? chunkProgress : uploadProgress;
 
     setFiles(prev => {
       // Prevent state update if progress hasn't effectively changed to avoid loop
-      // (Assuming simple primitive check is enough, but map always creates new ref)
-      // Let's only map if we find an uploading file
       const hasUploading = prev.some(f => f.uploading);
       if (!hasUploading) return prev;
 
@@ -119,7 +127,7 @@ export function MediaUploader({
     });
   }, [uploadProgress, chunkProgress, intent, files.length]);
 
-  // --- Upload Logic ---
+
   const uploadFile = async (file: File, id: string) => {
     try {
       // Logic for Lesson Video (Chunked)
@@ -134,17 +142,16 @@ export function MediaUploader({
 
         // Success handling for video 
         setFiles(prev => prev.filter(f => f.id !== id));
+        if (!uploadedKey) return;
         const newMedia: UploadedMedia = {
           url: "",
-          key: uploadedKey || "pending-processing",
+          key: uploadedKey,
           name: file.name,
           type: "VIDEO"
         };
 
         // Update Local and Parent
-        const updated = [...completedFiles, newMedia];
-        setCompletedFiles(updated);
-        onChange(updated);
+        appendMedia(newMedia);
         return;
       }
 
@@ -158,39 +165,36 @@ export function MediaUploader({
 
       setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 0 } : f));
 
-      const key = await startUpload(fileToUpload, uploadParams);
+      const { key, url } = await startUpload(fileToUpload, uploadParams);
+      const publicUrl = url || constructUrl(key);
+      if ((isImage || fileToUpload.type.startsWith("video/")) && !publicUrl) throw new Error("The uploaded file has no public URL. Please try uploading it again.");
 
       // Success
       setFiles(prev => prev.filter(f => f.id !== id));
 
       const isPdf = fileToUpload.type === "application/pdf";
       const newMedia: UploadedMedia = {
-        url: constructUrl(key),
+        url: publicUrl,
+        previewUrl: previewUrls.current.get(id),
         key,
         name: fileToUpload.name,
         type: isImage ? "IMAGE" : isPdf ? "PDF" : "VIDEO"
       };
 
-      if (isImage) {
-        newMedia.url = `${newMedia.url}?t=${Date.now()}`;
-      }
-
-      const updated = [...completedFiles, newMedia];
-      setCompletedFiles(updated);
-      onChange(updated);
+      appendMedia(newMedia);
 
       toast.success("Uploaded successfully");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Upload failed");
+      toast.error(error instanceof Error ? error.message : "Upload failed");
       setFiles(prev => prev.map(f => f.id === id ? { ...f, error: true, uploading: false } : f));
     }
   };
 
-  // --- Remove Handler ---
   const removeFile = async (index: number, isUploading = false) => {
     if (isUploading) {
+      if (intent === UploadIntent.COURSE_LESSON_VIDEO) await cancelUpload().catch(() => {});
       setFiles(prev => prev.filter((_, i) => i !== index));
       return;
     }
@@ -202,10 +206,11 @@ export function MediaUploader({
     if (fileToRemove.key) {
       try {
         const { deleteMediaAction } = await import("@/features/media/actions/delete-media.action");
-        await deleteMediaAction(fileToRemove.key);
+        const result = await deleteMediaAction(fileToRemove.key);
+        if (result.status === "error") throw new Error(result.message);
 
-        // Success: Remove from UI
         const updated = completedFiles.filter((_, i) => i !== index);
+        completedFilesRef.current = updated;
         setCompletedFiles(updated);
         onChange(updated);
       } catch (error) {
@@ -215,15 +220,14 @@ export function MediaUploader({
         setIsDeleting(null);
       }
     } else {
-      // No key, just remove local ref
       const updated = completedFiles.filter((_, i) => i !== index);
+      completedFilesRef.current = updated;
       setCompletedFiles(updated);
       onChange(updated);
       setIsDeleting(null);
     }
   };
 
-  // --- Configuration ---
   const getAcceptConfig = () => {
     const config: Accept = {};
 
@@ -246,18 +250,13 @@ export function MediaUploader({
     return config;
   }
 
-  // --- Drop Handler ---
+  // Drop Handler 
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
       fileRejections.forEach(({ errors }) => {
         toast.error(errors[0]?.message || "Invalid file type or size");
       });
     }
-
-    // Access current state via direct dependency or functional update if needed, 
-    // but here we are inside component scope, need to be careful with stale closures in callbacks.
-    // However, Dropzone calls this fresh. We need current 'completedFiles' and 'files' length.
-    // We should rely on the closure values which are updated by 'onDrop' dependency array.
 
     if (completedFiles.length + files.length + acceptedFiles.length > maxFiles) {
       toast.error(`Maximum ${maxFiles} files allowed`);
@@ -275,10 +274,12 @@ export function MediaUploader({
       if (file.type.startsWith("video")) type = "VIDEO";
       if (file.type === "application/pdf") type = "PDF";
 
+      const preview = URL.createObjectURL(file);
+      previewUrls.current.set(id, preview);
       const newFile: MediaFile = {
         id,
         file,
-        preview: URL.createObjectURL(file), // Note: Need cleanup
+        preview,
         progress: 0,
         uploading: true,
         error: false,
@@ -289,15 +290,21 @@ export function MediaUploader({
       uploadFile(file, id);
     });
   }, [completedFiles, files, maxFiles, maxSizeMB, intent, uploadParams, lessonId]);
-  // Added dependencies to ensure closure is fresh.
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open, inputRef } = useDropzone({
     onDrop,
     accept: getAcceptConfig(),
     maxFiles: maxFiles,
     maxSize: maxSizeMB * 1024 * 1024,
-    disabled: files.some(f => f.uploading) || completedFiles.length >= maxFiles
+    disabled: disabled || uploading || completedFiles.length >= maxFiles,
+    noClick: variant === "compact",
+    noKeyboard: variant === "compact",
   });
+
+  const chooseFile = (type: "image" | "video") => {
+    if (inputRef.current) inputRef.current.accept = type === "image" ? "image/png,image/jpeg,image/webp,image/avif" : "video/mp4,video/webm";
+    open();
+  };
 
   const getLabel = () => {
     const types = allowedTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(" & ");
@@ -305,7 +312,7 @@ export function MediaUploader({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-3", className)}>
 
       {/* PREVIEWS GRID */}
       {(completedFiles.length > 0 || files.length > 0) && (
@@ -315,9 +322,10 @@ export function MediaUploader({
           {completedFiles.map((media, idx) => (
             <div key={media.url || media.key || idx} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
               {media.type === "IMAGE" && (
-                <Image
-                  src={media.url}
-                  alt="media"
+                <SafeImage
+                  src={media.previewUrl || media.url}
+                  alt={media.name || "Image attachment"}
+                  unoptimized={!!media.previewUrl}
                   fill
                   className="object-cover"
                 />
@@ -332,12 +340,13 @@ export function MediaUploader({
                 <div className="flex flex-col items-center justify-center text-muted-foreground p-4">
                   <FileText className="w-12 h-12 mb-2" />
                   <span className="text-xs text-center truncate w-full px-2 text-foreground font-medium">PDF Document</span>
-                  <a href={media.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline mt-1">View</a>
+                  {media.url && <a href={media.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline mt-1">View</a>}
                 </div>
               )}
 
               <button
                 type="button"
+                aria-label="Remove attachment"
                 onClick={() => removeFile(idx)}
                 disabled={isDeleting === (media.url || media.key || String(idx))}
                 className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive disabled:opacity-100 disabled:cursor-not-allowed z-20"
@@ -390,6 +399,7 @@ export function MediaUploader({
               {/* Cancel Upload */}
               <button
                 type="button"
+                aria-label="Dismiss failed upload"
                 onClick={() => removeFile(idx, true)}
                 className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-destructive transition-colors z-10"
               >
@@ -401,7 +411,17 @@ export function MediaUploader({
       )}
 
       {/* DROPZONE AREA */}
-      {completedFiles.length < maxFiles && (
+      {variant === "compact" ? (
+        <div {...getRootProps()} className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3", isDragActive && "rounded-lg bg-primary/5 ring-1 ring-primary")}>
+          <input {...getInputProps()} aria-label="Attach images or videos" />
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" type="button" className="rounded-full px-3 text-xs" onClick={() => chooseFile("image")} disabled={disabled || uploading || completedFiles.length >= maxFiles}><ImagePlus className="size-4" />Image</Button>
+            <Button variant="secondary" size="sm" type="button" className="rounded-full px-3 text-xs" onClick={() => chooseFile("video")} disabled={disabled || uploading || completedFiles.length >= maxFiles}><Video className="size-4" />Video</Button>
+            {uploading && <Loader2 className="size-4 animate-spin text-primary" aria-label="Uploading attachment" />}
+          </div>
+          {footerAction}
+        </div>
+      ) : completedFiles.length < maxFiles && (
         <Card
           {...getRootProps()}
           className={cn(

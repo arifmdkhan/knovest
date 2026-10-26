@@ -1,8 +1,8 @@
 "use client";
 
-import { Call, useStreamVideoClient, StreamCall, useCallStateHooks, ParticipantView } from "@stream-io/video-react-sdk";
+import { CallingState, Call, useStreamVideoClient, StreamCall, useCallStateHooks, ParticipantView } from "@stream-io/video-react-sdk";
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { MiniPlayer } from "@/components/audio-room/MiniPlayer";
 
@@ -26,27 +26,26 @@ export const ActiveCallProvider = ({ children }: { children: ReactNode }) => {
     const [activeCall, setActiveCall] = useState<Call | null>(null);
     const [isJoining, setIsJoining] = useState(false);
     const client = useStreamVideoClient();
-    const router = useRouter();
+    // const router = useRouter();
 
     const joinRoom = useCallback(async (roomId: string) => {
         if (!client) return;
-
-        // If already in this room, do nothing
         if (activeCall?.id === roomId) return;
 
         // If in another room, leave it first
         if (activeCall) {
-            await activeCall.leave();
+            if (activeCall.state.callingState !== CallingState.LEFT) await activeCall.leave();
         }
 
         setIsJoining(true);
         try {
             const call = client.call('audio_room', roomId);
-            await call.join({ create: true });
+            await call.camera.disable();
+            await call.microphone.disable();
+            await call.join();
             setActiveCall(call);
         } catch (error) {
             console.error("Failed to join room", error);
-            // Don't toast if it's a permission error related to backstage
             const streamErrorCode = (error as { code?: number }).code;
             if (streamErrorCode !== 17) {
                 toast.error("Failed to join audio room");
@@ -60,7 +59,7 @@ export const ActiveCallProvider = ({ children }: { children: ReactNode }) => {
     const leaveRoom = useCallback(async () => {
         if (!activeCall) return;
         try {
-            await activeCall.leave();
+            if (activeCall.state.callingState !== CallingState.LEFT) await activeCall.leave();
             toast.success("Left audio room");
         } catch (error) {
             console.error("Failed to leave room", error);
@@ -74,7 +73,6 @@ export const ActiveCallProvider = ({ children }: { children: ReactNode }) => {
         if (!activeCall) return;
 
         const handleBeforeUnload = () => {
-            // We can't await here, but firing it might help notify server quickly
             activeCall.leave().catch(console.error);
         };
 
@@ -116,7 +114,7 @@ const GlobalAudioHandler = ({ call }: { call: Call }) => {
             {participants
                 .filter(p => p.isSpeaking || p.roles.includes('speaker') || p.roles.includes('host') || !p.isLocalParticipant)
                 .map(p => (
-                    <ParticipantView key={p.sessionId} participant={p} />
+                    <ParticipantView key={p.sessionId} participant={p} trackType="none" ParticipantViewUI={null} />
                 ))}
         </div>
     );

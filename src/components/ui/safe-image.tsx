@@ -17,7 +17,6 @@ export function SafeImage({
     className,
     fallbackClassName,
     fallbackIcon,
-    containerClassName,
     ...props
 }: SafeImageProps) {
     const [error, setError] = useState(false);
@@ -67,6 +66,7 @@ export function SafeImage({
             }}
             onLoad={() => setIsLoading(false)}
             {...props}
+            unoptimized={props.unoptimized || (typeof src === "string" && (src.startsWith("/api/posts/") || /[?&]X-Amz-Signature=/i.test(src)))}
         />
     );
 }

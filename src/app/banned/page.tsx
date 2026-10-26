@@ -1,15 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ban, Mail } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 
 export default function BannedPage() {
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
-            <div className="absolute inset-0 bg-grid-white/10 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] pointer-events-none" />
+            <div className="absolute inset-0 bg-grid-white/10 mask-[radial-gradient(ellipse_at_center,transparent_20%,black)] pointer-events-none" />
 
             <Card className="w-full max-w-md border-destructive/20 shadow-2xl shadow-destructive/10 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-destructive/5 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-b from-destructive/5 to-transparent pointer-events-none" />
 
                 <CardHeader className="text-center space-y-4 pb-2">
                     <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-2 animate-in zoom-in duration-500">
@@ -36,7 +36,7 @@ export default function BannedPage() {
 
                 <CardFooter className="flex flex-col gap-3 pt-2">
                     <Button asChild className="w-full" variant="outline">
-                        <Link href="mailto:support@consensus.app">
+                        <Link href={process.env.NEXT_PUBLIC_SUPPORT_EMAIL ? `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}` : "/contact"}>
                             <Mail className="w-4 h-4 mr-2" />
                             Contact Support
                         </Link>

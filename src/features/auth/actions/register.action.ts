@@ -1,68 +1,61 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { ApiResponse } from "@/types/api";
-import { getServerSession } from "@/lib/get-sessions";
 import { syncStreamUser } from "@/features/media/actions/stream.action";
-import arcjet, { detectBot, slidingWindow, request } from "@arcjet/next";
+import { safeAction } from "@/lib/safe-action";
+import { z } from "zod";
 
-const aj = arcjet({
-  key: process.env.ARCJET_KEY!,
-  rules: [
-    detectBot({
-      mode: "LIVE",
-      allow: ["CATEGORY:SEARCH_ENGINE"],
-    }),
-    slidingWindow({
-      mode: "LIVE",
-      interval: "1m",
-      max: 15,
-    })
-  ]
+const UsernameCheckSchema = z.object({
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores")
 });
 
-export async function checkUsernameAvailability(username: string): Promise<ApiResponse<boolean>> {
-  try {
-    const req = await request();
+export const checkUsernameAvailability = safeAction(
+  UsernameCheckSchema,
+  async ({ username }, { user }) => {
+    try {
 
-    const decision = await aj.protect(req);
-    if (decision.isDenied()) {
-      return { status: "error", message: "Too many requests. Please try again later." };
+      const existingUser = await prisma.user.findUnique({
+        where: { username: username.toLowerCase() }
+      });
+
+      if (existingUser && existingUser.id !== user?.id) {
+        return { status: "error", message: "Username is already taken" };
+      }
+
+      return { status: "success", message: "Username is available", data: true };
+    } catch (error) {
+      console.error("Check Username Error:", error);
+      return { status: "error", message: "Failed to validate username" };
     }
+  },
+  {} // Public access
+);
 
-    const isValidFormat = /^[a-zA-Z0-9_]+$/.test(username);
-    if (!isValidFormat) {
-      return { status: "error", message: "Username can only contain letters, numbers, and underscores" };
-    }
+const UpdateProfileLoginSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores")
+});
 
+export const updateProfileAfterLogin = safeAction(
+  UpdateProfileLoginSchema,
+  async (data, { user }) => {
+    // Re-check availability within the action to prevent race conditions or bypass
     const existingUser = await prisma.user.findUnique({
-      where: { username: username.toLowerCase() }
+      where: { username: data.username.toLowerCase() }
     });
 
-    if (existingUser) {
+    if (existingUser && existingUser.id !== user!.id) {
       return { status: "error", message: "Username is already taken" };
     }
 
-    return { status: "success", message: "Username is available", data: true };
-  } catch (error) {
-    return { status: "error", message: "Failed to validate username" };
-  }
-}
-
-// --- Action: Update Profile After OTP Login ---
-export async function updateProfileAfterLogin(data: { name: string, username: string }): Promise<ApiResponse> {
-  try {
-    const session = await getServerSession();
-
-    if (!session?.user) {
-      return { status: "error", message: "Unauthorized" };
-    }
-
-    const check = await checkUsernameAvailability(data.username);
-    if (check.status === "error") return check;
-
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user!.id },
       data: {
         name: data.name,
         username: data.username.toLowerCase(),
@@ -70,14 +63,12 @@ export async function updateProfileAfterLogin(data: { name: string, username: st
       }
     });
 
-    await syncStreamUser(session.user.id, {
+    await syncStreamUser(user!.id, {
       name: data.name,
       username: data.username
     });
 
     return { status: "success", message: "Profile updated" };
-  } catch (error) {
-    console.error("Update Profile After Login Error:", error);
-    return { status: "error", message: "Failed to update profile" };
-  }
-}
+  },
+  { requiredRole: "USER" }
+);

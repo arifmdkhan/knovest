@@ -1,35 +1,13 @@
 "use client"
 
-import {
-  IconLogout,
-  IconSettings,
-  IconShield,
-  IconUser,
-} from "@tabler/icons-react"
+import { IconLogout, IconSettings, IconShield, IconUser } from "@tabler/icons-react";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
-import { authClient } from "@/lib/auth-client"
-import Link from "next/link"
-import { ChevronsUpDown, HomeIcon, Sparkles } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth-client";
+import Link from "@/components/AppLink"
+import { ChevronsUpDown, HomeIcon } from "lucide-react";
 import useSignOut from "@/hooks/use-signout"
 
 export function NavUser() {
@@ -54,7 +32,7 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all duration-200 ease-in-out hover:bg-sidebar-accent/50 group"
             >
               <Avatar className="h-8 w-8 rounded-lg border border-sidebar-border shadow-sm group-hover:scale-105 transition-transform duration-200">
-                <AvatarImage src={user.image ?? `https://avatar.vercel.sh/${user.email}`} alt={user.name} />
+                <AvatarImage src={user.image ?? undefined} alt={user.name} />
                 <AvatarFallback className="rounded-lg bg-sidebar-primary/10 text-sidebar-primary font-semibold">
                   {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
                 </AvatarFallback>
@@ -79,7 +57,7 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg border border-border/50">
-                  <AvatarImage src={user.image ?? `https://avatar.vercel.sh/${user.email}`} alt={user.name} />
+                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
                   <AvatarFallback className="rounded-lg">
                     {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
                   </AvatarFallback>

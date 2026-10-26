@@ -25,7 +25,7 @@ interface StepProps {
     userProfile: { name: string; email: string } | null;
 }
 
-// Zod Schema for Validation
+// Zod Schema 
 const identitySchema = z.object({
     fullName: z.string().min(2, "Full Name is required"),
     dateOfBirth: z.date({ message: "Date of Birth is required" })
@@ -49,7 +49,6 @@ export function StepIdentity({ data, updateData, onNext, userProfile }: StepProp
     const [datePickerOpen, setDatePickerOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Validate a single field on blur or change
     const validateField = (field: keyof z.infer<typeof identitySchema>, value?: any) => {
         try {
             const fieldValue = value !== undefined ? value : data[field];
@@ -101,13 +100,13 @@ export function StepIdentity({ data, updateData, onNext, userProfile }: StepProp
         }
 
         setSaving(true);
-        // Auto-save draft - Fix null vs undefined
+        // Auto-save draft 
         const cleanData = {
             ...data,
             isSebiRegistered: data.isSebiRegistered ?? undefined,
             hasCertifications: data.hasCertifications ?? undefined,
             reviewNotes: data.reviewNotes ?? undefined,
-            // Ensure other optional fields are undefined if null
+            
         }
         const res = await saveApplicationDraft(cleanData);
         setSaving(false);
@@ -272,10 +271,8 @@ export function StepIdentity({ data, updateData, onNext, userProfile }: StepProp
                                     // Strict Input Masking for PAN (ABCDE1234F)
                                     // 1. Remove any non-alphanumeric chars immediately
                                     val = val.replace(/[^A-Z0-9]/g, '');
-
                                     // 2. Truncate to 10
                                     val = val.slice(0, 10);
-
                                     // 3. Re-build valid string char by char
                                     let cleanVal = "";
                                     for (let i = 0; i < val.length; i++) {

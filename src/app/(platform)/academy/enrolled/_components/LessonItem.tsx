@@ -1,7 +1,7 @@
-import { buttonVariants } from "@/components/ui/button";
+
 import { cn } from "@/lib/utils";
-import { Check, PlayCircle, Lock } from "lucide-react";
-import Link from "next/link";
+import { Check, PlayCircle } from "lucide-react";
+import Link from "@/components/AppLink";
 
 interface LessonItemProps {
     lesson: {

@@ -35,20 +35,15 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
     const { client: chatClient } = useChatContext();
     const [isLoading, setIsLoading] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-
-    // Data State
     const [paidMembers, setPaidMembers] = useState<AccessUser[]>([]);
     const [manualMembers, setManualMembers] = useState<AccessUser[]>([]);
     const [allowedGroups, setAllowedGroups] = useState<Channel[]>([]);
-
-    // Pagination State
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingInfo, setIsFetchingInfo] = useState(false);
 
     const { ref: loadMoreRef, inView } = useInView();
 
-    // Define custom data type based on usage
     interface CustomCallData {
         allowedUserIds?: string[] | string;
         allowedGroups?: string[];
@@ -59,7 +54,6 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
     const fetchDetails = useCallback(async (pageNum: number) => {
         setIsFetchingInfo(true);
         const manualIds: string[] = [];
-        // Only parse manual IDs on first page to check them once
         if (pageNum === 1) {
             if (Array.isArray(manualIdsRaw)) {
                 manualIds.push(...manualIdsRaw.map((id: any) => String(id)));
@@ -78,7 +72,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                     setManualMembers(details.manualUsers as AccessUser[]);
                 } else {
                     setPaidMembers(prev => [...prev, ...(details.paidUsers as AccessUser[])]);
-                    // Manual users are only on page 1, so no need to merge them on subsequent pages
+                   
                 }
                 setHasMore(!!details.hasMorePaid);
             }
@@ -87,14 +81,14 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         } finally {
             setIsFetchingInfo(false);
         }
-    }, [call.id, JSON.stringify(manualIdsRaw)]);
+    }, [call.id, manualIdsRaw]);
 
     // Initial Load
     useEffect(() => {
         if (open) {
             setPage(1);
             setHasMore(true);
-            setPaidMembers([]); // Clear previous
+            setPaidMembers([]); 
             setManualMembers([]);
             fetchDetails(1);
         }
@@ -110,7 +104,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
     }, [inView, hasMore, isFetchingInfo, open, page, fetchDetails]);
 
 
-    // Fetch Allowed Groups details (Client Side Chat)
+    // Fetch Allowed Groups details 
     const groupIdsRaw = customData.allowedGroups || [];
     const groupIds = Array.isArray(groupIdsRaw) ? groupIdsRaw : [];
 
@@ -135,7 +129,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         const creatorId = (call.state.createdBy as any)?.id;
         const list: AccessUser[] = [];
 
-        // A. Groups
+        // Groups
         allowedGroups.forEach(g => {
             list.push({
                 id: g.id!,
@@ -146,17 +140,17 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
             });
         });
 
-        // B. Merging Users
-        // We prioritize: Creator > Manual > Paid
+        // Merging Users
+        // prioritize Creator > Manual > Paid
         const allUsersMap = new Map<string, AccessUser>();
 
-        // 1. Paid
+        // Paid
         paidMembers.forEach(u => allUsersMap.set(u.id, u));
 
-        // 2. Manual (Overwrite paid if same, to show as Invited)
+        // Manual (Overwrite paid if same, to show as Invited)
         manualMembers.forEach(u => allUsersMap.set(u.id, u));
 
-        // 3. Creator
+        // Creator
         if (creatorId) {
             allUsersMap.set(creatorId, {
                 id: creatorId,
@@ -166,7 +160,6 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
             });
         }
 
-        // Convert to list
         Array.from(allUsersMap.values()).forEach(u => {
             // Ensure Creator is marked creator even if in other lists
             if (u.id === creatorId) u.type = 'creator';
@@ -181,7 +174,6 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
         setIsLoading(true);
         try {
             const currentAllowed: string[] = [];
-            // Robust parsing
             if (Array.isArray(manualIdsRaw)) {
                 currentAllowed.push(...manualIdsRaw);
             } else if (typeof manualIdsRaw === 'string') {
@@ -199,7 +191,7 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
 
             toast.success("Users added successfully");
             setSelectedUserIds([]);
-            // Trigger refetch or optimistic update could be nice, but simple refetch page 1 ensures sync
+            // Trigger refetch or optimistic update (to be implemented properly later)
             fetchDetails(1);
         } catch (error) {
             console.error("Failed to add users", error);
@@ -243,14 +235,11 @@ export function ManageAccessDialog({ open, onOpenChange, call }: ManageAccessDia
                     }
                 });
                 toast.success("User access revoked");
-                // Optimistic:
                 setManualMembers(prev => prev.filter(m => m.id !== user.id));
 
             } else if (user.type === 'paid') {
                 const res = await revokeStreamAccess(call.id, user.id);
                 if (res.status === "error") throw new Error(res.message);
-
-                // Optimistic update
                 setPaidMembers(prev => prev.filter(m => m.id !== user.id));
                 toast.success("Paid access revoked");
             }

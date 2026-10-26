@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { Heart, UserPlus, MessageCircle, Info, AtSign, Repeat } from "lucide-react";
-import { ConsensusLogo } from "@/components/ConsensusLogo";
+import { KnovestLogo } from "@/components/KnovestLogo";
 
 interface Actor {
     id: string;
@@ -22,35 +22,33 @@ interface NotificationItemProps {
         isRead: boolean;
         createdAt: Date;
         actor?: Actor | null;
-        actors?: Actor[]; // New prop for aggregated
-        count?: number;   // New prop for aggregated
+        actors?: Actor[];
+        count?: number;
         entityId: string | null;
     };
     onMarkRead?: (id: string) => void;
 }
 
+const NotificationIcon = ({ type }: { type: string }) => {
+    switch (type) {
+        case "LIKE": return <Heart className="w-4 h-4 text-red-500 fill-current" />;
+        case "FOLLOW": return <UserPlus className="w-4 h-4 text-blue-500" />;
+        case "COMMENT": return <MessageCircle className="w-4 h-4 text-green-500" />;
+        case "REPLY": return <MessageCircle className="w-4 h-4 text-green-500" />;
+        case "MENTION": return <AtSign className="w-4 h-4 text-orange-500" />;
+        case "REPOST": return <Repeat className="w-4 h-4 text-green-500" />;
+        case "SYSTEM": return <Info className="w-4 h-4 text-blue-500" />;
+        default: return <Info className="w-4 h-4 text-muted-foreground" />;
+    }
+};
+
 export function NotificationItem({ notification, onMarkRead }: NotificationItemProps) {
     const { type, actor, actors, count, createdAt, isRead, message, entityId } = notification;
-
-    // Use actors array if available, otherwise fallback to single actor
     const allActors = actors && actors.length > 0 ? actors : (actor ? [actor] : []);
     const displayCount = count || 1;
 
-    const Icon = () => {
-        switch (type) {
-            case "LIKE": return <Heart className="w-4 h-4 text-red-500 fill-current" />;
-            case "FOLLOW": return <UserPlus className="w-4 h-4 text-blue-500" />;
-            case "COMMENT": return <MessageCircle className="w-4 h-4 text-green-500" />;
-            case "REPLY": return <MessageCircle className="w-4 h-4 text-green-500" />;
-            case "MENTION": return <AtSign className="w-4 h-4 text-orange-500" />;
-            case "REPOST": return <Repeat className="w-4 h-4 text-green-500" />;
-            case "SYSTEM": return <Info className="w-4 h-4 text-blue-500" />;
-            default: return <Info className="w-4 h-4 text-muted-foreground" />;
-        }
-    };
-
     const getLink = () => {
-        // If multiple actors, linking to one profile is ambiguous, but usually we link to the first one or the entity
+        // If multiple actors, linking to one profile is ambiguous, but usually we link to the first one 
         if (type === "FOLLOW" && allActors[0]?.username) return `/profile/${allActors[0].username}`;
         if (type === "LIKE" || type === "COMMENT" || type === "REPLY" || type === "MENTION" || type === "REPOST") {
             return `/posts/${entityId}`;
@@ -59,16 +57,6 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
     };
 
     const generateText = () => {
-        const actionText = {
-            "LIKE": "liked your post",
-            "FOLLOW": "started following you",
-            "COMMENT": "commented on your post",
-            "REPLY": "replied to your comment",
-            "MENTION": "mentioned you",
-            "REPOST": "reposted your post",
-            "SYSTEM": "System Notification"
-        }[type] || "sent a notification";
-
         if (type === "SYSTEM") return <span className="font-semibold text-foreground/90">System</span>;
 
         if (displayCount === 1) {
@@ -98,14 +86,14 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
         return (
             <div
                 className={cn(
-                    "relative flex items-start gap-4 p-4 border-b hover:bg-muted/50 transition-colors",
+                    "relative flex min-h-[88px] items-start gap-4 p-5 pr-12 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors",
                     !isRead && "bg-primary/5 hover:bg-primary/10"
                 )}
                 onClick={() => !isRead && onMarkRead?.(notification.id)}
             >
                 <div className="shrink-0 relative mt-1">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <ConsensusLogo className="w-6 h-6" />
+                        <KnovestLogo className="w-6 h-6" />
                     </div>
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
@@ -117,9 +105,7 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
                     </p>
                 </div>
                 {!isRead && (
-                    <div className="absolute top-4 right-4">
-                        <span className="block w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20" />
-                    </div>
+                    <button className="absolute top-3 right-2 flex size-11 items-center justify-center" aria-label="Mark notification as read" onClick={event => { event.stopPropagation(); onMarkRead?.(notification.id); }}><span className="size-2 rounded-full bg-primary" /></button>
                 )}
             </div>
         );
@@ -128,12 +114,12 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
     return (
         <div
             className={cn(
-                "relative flex items-start gap-4 p-4 border-b hover:bg-muted/50 transition-colors",
+                "relative flex min-h-[88px] items-start gap-4 p-5 pr-12 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors",
                 !isRead && "bg-primary/5 hover:bg-primary/10"
             )}
             onClick={() => !isRead && onMarkRead?.(notification.id)}
         >
-            {/* Actor Avatar(s) */}
+            {/* Actor Avatar*/}
             <div className="shrink-0 relative">
                 {displayCount > 1 ? (
                     <div className="flex -space-x-3 overflow-hidden">
@@ -161,7 +147,7 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
             <div className="flex-1 min-w-0 space-y-1">
                 <Link href={getLink()} className="block group">
                     <div className="flex items-center gap-2 mb-0.5">
-                        <Icon />
+                        <NotificationIcon type={type} />
                         <span className="text-sm font-medium text-muted-foreground">
                             {type === "LIKE" && "liked your post"}
                             {type === "FOLLOW" && "started following you"}
@@ -174,19 +160,15 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
                     </div>
                     <p className="text-sm text-foreground leading-snug">
                         {generateText()}
-                        {message && <span className="text-muted-foreground ml-1">"{message}"</span>}
+                        {message && <span className="text-muted-foreground ml-1">&quot;{message}&quot;</span>}
                     </p>
                 </Link>
                 <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                 </p>
             </div>
-
-            {/* Action (Optional Read Indicator) */}
             {!isRead && (
-                <div className="absolute top-4 right-4">
-                    <span className="block w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20" />
-                </div>
+                <button className="absolute top-3 right-2 flex size-11 items-center justify-center" aria-label="Mark notification as read" onClick={event => { event.stopPropagation(); onMarkRead?.(notification.id); }}><span className="size-2 rounded-full bg-primary" /></button>
             )}
         </div>
     );

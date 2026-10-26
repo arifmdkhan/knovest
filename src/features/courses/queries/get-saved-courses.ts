@@ -42,7 +42,7 @@ export async function getSavedCourses(cursor?: string, limit = 10) {
                     enrollment: {
                         where: {
                             userId: userId,
-                            status: 'Active' // Fixed string literal type
+                            status: 'Active' 
                         },
                         select: {
                             id: true,
@@ -69,7 +69,6 @@ export async function getSavedCourses(cursor?: string, limit = 10) {
         nextCursor = nextItem?.id;
     }
 
-    // Transform to flat PublicCourseType structure
     const courses = savedCourses.map(item => ({
         ...item.course,
         isSaved: true,

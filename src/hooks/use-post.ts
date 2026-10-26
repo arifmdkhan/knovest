@@ -105,21 +105,37 @@ export const useCreatePost = () => {
         },
         onSuccess: (newPost) => {
             toast.success("Post published!");
+            queryClient.invalidateQueries({ queryKey: ["posts", "user", newPost.author.id] });
 
             // Optimistic update for feed
-            queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
-                if (!oldData) return { pages: [{ posts: [newPost], nextCursor: null }], pageParams: [undefined] };
+            const queries = queryClient.getQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] });
 
-                const firstPage = oldData.pages[0];
-                const newFirstPage = {
-                    ...firstPage,
-                    posts: [newPost, ...firstPage.posts]
-                };
+            queries.forEach(([queryKey, oldData]) => {
+                if (!oldData) return;
 
-                return {
-                    ...oldData,
-                    pages: [newFirstPage, ...oldData.pages.slice(1)]
-                };
+                const key = queryKey as [string, string, string | undefined, FeedType | undefined];
+                const feedAuthorId = key[2];
+                const feedType = key[3];
+
+                const isMyProfile = feedAuthorId === newPost.author.id;
+                const isGeneralFeed = !feedAuthorId && (feedType === 'FOR_YOU' || feedType === 'FOLLOWING');
+
+                if (isMyProfile || isGeneralFeed) {
+                    queryClient.setQueryData(queryKey, (prev: InfiniteData<FeedPage> | undefined) => {
+                        if (!prev) return { pages: [{ posts: [newPost], nextCursor: null }], pageParams: [undefined] };
+
+                        const firstPage = prev.pages[0];
+                        const newFirstPage = {
+                            ...firstPage,
+                            posts: [newPost, ...firstPage.posts]
+                        };
+
+                        return {
+                            ...prev,
+                            pages: [newFirstPage, ...prev.pages.slice(1)]
+                        };
+                    });
+                }
             });
         },
         onError: (error: Error) => {
@@ -217,7 +233,7 @@ export const useToggleSave = () => {
         onSuccess: (data) => {
             toast.success(data.saved ? "Saved to bookmarks" : "Removed from bookmarks");
 
-            // Update main feed cache (preserving existing logic)
+            // Update main feed cache 
             queryClient.setQueriesData<InfiniteData<FeedPage>>({ queryKey: ["posts", "feed"] }, (oldData) => {
                 if (!oldData) return oldData;
                 return {

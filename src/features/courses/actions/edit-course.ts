@@ -2,26 +2,17 @@
 
 import { requireCreator } from "@/features/creator/queries/require-creator";
 import { ApiResponse } from "@/types/api";
-import {
-  chapterSchema,
-  chapterSchemaType,
-  lessonSchema,
-  lessonSchemaType,
-} from "@/features/courses/schemas";
+import { chapterSchema, chapterSchemaType, lessonSchema, lessonSchemaType } from "@/features/courses/schemas";
 import { courseSchema, CourseSchemaType } from "@/features/courses/schemas";
-import arcjet, { fixedWindow } from "@/lib/arcjet";
 import { revalidatePath } from "next/cache";
-import { request } from "@arcjet/next";
 import { prisma } from "@/lib/db";
 
-const aj = arcjet
-  .withRule(
-    fixedWindow({
-      mode: "LIVE",
-      window: "1m",
-      max: 8,
-    })
-  );
+async function ownsCourse(courseId: string, userId: string) {
+  return !!await prisma.course.findFirst({
+    where: { id: courseId, userId, deletedAt: null },
+    select: { id: true },
+  });
+}
 
 export async function editCourse(
   data: CourseSchemaType,
@@ -30,25 +21,6 @@ export async function editCourse(
   const user = await requireCreator();
 
   try {
-    const req = await request();
-    const decision = await aj.protect(req, {
-      fingerprint: user.user.id,
-    });
-
-    if (decision.isDenied()) {
-      if (decision.reason.isRateLimit()) {
-        return {
-          status: "error",
-          message: "Too many requests. Please try again later.",
-        };
-      } else {
-        return {
-          status: "error",
-          message:
-            "You are a bot! If this is a mistake, please contact support.",
-        };
-      }
-    }
 
     const result = courseSchema.safeParse(data);
     if (!result.success) {
@@ -57,6 +29,8 @@ export async function editCourse(
         message: "Invalid data",
       };
     }
+
+    if (result.data.id && result.data.id !== courseId) return { status: "error", message: "Course identity cannot be changed" };
 
     const existingCourse = await prisma.course.findFirst({
       where: {
@@ -101,9 +75,11 @@ export async function reorderLessons(
   lessons: { id: string; position: number }[],
   courseId: string
 ): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
   try {
-    if (!lessons || lessons.length === 0) {
+    if (!await ownsCourse(courseId, session.user.id)) return { status: "error", message: "Course not found or access denied" };
+    if (!await prisma.chapter.findFirst({ where: { id: chapterId, courseId }, select: { id: true } })) return { status: "error", message: "Chapter not found" };
+    if (!lessons || lessons.length === 0 || lessons.length > 500 || lessons.some(item => !Number.isInteger(item.position) || item.position < 0)) {
       return {
         status: "error",
         message: "No lessons present",
@@ -122,7 +98,7 @@ export async function reorderLessons(
     );
 
     await prisma.$transaction(updates);
-    revalidatePath(`/academy/courses/${courseId}/edit`);
+    revalidatePath(`/academy/creator/courses/${courseId}/edit`);
 
     return {
       status: "success",
@@ -140,9 +116,10 @@ export async function reorderChapters(
   courseId: string,
   chapters: { id: string; position: number }[]
 ): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
   try {
-    if (!chapters || chapters.length === 0) {
+    if (!await ownsCourse(courseId, session.user.id)) return { status: "error", message: "Course not found or access denied" };
+    if (!chapters || chapters.length === 0 || chapters.length > 500 || chapters.some(item => !Number.isInteger(item.position) || item.position < 0)) {
       return {
         status: "error",
         message: "No chapter found for reordering",
@@ -162,7 +139,7 @@ export async function reorderChapters(
     );
 
     await prisma.$transaction(updates);
-    revalidatePath(`/academy/courses/${courseId}/edit`);
+    revalidatePath(`/academy/creator/courses/${courseId}/edit`);
 
     return {
       status: "success",
@@ -179,7 +156,7 @@ export async function reorderChapters(
 export async function createChapter(
   values: chapterSchemaType
 ): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
   try {
     const result = chapterSchema.safeParse(values);
     if (!result.success) {
@@ -188,6 +165,8 @@ export async function createChapter(
         message: "Invalid Data",
       };
     }
+
+    if (!await ownsCourse(result.data.courseId, session.user.id)) return { status: "error", message: "Course not found or access denied" };
 
     await prisma.$transaction(async (tx) => {
       const maxPosition = await tx.chapter.findFirst({
@@ -210,7 +189,7 @@ export async function createChapter(
       });
     });
 
-    revalidatePath(`/academy/courses/${result.data.courseId}/edit`);
+    revalidatePath(`/academy/creator/courses/${result.data.courseId}/edit`);
 
     return {
       status: "success",
@@ -227,7 +206,7 @@ export async function createChapter(
 export async function createLesson(
   values: lessonSchemaType
 ): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
   try {
     const result = lessonSchema.safeParse(values);
     if (!result.success) {
@@ -236,6 +215,15 @@ export async function createLesson(
         message: "Invalid Data",
       };
     }
+
+    const chapter = await prisma.chapter.findFirst({
+      where: { id: result.data.chapterId, courseId: result.data.courseId, course: { userId: session.user.id, deletedAt: null } },
+      select: { id: true },
+    });
+    if (!chapter) return { status: "error", message: "Chapter not found or access denied" };
+
+    // A new lesson has no existing asset namespace. Attach uploads only after creation.
+    if (result.data.videoKey || result.data.thumbnailKey || result.data.resources?.length) return { status: "error", message: "Create the lesson before uploading assets" };
 
     await prisma.$transaction(async (tx) => {
       const maxPosition = await tx.lesson.findFirst({
@@ -261,7 +249,7 @@ export async function createLesson(
       });
     });
 
-    revalidatePath(`/academy/courses/${result.data.courseId}/edit`);
+    revalidatePath(`/academy/creator/courses/${result.data.courseId}/edit`);
 
     return {
       status: "success",
@@ -284,12 +272,14 @@ export async function deleteLesson({
   courseId: string;
   lessonId: string;
 }): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
 
   try {
     const chapterWithLessons = await prisma.chapter.findUnique({
       where: {
         id: chapterId,
+        courseId,
+        course: { userId: session.user.id, deletedAt: null },
       },
       select: {
         lessons: {
@@ -331,11 +321,12 @@ export async function deleteLesson({
 
     await prisma.$transaction([
       ...updates,
+      prisma.cleanupJob.create({ data: { entityType: "ASSET_PREFIX", entityId: lessonId, scheduledAt: new Date(), prefixes: [`courses/${courseId}/lessons/${lessonId}/`] } }),
       prisma.lesson.delete({
         where: { id: lessonId, chapterId: chapterId },
       }),
     ]);
-    revalidatePath(`/academy/courses/${courseId}/edit`);
+    revalidatePath(`/academy/creator/courses/${courseId}/edit`);
 
     return {
       status: "success",
@@ -357,12 +348,14 @@ export async function deleteChapter({
   chapterId: string;
   courseId: string;
 }): Promise<ApiResponse> {
-  await requireCreator();
+  const session = await requireCreator();
 
   try {
     const courseWithChapters = await prisma.course.findUnique({
       where: {
         id: courseId,
+        userId: session.user.id,
+        deletedAt: null,
       },
       select: {
         chapter: {
@@ -372,6 +365,7 @@ export async function deleteChapter({
           select: {
             id: true,
             position: true,
+            lessons: { select: { id: true } },
           },
         },
       },
@@ -408,11 +402,12 @@ export async function deleteChapter({
 
     await prisma.$transaction([
       ...updates,
+      ...(chapterToDelete.lessons.length ? [prisma.cleanupJob.create({ data: { entityType: "ASSET_PREFIX", entityId: chapterId, scheduledAt: new Date(), prefixes: chapterToDelete.lessons.map(lesson => `courses/${courseId}/lessons/${lesson.id}/`) } })] : []),
       prisma.chapter.delete({
         where: { id: chapterId },
       }),
     ]);
-    revalidatePath(`/academy/courses/${courseId}/edit`);
+    revalidatePath(`/academy/creator/courses/${courseId}/edit`);
 
     return {
       status: "success",

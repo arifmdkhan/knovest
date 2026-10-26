@@ -3,27 +3,17 @@
 import { useEffect, useState } from "react";
 import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Trash2, Link, Edit, Globe, Lock, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/components/NavigationProvider";
 import { authClient } from "@/lib/auth-client";
 import { deleteStream } from "@/features/media/actions/stream.action";
 import { CreateStreamDialog } from "./CreateStreamDialog";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 import { hasUserPaidForStream } from "@/features/media/actions/check-stream-access.action";
 
@@ -31,77 +21,35 @@ import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { useTradeRoomContext } from "./TradeRoomContext";
 import { CustomCallData } from "@/types/stream";
 
+import { useRoomHosts } from "./useRoomHosts";
+import { openRoomTab } from "@/lib/open-room-tab";
+
 interface StreamListProps {
     type: "live" | "upcoming" | "my-streams" | "all-video";
     initialData?: Call[];
 }
 
-export function StreamCardSkeleton() {
-    return (
-        <Card className="overflow-hidden border-zinc-200/50 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 h-full flex flex-col">
-            <div className="aspect-video bg-zinc-100 dark:bg-zinc-900/50 relative flex items-center justify-center">
-                <Skeleton className="h-12 w-12 rounded-full opacity-20" />
-            </div>
-            <CardHeader className="p-4 space-y-3 flex-1">
-                <div className="flex items-start justify-between gap-4">
-                    <Skeleton className="h-5 w-3/4 rounded-md" />
-                    <Skeleton className="h-5 w-12 rounded-full" />
-                </div>
-                <div className="flex items-center gap-3 pt-2">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <div className="flex flex-col gap-2 flex-1">
-                        <Skeleton className="h-3 w-24 rounded-md" />
-                        <Skeleton className="h-2 w-16 rounded-md" />
-                    </div>
-                </div>
-            </CardHeader>
-            <CardFooter className="p-4 pt-0 gap-2">
-                <Skeleton className="h-9 flex-1 rounded-md" />
-                <Skeleton className="h-9 w-9 rounded-md" />
-            </CardFooter>
-        </Card>
-    );
-}
+
 
 export function StreamList({ type, initialData }: StreamListProps) {
     const client = useStreamVideoClient();
     const router = useRouter();
     const { data: session } = authClient.useSession();
     const [calls, setCalls] = useState<Call[]>(initialData || []);
+    const [now, setNow] = useState<number | null>(null);
+    useEffect(() => {
+        const update = () => setNow(Date.now());
+        update();
+        const timer = setInterval(update, 30_000);
+        return () => clearInterval(timer);
+    }, []);
     const [isLoading, setIsLoading] = useState(!initialData);
     const [editingCall, setEditingCall] = useState<Call | null>(null);
     const [paidStreamIds, setPaidStreamIds] = useState<Set<string>>(new Set());
-    // Store manually fetched user data to ensure valid usernames/badges
-    const [creatorsData, setCreatorsData] = useState<Record<string, any>>({});
+    const creatorsData = useRoomHosts(calls);
 
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
-
-    // Fetch creator details from Chat Client to ensure fresh data (username, badges)
-    useEffect(() => {
-        if (!chatClient || calls.length === 0) return;
-
-        const fetchCreators = async () => {
-            const creatorIds = Array.from(new Set(calls.map(c => (c.state.createdBy as any)?.id).filter(Boolean)));
-            // Only fetch what we don't have
-            const missingIds = creatorIds.filter(id => !creatorsData[id]);
-
-            if (missingIds.length === 0) return;
-
-            try {
-                const { users } = await chatClient.queryUsers({ id: { $in: missingIds } });
-                setCreatorsData(prev => {
-                    const next = { ...prev };
-                    users.forEach(u => next[u.id] = u);
-                    return next;
-                });
-            } catch (err) {
-                console.error("Failed to fetch stream creators", err);
-            }
-        };
-
-        fetchCreators();
-    }, [calls, chatClient]); // Intentionally omitting creatorsData to treat it as cache-first logic, and calls update triggers re-check.
 
     useEffect(() => {
         if (!client || !chatClient || (type !== 'my-streams' && isLoadingGroups)) return;
@@ -251,7 +199,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
     if (isLoading) {
         return (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="session-grid">
                 {Array.from({ length: 4 }).map((_, i) => (
                     <StreamCardSkeleton key={i} />
                 ))}
@@ -277,7 +225,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
     return (
         <>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="session-grid">
                 {calls.map((call) => {
                     const isCreator = call.state.createdBy?.id === chatClient?.userID;
                     const customData = (call.state.custom || {}) as CustomCallData;
@@ -314,15 +262,15 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
                     const startTime = call.state.startsAt ? new Date(call.state.startsAt).getTime() :
                         (call.state.startedAt ? new Date(call.state.startedAt).getTime() :
-                            (call.state.createdAt ? new Date(call.state.createdAt).getTime() : Date.now()));
+                            (call.state.createdAt ? new Date(call.state.createdAt).getTime() : (now ?? 0)));
 
-                    const timeDiff = Date.now() - startTime;
-                    const isWindowOpen = isPaidStream && (timeDiff <= 15 * 60 * 1000 || timeDiff < 0);
+                    const timeDiff = (now ?? 0) - startTime;
+                    const isWindowOpen = now !== null && isPaidStream && timeDiff <= 15 * 60 * 1000;
 
                     return (
-                        <Card key={call.id} className="group overflow-hidden border-zinc-200/80 bg-white hover:bg-zinc-50 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-violet-500/30 dark:hover:bg-zinc-900 dark:hover:shadow-2xl dark:hover:shadow-violet-900/20 transition-all duration-300 p-0 gap-0 h-full flex flex-col">
+                        <Card key={call.id} className="session-card group min-w-0 overflow-hidden border-zinc-200/80 bg-white hover:bg-zinc-50 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-violet-500/30 dark:hover:bg-zinc-900 dark:hover:shadow-2xl dark:hover:shadow-violet-900/20 transition-all duration-300 p-0 gap-0 h-full flex flex-col">
                             <div className="aspect-video bg-zinc-100 dark:bg-zinc-950 relative flex items-center justify-center overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 group-hover:scale-110 transition-transform duration-700 ease-out" />
+                                <div className="absolute inset-0 bg-linear-to-br from-violet-500/10 to-fuchsia-500/10 group-hover:scale-110 transition-transform duration-700 ease-out" />
                                 <Play className="h-12 w-12 text-zinc-300 dark:text-zinc-800 group-hover:text-violet-500/50 transition-colors duration-300 relative z-0" />
 
                                 <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 items-end">
@@ -369,7 +317,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-1.5 bg-blue-600/90 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md shadow-lg">
-                                            SCHEDULED
+                                            {call.state.endedAt ? "ENDED" : "SCHEDULED"}
                                         </div>
                                     )}
                                 </div>
@@ -389,15 +337,16 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                     </p>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-1">
+                                <div className="flex min-w-0 items-center justify-between pt-1">
                                     {(() => {
                                         const creatorId = (call.state.createdBy as any)?.id;
                                         const creator = (creatorId && creatorsData[creatorId]) || call.state.createdBy;
 
                                         return (
                                             <UserAvatarWithInfo
-                                                name={creator?.name || "Unknown"}
-                                                username={creator?.username || creator?.custom?.username || "user"}
+                                                className="min-w-0 flex-1"
+                                                name={creator?.name || "Host"}
+                                                username={creator?.username || creator?.custom?.username || null}
                                                 image={creator?.image || null}
                                                 expertVerificationType={creator?.expertVerificationType || creator?.custom?.expertVerificationType}
                                                 accountVerificationType={creator?.accountVerificationType || creator?.custom?.accountVerificationType}
@@ -408,15 +357,15 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                 </div>
                             </CardHeader>
 
-                            <CardFooter className="p-4 pt-0 gap-2">
+                            <CardFooter className="session-card-footer p-4 pt-0 gap-2">
                                 <Button
-                                    className={`flex-1 text-white shadow-md border-0 h-9 text-sm font-medium transition-all active:scale-95 ${hasAccess ? "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-violet-500/20" :
-                                        (isWindowOpen ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/20" : "bg-zinc-400 cursor-not-allowed")
+                                    className={`flex-1 text-white shadow-md border-0 h-9 text-sm font-medium transition-all active:scale-95 ${hasAccess ? "bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-violet-500/20" :
+                                        (isWindowOpen ? "bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/20" : "bg-zinc-400 cursor-not-allowed")
                                         }`}
-                                    disabled={!hasAccess && !isWindowOpen}
+                                    disabled={!!call.state.endedAt || (!hasAccess && !isWindowOpen)}
                                     onClick={() => {
                                         if (hasAccess) {
-                                            window.open(`/trade-room/${call.id}`, '_blank');
+                                            if (!openRoomTab(`/trade-room/${call.id}`)) toast.error("Allow Knovest to open a new tab, then try again.");
                                         } else if (isWindowOpen) {
                                             if (customData.isPaid) {
                                                 router.push(`/trade-room/payment/${call.id}`);
@@ -425,7 +374,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
                                     }}
                                 >
                                     <Play className="h-3.5 w-3.5 mr-2 fill-current" />
-                                    {hasAccess ? "Join Stream" : (
+                                    {call.state.endedAt ? "Ended" : hasAccess ? "Join Stream" : (
                                         isWindowOpen ? `Pay ₹${price} to Join` : "Access Closed"
                                     )}
                                 </Button>
@@ -477,5 +426,33 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
 
         </>
+    );
+}
+
+
+function StreamCardSkeleton() {
+    return (
+        <Card className="overflow-hidden border-zinc-200/50 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 h-full flex flex-col">
+            <div className="aspect-video bg-zinc-100 dark:bg-zinc-900/50 relative flex items-center justify-center">
+                <Skeleton className="h-12 w-12 rounded-full opacity-20" />
+            </div>
+            <CardHeader className="p-4 space-y-3 flex-1">
+                <div className="flex items-start justify-between gap-4">
+                    <Skeleton className="h-5 w-3/4 rounded-md" />
+                    <Skeleton className="h-5 w-12 rounded-full" />
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex flex-col gap-2 flex-1">
+                        <Skeleton className="h-3 w-24 rounded-md" />
+                        <Skeleton className="h-2 w-16 rounded-md" />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardFooter className="session-card-footer p-4 pt-0 gap-2">
+                <Skeleton className="h-9 flex-1 rounded-md" />
+                <Skeleton className="h-9 w-9 rounded-md" />
+            </CardFooter>
+        </Card>
     );
 }

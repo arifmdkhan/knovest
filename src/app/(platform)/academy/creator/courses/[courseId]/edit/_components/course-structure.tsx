@@ -2,15 +2,15 @@
 
 import { CreatorCourseSingularType } from '@/features/creator/queries/creator-get-course';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { DndContext, DragEndEvent, DraggableSyntheticListeners, KeyboardSensor, PointerSensor, rectIntersection, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DraggableSyntheticListeners, KeyboardSensor, PointerSensor, rectIntersection, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, ChevronRight, DeleteIcon, FileText, GripVertical, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronDown, ChevronRight, FileText, GripVertical } from 'lucide-react';
+import Link from "@/components/AppLink";
 import { title } from 'process';
 import { ReactNode, useEffect, useState } from 'react';
 import { toast } from 'sonner';

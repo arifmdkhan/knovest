@@ -3,28 +3,35 @@
 import { prisma as db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { VerificationStatus } from "@/generated/prisma/enums";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getServerSession } from "@/lib/get-sessions";
 import { ApiResponse } from "@/types/api";
 import { VerificationApplicationInput } from "../types";
+import { z } from "zod";
+import { isCanonicalKey } from "@/lib/storage/asset-keys";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
-// --- Types ---
+const text = z.string().max(200);
+const document = z.string().max(1000);
+const draftSchema = z.object({
+  fullName: text.optional(), dateOfBirth: z.date().optional(), nationality: text.optional(), state: text.optional(),
+  panNumber: z.string().max(10).optional(), mobileNumber: z.string().max(20).optional(),
+  isSebiRegistered: z.boolean().optional(), sebiLicenseType: text.optional(), sebiRegNumber: text.optional(), sebiRegName: text.optional(),
+  sebiCertUrl: document.optional(), sebiExpiry: z.date().optional(), hasCertifications: z.boolean().optional(),
+  certifications: z.array(z.object({ name: text, issuingAuthority: text.optional(), completionYear: z.number().int().min(1900).max(2100).optional(), certNumber: text.optional(), expiryDate: z.date().optional(), certUrl: document.optional() })).max(20).optional(),
+  brokerPnls: z.array(z.object({ brokerName: text, pnlLink: z.string().max(2000).refine(value => !value || /^https?:\/\//i.test(value)), accountHolder: text, fileUrl: document.optional() })).max(10).optional(),
+  hasAgreedToTerms: z.boolean().optional(),
+});
 
-
-
-// --- Actions ---
 
 /**
  * Gets the current user's verification application status
  */
 export async function getVerificationStatus(): Promise<ApiResponse<{
   status: VerificationStatus | null;
-  application: any; // Ideally this would be a generated type from Prisma
+  application: any; // will use prisma generated type later
   user: { name: string; email: string };
 }>> {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     return { status: "error", message: "Unauthorized" };
@@ -56,14 +63,12 @@ export async function getVerificationStatus(): Promise<ApiResponse<{
 
 /**
  * Creates or updates a draft application
- * This function saves progress as the user moves through steps.
+ * 
  */
 export async function saveApplicationDraft(
   data: VerificationApplicationInput
 ): Promise<ApiResponse<{ applicationId: string; status: VerificationStatus }>> {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     return { status: "error", message: "Unauthorized" };
@@ -72,16 +77,24 @@ export async function saveApplicationDraft(
   const user = session.user;
 
   try {
+    await enforceRateLimit(`verification:${user.id}`, 20);
+    const parsed = draftSchema.safeParse(data);
+    if (!parsed.success) return { status: "error", message: "Invalid application data" };
+    data = parsed.data;
+    const documents = [data.sebiCertUrl, ...(data.certifications || []).map(item => item.certUrl), ...(data.brokerPnls || []).map(item => item.fileUrl)].filter(Boolean) as string[];
+    if (documents.some(key => !isCanonicalKey(key) || !key.startsWith(`documents/users/${user.id}/`) || !key.endsWith(".pdf"))) {
+      return { status: "error", message: "Documents must belong to your account" };
+    }
     const existing = await db.verificationApplication.findUnique({
       where: { userId: user.id },
     });
 
-    if (existing && existing.status === "PENDING") {
+    if (existing && (existing.status === "PENDING" || existing.status === "APPROVED")) {
       return { status: "error", message: "Application is under review" };
     }
 
     if (existing && existing.status === "REJECTED") {
-      return { status: "error", message: "Application was rejected. You can re-apply after 3 months." };
+      return { status: "error", message: "Application was rejected. Contact support about a review." };
     }
 
     // Helper to handle nested updates/creates for repeatable fields
@@ -109,7 +122,7 @@ export async function saveApplicationDraft(
 
 
     const application = await db.verificationApplication.upsert({
-      where: { userId: user.id },
+      where: { userId: user.id, status: "DRAFT" },
       create: {
         userId: user.id,
         status: "DRAFT",
@@ -130,7 +143,6 @@ export async function saveApplicationDraft(
         hasCertifications: data.hasCertifications,
         certifications: certificationOps ? { create: certificationOps.create } : undefined,
 
-        pnlVerified: data.pnlVerified,
         brokerPnls: pnlOps ? { create: pnlOps.create } : undefined,
 
         hasAgreedToTerms: data.hasAgreedToTerms,
@@ -153,7 +165,6 @@ export async function saveApplicationDraft(
         ...(data.hasCertifications !== undefined && { hasCertifications: data.hasCertifications }),
         ...(data.certifications !== undefined && { certifications: certificationOps }),
 
-        ...(data.pnlVerified !== undefined && { pnlVerified: data.pnlVerified }),
         ...(data.brokerPnls !== undefined && { brokerPnls: pnlOps }),
 
         ...(data.hasAgreedToTerms !== undefined && { hasAgreedToTerms: data.hasAgreedToTerms }),
@@ -179,9 +190,7 @@ export async function saveApplicationDraft(
  * Submits the application for review
  */
 export async function submitApplication(applicationId: string): Promise<ApiResponse<{ status: VerificationStatus }>> {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     return { status: "error", message: "Unauthorized" };
@@ -203,12 +212,23 @@ export async function submitApplication(applicationId: string): Promise<ApiRespo
       return { status: "error", message: "Application not found" };
     }
 
+    if (application.status !== "DRAFT") return { status: "error", message: "Only a draft application can be submitted" };
+
     // 2. Validate Required Fields (SERVER SIDE ENFORCEMENT)
     const errors: string[] = [];
     if (!application.fullName) errors.push("Full Name is required");
+    if (!application.hasAgreedToTerms) errors.push("Accept the verification terms before submitting");
     if (!application.panNumber) errors.push("PAN Number is required");
+    if (!application.panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(application.panNumber)) errors.push("A valid PAN is required");
+    if (!application.mobileNumber || !/^[0-9]{10}$/.test(application.mobileNumber)) errors.push("A valid mobile number is required");
+    if (!application.nationality || !application.state) errors.push("Nationality and state are required");
+    const birth = application.dateOfBirth && new Date(application.dateOfBirth);
+    const adultOn = birth && new Date(birth.getFullYear() + 18, birth.getMonth(), birth.getDate());
+    if (!adultOn || adultOn > new Date()) errors.push("You must be at least 18 years old");
     if (application.isSebiRegistered === null) errors.push("SEBI Registration status required");
     if (application.isSebiRegistered && !application.sebiCertUrl) errors.push("SEBI Certificate upload is required");
+    const documents = [application.sebiCertUrl, ...application.certifications.map(item => item.certUrl), ...application.brokerPnls.map(item => item.fileUrl)].filter(Boolean) as string[];
+    if (documents.some(key => !isCanonicalKey(key) || !key.startsWith(`documents/users/${user.id}/`) || !key.endsWith(".pdf"))) errors.push("Re-upload documents to your account before submitting");
 
     if (application.hasCertifications) {
       if (!application.certifications || application.certifications.length === 0) {
@@ -233,13 +253,14 @@ export async function submitApplication(applicationId: string): Promise<ApiRespo
     }
 
     // 3. Update Status
-    await db.verificationApplication.update({
-      where: { id: applicationId },
+    const updated = await db.verificationApplication.updateMany({
+      where: { id: applicationId, userId: user.id, status: "DRAFT" },
       data: {
         status: "PENDING",
         submittedAt: new Date()
       }
     });
+    if (updated.count !== 1) return { status: "error", message: "Application changed. Refresh and try again." };
 
     revalidatePath("/verification");
     return { status: "success", message: "Application submitted successfully", data: { status: "PENDING" as VerificationStatus } };

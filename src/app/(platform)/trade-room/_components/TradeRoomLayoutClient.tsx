@@ -17,8 +17,6 @@ interface TradeRoomLayoutClientProps {
 export default function TradeRoomLayoutClient({ children, user }: TradeRoomLayoutClientProps) {
     const [myGroupIds, setMyGroupIds] = useState<string[]>([]);
     const [isLoadingGroups, setIsLoadingGroups] = useState(true);
-
-    // We expect the Chat context to be provided by the global PlatformStreamProvider
     const { client: chatClient } = useChatContext();
 
     useEffect(() => {
@@ -26,10 +24,6 @@ export default function TradeRoomLayoutClient({ children, user }: TradeRoomLayou
 
         const fetchGroups = async () => {
             try {
-                // Ensure client is connected? Global provider handles this.
-                // But we should check if userID matches just in case? 
-                // Context client is stable.
-
                 const channels = await chatClient.queryChannels(
                     {
                         type: 'messaging',
@@ -48,12 +42,6 @@ export default function TradeRoomLayoutClient({ children, user }: TradeRoomLayou
         fetchGroups();
     }, [chatClient, user.id]);
 
-    // If chatClient is not available (e.g. global provider loading), we might show loader.
-    // But global provider shows loader while init.
-    // So chatClient should be ready here if this component is rendered.
-    // UNLESS stream-chat-react context behaves differently.
-    // It should be fine.
-
     if (!chatClient) {
         // Fallback safety
         return (
@@ -65,7 +53,7 @@ export default function TradeRoomLayoutClient({ children, user }: TradeRoomLayou
 
     return (
         <TradeRoomProvider value={{ myGroupIds, isLoadingGroups }}>
-            <div className="w-full bg-background rounded-lg">
+            <div className="trade-room-content w-full min-w-0 bg-background rounded-lg">
                 {children}
             </div>
         </TradeRoomProvider>

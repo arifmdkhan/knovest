@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 import { ApiResponse } from "@/types/api";
 
-export async function purchaseStreamAccess(streamId: string, price: number): Promise<ApiResponse> {
+export async function purchaseStreamAccess(streamId: string): Promise<ApiResponse> {
     try {
         const session = await getServerSession();
 
@@ -27,34 +27,7 @@ export async function purchaseStreamAccess(streamId: string, price: number): Pro
             return { status: "success", message: "Already purchased" };
         }
 
-        console.log(`Processing payment of ${price} for stream ${streamId} by user ${session.user.id}`);
-
-        await prisma.streamAccess.create({
-            data: {
-                userId: session.user.id,
-                streamId: streamId,
-                amount: price,
-            }
-        });
-
-        try {
-            const { StreamClient } = await import("@stream-io/node-sdk");
-            const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
-            const secret = process.env.STREAM_API_SECRET!;
-            const client = new StreamClient(apiKey, secret);
-
-            const call = client.video.call("livestream", streamId);
-            await call.updateCallMembers({
-                update_members: [{ user_id: session.user.id, role: "user" }]
-            });
-            console.log(`Added user ${session.user.id} to members of stream ${streamId}`);
-        } catch (streamError) {
-            console.error("Failed to update Stream backend permissions", streamError);
-        }
-
-        revalidatePath("/trade-room");
-        revalidatePath(`/trade-room/${streamId}`);
-        return { status: "success", message: "Access purchased" };
+        return { status: "error", message: "Payments are not available yet. Access requires a verified payment." };
 
     } catch (error: unknown) {
         console.error("Purchase failed:", error);
@@ -62,26 +35,7 @@ export async function purchaseStreamAccess(streamId: string, price: number): Pro
     }
 }
 
-export async function checkStreamAccess(streamId: string): Promise<ApiResponse<boolean>> {
-    try {
-        const session = await getServerSession();
-        if (!session?.user) return { status: "success", message: "Unauthorized", data: false };
 
-        const access = await prisma.streamAccess.findUnique({
-            where: {
-                userId_streamId: {
-                    userId: session.user.id,
-                    streamId: streamId,
-                }
-            }
-        });
-
-        return { status: "success", message: "Access status fetched", data: !!access };
-    } catch (error) {
-        console.error("Check Stream Access Error:", error);
-        return { status: "error", message: "Failed to check access" };
-    }
-}
 
 export async function revokeStreamAccess(streamId: string, userId: string): Promise<ApiResponse> {
     try {
@@ -148,6 +102,12 @@ export async function getStreamAccessDetails(
     const PAGE_SIZE = 15;
 
     try {
+        const { StreamClient } = await import("@stream-io/node-sdk");
+        const client = new StreamClient(process.env.NEXT_PUBLIC_STREAM_API_KEY!, process.env.STREAM_API_SECRET!);
+        const { call } = await client.video.call("livestream", streamId).get();
+        if (call.created_by.id !== session.user.id) return { status: "error", message: "Unauthorized" };
+        manualUserIds = Array.isArray(call.custom?.allowedUserIds) ? call.custom.allowedUserIds.map(String).slice(0, 100) : [];
+        page = Math.min(10000, Math.max(1, Math.trunc(page) || 1));
         const paidAccessRecords = await prisma.streamAccess.findMany({
             where: { streamId },
             include: { user: true },
