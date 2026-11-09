@@ -1,5 +1,8 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryFeedback } from "@/components/QueryFeedback";
+
 import { useEffect, useState } from "react";
 import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
@@ -35,7 +38,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
     const client = useStreamVideoClient();
     const router = useRouter();
     const { data: session } = authClient.useSession();
-    const [calls, setCalls] = useState<Call[]>(initialData || []);
+    const queryClient = useQueryClient();
     const [now, setNow] = useState<number | null>(null);
     useEffect(() => {
         const update = () => setNow(Date.now());
@@ -43,20 +46,22 @@ export function StreamList({ type, initialData }: StreamListProps) {
         const timer = setInterval(update, 30_000);
         return () => clearInterval(timer);
     }, []);
-    const [isLoading, setIsLoading] = useState(!initialData);
     const [editingCall, setEditingCall] = useState<Call | null>(null);
     const [paidStreamIds, setPaidStreamIds] = useState<Set<string>>(new Set());
-    const creatorsData = useRoomHosts(calls);
 
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
 
-    useEffect(() => {
-        if (!client || !chatClient || (type !== 'my-streams' && isLoadingGroups)) return;
-
-        const fetchCalls = async () => {
-            setIsLoading(true);
-            try {
+    const query = useQuery({
+        queryKey: ["room-calls", "video", type, session?.user?.id, [...myGroupIds].sort()],
+        enabled: !!client && !!chatClient && !!session?.user?.id && (type === "my-streams" || !isLoadingGroups),
+        initialData,
+        // SDK Call instances are mutable class objects, not JSON data.
+        structuralSharing: false,
+        gcTime: 5 * 60_000,
+        refetchInterval: 30_000,
+        queryFn: async () => {
+            if (!client || !chatClient) throw new Error("Room connection unavailable");
                 let filter_conditions: { [key: string]: any } = { type: 'livestream' };
                 let sort: { field: string; direction: number }[] = [{ field: 'starts_at', direction: -1 }];
 
@@ -84,9 +89,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
                 } else if (type === 'my-streams') {
                     const userId = session?.user?.id;
                     if (!userId) {
-                        setCalls([]);
-                        setIsLoading(false);
-                        return;
+                        return [];
                     }
 
                     filter_conditions = {
@@ -105,7 +108,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
                 });
 
                 if (type === 'my-streams') {
-                    setCalls(fetchedCalls);
+                    return fetchedCalls;
                 } else {
                     const visibleCalls = fetchedCalls.filter(call => {
                         const custom = (call.state.custom || {}) as CustomCallData;
@@ -139,18 +142,15 @@ export function StreamList({ type, initialData }: StreamListProps) {
                         return false;
                     });
 
-                    setCalls(visibleCalls);
+                    return visibleCalls;
                 }
 
-            } catch (error: unknown) {
-                console.error("Failed to fetch calls", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchCalls();
-    }, [client, chatClient, type, session?.user?.id, myGroupIds, isLoadingGroups]);
+        },
+    });
+    const calls = query.data || [];
+    const isLoading = query.isPending;
+    const creatorsData = useRoomHosts(calls);
+    const feedback = <QueryFeedback {...query} hasData={query.data !== undefined} />;
 
     useEffect(() => {
         if (!session?.user?.id || calls.length === 0) return;
@@ -184,7 +184,8 @@ export function StreamList({ type, initialData }: StreamListProps) {
         try {
             await deleteStream({ type: call.type, id: call.id });
             toast.success("Stream deleted successfully");
-            setCalls((prev) => prev.filter((c) => c.id !== call.id));
+            queryClient.setQueriesData<Call[]>({ queryKey: ["room-calls"] }, previous => previous?.filter(c => c.id !== call.id));
+            void queryClient.invalidateQueries({ queryKey: ["room-calls"] });
         } catch (error) {
             console.error("Failed to delete stream", error);
             toast.error("Failed to delete stream");
@@ -196,6 +197,8 @@ export function StreamList({ type, initialData }: StreamListProps) {
         navigator.clipboard.writeText(url);
         toast.success("Stream link copied");
     };
+
+    if (!query.data && query.isError) return feedback;
 
     if (isLoading) {
         return (
@@ -210,6 +213,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
     if (calls.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+                {feedback}
                 <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
                     <Play className="h-8 w-8 text-zinc-400" />
                 </div>
@@ -225,6 +229,7 @@ export function StreamList({ type, initialData }: StreamListProps) {
 
     return (
         <>
+            {feedback}
             <div className="session-grid">
                 {calls.map((call) => {
                     const isCreator = call.state.createdBy?.id === chatClient?.userID;

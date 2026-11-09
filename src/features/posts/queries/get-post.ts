@@ -1,12 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 
-import { notFound } from "next/navigation";
 import { FeedPost } from "@/types/post";
 import { getServerSession } from "@/lib/get-sessions";
 import { readablePostWhere, postMediaUrl } from "@/features/posts/access";
 
-export async function getPost(postId: string): Promise<FeedPost> {
+export async function getPost(postId: string): Promise<FeedPost | null> {
     const session = await getServerSession();
     const userId = session?.user?.id;
 
@@ -31,7 +30,7 @@ export async function getPost(postId: string): Promise<FeedPost> {
     });
 
     if (!post) {
-        notFound();
+        return null;
     }
 
     const formattedPost: FeedPost = {

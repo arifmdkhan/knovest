@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { FeedCard } from "./FeedCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +8,7 @@ import { useGetPosts, FeedType } from "@/hooks/use-post";
 import { EmptyFeedState } from "./EmptyFeedState";
 import { useInView } from "react-intersection-observer";
 
+import { QueryFeedback } from "@/components/QueryFeedback";
 import { FeedPost } from "@/types/post";
 
 export function InfiniteFeed({ type = 'FOR_YOU', initialData }: { type?: FeedType, initialData?: { posts: FeedPost[], nextCursor?: string } }) {
@@ -16,8 +17,11 @@ export function InfiniteFeed({ type = 'FOR_YOU', initialData }: { type?: FeedTyp
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
     isPending,
     status,
+    isFetching,
+    refetch,
   } = useGetPosts(undefined, type, initialData);
 
   // Flatten pages into a single array of posts
@@ -28,28 +32,24 @@ export function InfiniteFeed({ type = 'FOR_YOU', initialData }: { type?: FeedTyp
   const { ref, inView } = useInView();
 
   // Load more when the loader comes into view
-  if (inView && hasNextPage && !isFetchingNextPage) {
-    fetchNextPage();
-  }
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetching && !isFetchNextPageError) void fetchNextPage();
+  }, [inView, hasNextPage, isFetching, isFetchNextPageError, fetchNextPage]);
 
   if (isPending) {
     return <FeedSkeleton />;
   }
 
-  if (status === "error") {
-    return (
-      <div className="py-10 text-center text-muted-foreground">
-        Failed to load feed. Please try again.
-      </div>
-    );
-  }
+  const feedback = <QueryFeedback isError={status === "error"} isFetching={isFetching} hasData={!!data} refetch={refetch} />;
+  if (!data) return feedback;
 
   if (allPosts.length === 0) {
-    return <EmptyFeedState type={type} />;
+    return <>{feedback}<EmptyFeedState type={type} /></>;
   }
 
   return (
     <div className="space-y-6 pb-8">
+      {feedback}
       {allPosts.map((post, index) => (
         <FeedCard key={post.id} post={post} priority={index === 0} />
       ))}

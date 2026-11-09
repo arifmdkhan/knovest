@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, useTransition } from "react";
+import { QueryClientContext } from "@tanstack/react-query";
 import { useRouter as useNextRouter } from "next/navigation";
 
 const NavigationContext = createContext<{
@@ -38,6 +39,7 @@ export function useNavigationFeedback() {
 /** Keep the native router API; track its transitions for button-driven navigation too. */
 export function useRouter() {
     const router = useNextRouter();
+    const queryClient = useContext(QueryClientContext);
     const { startNavigation } = useNavigationFeedback();
     return useMemo(() => ({
         ...router,
@@ -45,6 +47,9 @@ export function useRouter() {
         replace: (...args: Parameters<typeof router.replace>) => startNavigation(() => router.replace(...args)),
         back: () => startNavigation(() => router.back()),
         forward: () => startNavigation(() => router.forward()),
-        refresh: () => startNavigation(() => router.refresh()),
-    }), [router, startNavigation]);
+        refresh: () => {
+            void queryClient?.invalidateQueries();
+            startNavigation(() => router.refresh());
+        },
+    }), [router, startNavigation, queryClient]);
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,7 @@ interface CreateStreamDialogProps {
 export function CreateStreamDialog({ open, onOpenChange, initialScheduled = false, editCall }: CreateStreamDialogProps) {
     const client = useStreamVideoClient();
     const { client: chatClient } = useChatContext();
+    const queryClient = useQueryClient();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [permissionType, setPermissionType] = useState<"everyone" | "group">("everyone");
@@ -170,6 +173,7 @@ export function CreateStreamDialog({ open, onOpenChange, initialScheduled = fals
                 }
             }
 
+            void queryClient.invalidateQueries({ queryKey: ["room-calls"] });
             onOpenChange(false);
 
         } catch (error: unknown) {

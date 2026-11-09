@@ -57,3 +57,27 @@ next-env.d.ts
 /test-results/
 /tmp/
 *.log
+
+# Local archives, design references and internal working notes
+/.local/
+/designs/
+/docs/private/
+/docs/AUDIT-*.md
+/docs/BUDGET-*.md
+/docs/REMEDIATION-*.md
+/docs/REVISION-NOTES.md
+
+# Local backups and diagnostic captures; keep Prisma SQL migrations tracked
+/.backups/
+/backups/
+*.bak
+*.dump
+*.sql.gz
+*.har
+*.heapsnapshot
+*.cpuprofile
+
+# Personal editor and package-manager state
+/.idea/
+*.code-workspace
+/.pnpm-store/

@@ -1,10 +1,10 @@
 import { Users, UserCheck, BookOpen } from "lucide-react";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { creatorGetDashboardStats } from "@/features/creator/queries/creator-get-dashboard-stats";
+import type { creatorGetDashboardStats } from "@/features/creator/queries/creator-get-dashboard-stats";
 
 
-export async function SectionCards() {
-  const { totalSubscriptions, totalEnrollments, totalCourses } = await creatorGetDashboardStats()
+export function SectionCards({ stats }: { stats: Awaited<ReturnType<typeof creatorGetDashboardStats>> }) {
+  const { totalSubscriptions, totalEnrollments, totalCourses } = stats;
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

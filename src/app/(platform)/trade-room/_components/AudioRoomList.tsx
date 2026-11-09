@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryFeedback } from "@/components/QueryFeedback";
+
+import { useState } from "react";
 import { useStreamVideoClient, Call } from "@stream-io/video-react-sdk";
 import { useChatContext } from "stream-chat-react";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,21 +33,23 @@ interface AudioRoomListProps {
 export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
     const client = useStreamVideoClient();
     const { data: session } = authClient.useSession();
-    const [calls, setCalls] = useState<Call[]>(initialData || []);
-    const [isLoading, setIsLoading] = useState(!initialData);
+    const queryClient = useQueryClient();
     const [editingCall, setEditingCall] = useState<Call | null>(null);
 
     const { client: chatClient } = useChatContext();
     const { myGroupIds, isLoadingGroups } = useTradeRoomContext();
 
-    const creatorsData = useRoomHosts(calls);
 
-    useEffect(() => {
-        if (!client || !chatClient || (type !== 'my-rooms' && isLoadingGroups)) return;
-
-        const fetchCalls = async () => {
-            setIsLoading(true);
-            try {
+    const query = useQuery({
+        queryKey: ["room-calls", "audio", type, session?.user?.id, [...myGroupIds].sort()],
+        enabled: !!client && !!chatClient && !!session?.user?.id && (type === "my-rooms" || !isLoadingGroups),
+        initialData,
+        // SDK Call instances are mutable class objects, not JSON data.
+        structuralSharing: false,
+        gcTime: 5 * 60_000,
+        refetchInterval: 30_000,
+        queryFn: async () => {
+            if (!client || !chatClient) throw new Error("Room connection unavailable");
                 let filter_conditions: { [key: string]: any } = { type: 'audio_room' };
                 let sort: { field: string; direction: number }[] = [{ field: 'starts_at', direction: -1 }];
 
@@ -63,9 +68,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                     const userId = session?.user?.id;
 
                     if (!userId) {
-                        setCalls([]);
-                        setIsLoading(false);
-                        return;
+                        return [];
                     }
 
                     filter_conditions = {
@@ -82,7 +85,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                 });
 
                 if (type === 'my-rooms') {
-                    setCalls(calls);
+                    return calls;
                 } else {
                     const accessibleCalls = calls.filter(call => {
                         const custom = call.state.custom;
@@ -118,24 +121,22 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
                         }
                         return false;
                     });
-                    setCalls(accessibleCalls);
+                    return accessibleCalls;
                 }
 
-            } catch (error: any) {
-                console.error("Failed to fetch audio rooms", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchCalls();
-    }, [client, chatClient, type, session?.user?.id, myGroupIds, isLoadingGroups]);
+        },
+    });
+    const calls = query.data || [];
+    const isLoading = query.isPending;
+    const creatorsData = useRoomHosts(calls);
+    const feedback = <QueryFeedback {...query} hasData={query.data !== undefined} />;
 
     const handleDelete = async (call: Call) => {
         try {
             await deleteStream({ type: call.type, id: call.id });
             toast.success("Audio room deleted successfully");
-            setCalls((prev) => prev.filter((c) => c.id !== call.id));
+            queryClient.setQueriesData<Call[]>({ queryKey: ["room-calls"] }, previous => previous?.filter(c => c.id !== call.id));
+            void queryClient.invalidateQueries({ queryKey: ["room-calls"] });
         } catch (error) {
             console.error("Failed to delete audio room", error);
             toast.error("Failed to delete audio room");
@@ -147,6 +148,8 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
         navigator.clipboard.writeText(url);
         toast.success("Room link copied to clipboard");
     };
+
+    if (!query.data && query.isError) return feedback;
 
     if (isLoading) {
         return (
@@ -160,6 +163,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
 
     if (calls.length === 0) {
         return <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
+            {feedback}
             <Headphones className="size-7 text-primary" />
             <h3 className="font-semibold">{type === "my-rooms" ? "No audio rooms yet" : "No audio rooms available"}</h3>
             <p className="max-w-xs text-sm text-muted-foreground">{type === "my-rooms" ? "Your audio discussions will appear here once you create a room." : "Check back for the next conversation."}</p>
@@ -168,6 +172,7 @@ export function AudioRoomList({ type, initialData }: AudioRoomListProps) {
 
     return (
         <>
+            {feedback}
             <div className="session-grid">
                 {calls.map((call) => {
                     const isCreator = call.state.createdBy?.id === chatClient?.userID;

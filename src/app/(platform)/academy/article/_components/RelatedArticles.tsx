@@ -1,15 +1,22 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { readRelatedArticles } from "@/features/content/read-actions";
+import { contentQueryOptions } from "@/lib/query-client";
+import { QueryFeedback } from "@/components/QueryFeedback";
 import { ArticleCard } from "./ArticleCard";
-import { getRelatedArticles } from "@/features/articles/queries/get-related-articles";
+
 
 interface RelatedArticlesProps {
     category: string;
     currentArticleId: string;
 }
 
-export async function RelatedArticles({ category, currentArticleId }: RelatedArticlesProps) {
-    const articles = await getRelatedArticles(category, currentArticleId);
+export function RelatedArticles({ category, currentArticleId }: RelatedArticlesProps) {
+    const query = useQuery({ queryKey: ["articles", "related", category, currentArticleId], queryFn: () => readRelatedArticles(category, currentArticleId), ...contentQueryOptions });
+    const articles = query.data || [];
 
-    if (articles.length === 0) return null;
+    if (articles.length === 0) return <QueryFeedback {...query} hasData={query.data !== undefined} />;
 
     return (
         <div className="space-y-6">

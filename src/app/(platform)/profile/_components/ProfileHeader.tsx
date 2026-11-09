@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +27,11 @@ interface ProfileHeaderProps {
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const { data: session } = authClient.useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isCurrentUser = session?.user?.id === profile.id;
-  const [isFollowing, setIsFollowing] = useState(profile.isFollowing);
-  const [followersCount, setFollowersCount] = useState(profile.followersCount);
+  const [followOverride, setFollowOverride] = useState<{ source: ProfileData; following: boolean; count: number } | null>(null);
+  const isFollowing = followOverride?.source === profile ? followOverride.following : profile.isFollowing;
+  const followersCount = followOverride?.source === profile ? followOverride.count : profile.followersCount;
   const [isLoading, setIsLoading] = useState(false);
   const [isMessaging, setIsMessaging] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -47,8 +50,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
     const prevFollowing = isFollowing;
     const prevCount = followersCount;
 
-    setIsFollowing(!isFollowing);
-    setFollowersCount(prev => isFollowing ? prev - 1 : prev + 1);
+    setFollowOverride({ source: profile, following: !isFollowing, count: followersCount + (isFollowing ? -1 : 1) });
     setIsLoading(true);
 
     try {
@@ -56,13 +58,12 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       if (res.status === "error") throw new Error(res.message);
 
       if (res.data) {
-        setIsFollowing(res.data.isFollowing);
-        setFollowersCount(res.data.followersCount);
+        setFollowOverride({ source: profile, following: res.data.isFollowing, count: res.data.followersCount });
       }
+      void queryClient.invalidateQueries();
       toast.success(res.message);
     } catch (error: unknown) {
-      setIsFollowing(prevFollowing);
-      setFollowersCount(prevCount);
+      setFollowOverride({ source: profile, following: prevFollowing, count: prevCount });
       const errorMessage = error instanceof Error ? error.message : "Failed to follow";
       toast.error(errorMessage);
     } finally {

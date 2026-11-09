@@ -20,9 +20,12 @@ test('navigation feedback forwards router destinations and options without rewri
   const calls = [];
   let transitions = 0;
   const router = Object.fromEntries(['push', 'replace', 'back', 'forward', 'refresh', 'prefetch'].map(method => [method, (...args) => calls.push({ method, args })]));
+  const queryContext = {};
+  let invalidations = 0;
   const { useRouter } = load('src/components/NavigationProvider.tsx', {
-    react: { createContext: () => ({}), useMemo: factory => factory(), useContext: () => ({ startNavigation: action => { transitions++; action(); } }) },
+    react: { createContext: () => ({}), useMemo: factory => factory(), useContext: context => context === queryContext ? { invalidateQueries: () => { invalidations++; } } : ({ startNavigation: action => { transitions++; action(); } }) },
     'next/navigation': { useRouter: () => router },
+    '@tanstack/react-query': { QueryClientContext: queryContext },
     'react/jsx-runtime': {},
   });
   const tracked = useRouter();
@@ -30,6 +33,7 @@ test('navigation feedback forwards router destinations and options without rewri
   tracked.replace('/search?q=markets', { scroll: false });
   tracked.back(); tracked.forward(); tracked.refresh();
   assert.equal(transitions, 5);
+  assert.equal(invalidations, 1);
   assert.equal(calls[0].method, 'push');
   assert.equal(calls[0].args[0], '/academy/course/example?chapter=2#curriculum');
   assert.equal(calls[0].args[1].scroll, false);

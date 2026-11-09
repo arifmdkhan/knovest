@@ -1,5 +1,7 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { Button } from "@/components/ui/button";
 import { deleteReview } from "@/features/reviews/actions/delete-review";
@@ -13,8 +15,8 @@ import { cn } from "@/lib/utils";
 import { Review, User } from "@/generated/prisma/client";
 
 interface ReviewWithUser extends Review {
-    user: User;
-    replies?: (Review & { user: User })[];
+    user: Pick<User, "id" | "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType">;
+    replies?: (Review & { user: Pick<User, "id" | "name" | "username" | "image" | "expertVerificationType" | "accountVerificationType"> })[];
 }
 
 interface ReviewListProps {
@@ -51,6 +53,7 @@ function ReviewItem({
     courseId: string;
     courseOwnerId: string;
 }) {
+    const queryClient = useQueryClient();
     const [isReplying, setIsReplying] = useState(false);
     const [isDeleting, startTransition] = useTransition();
 
@@ -60,6 +63,8 @@ function ReviewItem({
         startTransition(async () => {
             const result = await deleteReview(review.id, courseId);
             if (result.status === "success") {
+                void queryClient.invalidateQueries({ queryKey: ["course-detail"] });
+                void queryClient.invalidateQueries({ queryKey: ["courses"] });
                 toast.success(result.message);
             } else {
                 toast.error(result.message);

@@ -1,8 +1,8 @@
 # Knovest
 
-Financial learning and community app built with Next.js, React, Prisma, and Better Auth. Uses Neon PostgreSQL and Object Storage, Stream Chat/Video, Resend, and Google OAuth. Arcjet is not used.
+Financial learning and community app built with Next.js, React, Prisma, and Better Auth. Uses Neon PostgreSQL and Object Storage, Stream Chat/Video, Resend, and Google OAuth.
 
-Production status and remaining gates: [remediation status](docs/REMEDIATION-STATUS-2026-10-18.md), [release runbook](docs/RELEASE-RUNBOOK.md), [audit](docs/AUDIT-2026-10-17.md), and [budget model](docs/BUDGET-2026-10-17.md). Payments remain disabled for this release.
+Setup instructions are below. See the [release runbook](docs/RELEASE-RUNBOOK.md) for deployment requirements and [caching guide](docs/caching.md) for dynamic content behavior. Payments remain disabled for this release.
 
 ## Local setup
 
@@ -18,6 +18,17 @@ pnpm dev
 ~~~
 
 Open http://localhost:3000. Do not overwrite an existing .env.local. Prisma reads .env.local first, then .env.
+
+## Repository contents
+
+- `src/`: application code and public-facing pages.
+- `prisma/`: database schema and complete migration history.
+- `public/`: assets used by the application.
+- `tests/` and `.github/workflows/`: regression tests and CI checks.
+- `scripts/`: operational tools, including the private post-media migration.
+- `docs/`: current release and caching documentation.
+
+Keep `pnpm-lock.yaml` and `.env.example` tracked. Credentials, generated files, local archives, design references, backups, and diagnostic captures are ignored. Files under `.local/` are local-only and are not part of the public repository. Ignore rules do not remove files from earlier Git commits.
 
 ## What to put in .env.local
 

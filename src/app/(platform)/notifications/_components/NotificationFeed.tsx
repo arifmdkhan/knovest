@@ -60,7 +60,7 @@ export function NotificationFeed() {
     </div>
     <div className="app-panel overflow-hidden">
       {isLoading ? <div className="flex justify-center py-20" role="status" aria-label="Loading notifications"><Loader2 className="size-7 animate-spin text-primary" /></div>
-      : isError ? <div className="py-16 text-center space-y-3"><p className="text-muted-foreground">Couldn’t load notifications.</p><Button variant="outline" onClick={() => refetch()}>Try again</Button></div>
+      : isError && !data ? <div className="py-16 text-center space-y-3"><p className="text-muted-foreground">Couldn’t load notifications.</p><Button variant="outline" onClick={() => refetch()}>Try again</Button></div>
       : notifications.length === 0 ? <div className="flex flex-col items-center gap-3 px-5 py-20 text-center">
         <span className="mb-2 flex size-16 items-center justify-center rounded-2xl border border-border bg-primary/5"><Bell className="size-7 text-primary" /></span>
         <h2 className="text-lg font-semibold">You’re all caught up</h2>

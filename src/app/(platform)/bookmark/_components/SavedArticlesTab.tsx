@@ -13,7 +13,7 @@ export function SavedArticlesTab() {
     initialPageParam: undefined as string | undefined, getNextPageParam: page => page.nextCursor,
   });
   if (status === "pending") return <div className="flex justify-center p-16" role="status" aria-label="Loading saved articles"><Loader2 className="size-6 animate-spin text-primary" /></div>;
-  if (status === "error") return <div className="app-panel p-10 text-center space-y-4"><p>Couldn’t load your saved articles.</p><Button variant="outline" onClick={() => refetch()}>Try again</Button></div>;
+  if (status === "error" && !data) return <div className="app-panel p-10 text-center space-y-4"><p>Couldn’t load your saved articles.</p><Button variant="outline" onClick={() => refetch()}>Try again</Button></div>;
   const articles = data.pages.flatMap(page => page.articles);
   if (!articles.length) return <BookmarkEmptyState icon={FileText} title="No saved articles" description="Build your reading list. Save insightful articles to revisit at your own pace." actionLabel="Explore articles" actionLink="/academy/article" />;
   return <div className="space-y-6"><div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{articles.map(article => <ArticleCard key={article.id} article={article} />)}</div>{hasNextPage && <div className="text-center"><Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>{isFetchingNextPage ? "Loading…" : "Load more articles"}</Button></div>}</div>;

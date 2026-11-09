@@ -35,7 +35,7 @@ export function SavedCoursesTab() {
 
     if (status === "pending") return <CoursesSkeleton />;
 
-    if (status === "error") return <div className="text-center py-10 text-destructive">Error loading courses</div>;
+    if (status === "error" && !data) return <div className="text-center py-10 text-destructive">Error loading courses</div>;
 
     const isEmpty = !data?.pages[0]?.courses.length;
 

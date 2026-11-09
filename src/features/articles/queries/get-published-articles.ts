@@ -9,7 +9,7 @@ export async function getPublishedArticles(authorId?: string, category?: string)
             ...(category && { category }), // Add category filter
         },
         include: {
-            author: true,
+            author: { select: { id: true, name: true, username: true, image: true, expertVerificationType: true, accountVerificationType: true } },
         },
         orderBy: {
             createdAt: "desc",

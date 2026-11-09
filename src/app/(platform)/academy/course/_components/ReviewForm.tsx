@@ -1,5 +1,7 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { createReview } from "@/features/reviews/actions/create-review";
@@ -16,6 +18,7 @@ interface ReviewFormProps {
 }
 
 export function ReviewForm({ courseId, parentId, onSuccess, onCancel }: ReviewFormProps) {
+    const queryClient = useQueryClient();
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState("");
     const [isPending, startTransition] = useTransition();
@@ -45,6 +48,8 @@ export function ReviewForm({ courseId, parentId, onSuccess, onCancel }: ReviewFo
         startTransition(async () => {
             const result = await createReview(formData);
             if (result.status === "success") {
+                void queryClient.invalidateQueries({ queryKey: ["course-detail"] });
+                void queryClient.invalidateQueries({ queryKey: ["courses"] });
                 toast.success(result.message);
                 setRating(0);
                 setComment("");

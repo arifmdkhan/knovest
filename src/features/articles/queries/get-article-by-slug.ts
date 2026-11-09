@@ -8,7 +8,7 @@ export async function getArticleBySlug(slug: string) {
             status: "PUBLISHED",
         },
         include: {
-            author: true,
+            author: { select: { id: true, name: true, username: true, image: true, bio: true, expertVerificationType: true, accountVerificationType: true } },
         },
     });
 

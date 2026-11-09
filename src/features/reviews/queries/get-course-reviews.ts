@@ -8,10 +8,10 @@ export async function getCourseReviews(courseId: string) {
             parentId: null, // Fetch only top-level reviews
         },
         include: {
-            user: true,
+            user: { select: { id: true, name: true, username: true, image: true, expertVerificationType: true, accountVerificationType: true } },
             replies: {
                 include: {
-                    user: true,
+                    user: { select: { id: true, name: true, username: true, image: true, expertVerificationType: true, accountVerificationType: true } },
                 },
                 orderBy: {
                     createdAt: "asc",

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { contentQueryOptions } from "@/lib/query-client";
+import { QueryFeedback } from "@/components/QueryFeedback";
 import { useChatContext } from "stream-chat-react";
 import { Loader2 } from "lucide-react";
 import { TradeRoomProvider } from "./TradeRoomContext";
@@ -15,32 +17,19 @@ interface TradeRoomLayoutClientProps {
 }
 
 export default function TradeRoomLayoutClient({ children, user }: TradeRoomLayoutClientProps) {
-    const [myGroupIds, setMyGroupIds] = useState<string[]>([]);
-    const [isLoadingGroups, setIsLoadingGroups] = useState(true);
     const { client: chatClient } = useChatContext();
-
-    useEffect(() => {
-        if (!chatClient || !user) return;
-
-        const fetchGroups = async () => {
-            try {
-                const channels = await chatClient.queryChannels(
-                    {
-                        type: 'messaging',
-                        members: { $in: [user.id] }
-                    },
-                    { last_message_at: -1 }
-                );
-                setMyGroupIds(channels.map(c => c.id!));
-            } catch (error) {
-                console.error("Failed to fetch user groups", error);
-            } finally {
-                setIsLoadingGroups(false);
-            }
-        };
-
-        fetchGroups();
-    }, [chatClient, user.id]);
+    const groups = useQuery({
+        queryKey: ["room-groups", user.id],
+        enabled: !!chatClient,
+        ...contentQueryOptions,
+        queryFn: async () => {
+            if (!chatClient) throw new Error("Chat connection unavailable");
+            const channels = await chatClient.queryChannels({ type: "messaging", members: { $in: [user.id] } }, { last_message_at: -1 });
+            return channels.map(channel => channel.id!).filter(Boolean);
+        },
+    });
+    const myGroupIds = groups.data || [];
+    const isLoadingGroups = groups.isPending;
 
     if (!chatClient) {
         // Fallback safety
@@ -54,6 +43,7 @@ export default function TradeRoomLayoutClient({ children, user }: TradeRoomLayou
     return (
         <TradeRoomProvider value={{ myGroupIds, isLoadingGroups }}>
             <div className="trade-room-content w-full min-w-0 bg-background rounded-lg">
+                <QueryFeedback {...groups} hasData={groups.data !== undefined} />
                 {children}
             </div>
         </TradeRoomProvider>

@@ -3,6 +3,7 @@
 import Link from "@/components/AppLink";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toggleFollow } from "@/features/user/user.action";
@@ -66,6 +67,7 @@ export function FollowSuggestions({ users }: { users: Suggestion[] }) {
 }
 
 function SuggestionItem({ user }: { user: Suggestion }) {
+  const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -80,6 +82,7 @@ function SuggestionItem({ user }: { user: Suggestion }) {
 
       if (result.data) {
         setIsFollowing(result.data.isFollowing);
+        void queryClient.invalidateQueries();
       }
     } catch  {
       setIsFollowing(false); // Revert following.

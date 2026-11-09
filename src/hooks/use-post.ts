@@ -7,6 +7,7 @@ import { toggleRepost } from "@/features/posts/actions/toggle-repost";
 import { CreatePostSchemaType, DeletePostSchemaType, ToggleLikeSchemaType, ToggleSaveSchemaType, ToggleRepostSchemaType } from "@/features/posts/schemas";
 import { toast } from "sonner";
 import { FeedPost } from "@/types/post";
+import { contentQueryOptions } from "@/lib/query-client";
 export type FeedType = 'FOR_YOU' | 'FOLLOWING' | 'SUBSCRIBED';
 
 interface FeedPage {
@@ -75,6 +76,7 @@ export const useToggleRepost = () => {
 export const useGetPosts = (authorId?: string, type: FeedType = 'FOR_YOU', initialData?: { posts: FeedPost[]; nextCursor?: string }) => {
     return useInfiniteQuery({
         queryKey: ["posts", "feed", authorId, type],
+        ...contentQueryOptions,
         queryFn: async ({ pageParam }) => {
             const res = await getFeedPostsAction(
                 pageParam as string | undefined,

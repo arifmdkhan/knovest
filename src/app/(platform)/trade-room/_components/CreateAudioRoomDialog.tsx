@@ -1,5 +1,7 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ interface CreateAudioRoomDialogProps {
 export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = false, editCall }: CreateAudioRoomDialogProps) {
     const client = useStreamVideoClient();
     const { client: chatClient } = useChatContext();
+    const queryClient = useQueryClient();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [permissionType, setPermissionType] = useState<"everyone" | "group">("everyone");
@@ -157,6 +160,7 @@ export function CreateAudioRoomDialog({ open, onOpenChange, initialScheduled = f
                 }
             }
 
+            void queryClient.invalidateQueries({ queryKey: ["room-calls"] });
             onOpenChange(false);
 
         } catch (error: unknown) {

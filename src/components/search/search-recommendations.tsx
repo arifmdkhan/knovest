@@ -1,18 +1,29 @@
-import { getSearchRecommendations } from "@/features/search/queries/get-search-recommendations";
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { readSearchRecommendations } from "@/features/content/read-actions";
+import { contentQueryOptions } from "@/lib/query-client";
+import { QueryFeedback } from "@/components/QueryFeedback";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { UserAvatarWithInfo } from "@/components/UserAvatarWithInfo";
 import { PublicCourseCard } from "@/app/(platform)/academy/course/_components/PublicCourseCard";
 import { ArticleCard } from "@/app/(platform)/academy/article/_components/ArticleCard";
 import { Sparkles, Grid, BookOpen, FileText } from "lucide-react";
 
-export async function SearchRecommendations() {
-    const { experts, courses, articles } = await getSearchRecommendations();
+export function SearchRecommendations() {
+    const query = useQuery({ queryKey: ["search-recommendations"], queryFn: readSearchRecommendations, ...contentQueryOptions });
+    if (query.isPending) return <PageSkeleton />;
+    const feedback = <QueryFeedback {...query} hasData={query.data !== undefined} />;
+    if (!query.data) return feedback;
+    const { experts, courses, articles } = query.data;
 
     const hasRecommendations = experts.length > 0 || courses.length > 0 || articles.length > 0;
 
-    if (!hasRecommendations) return null;
+    if (!hasRecommendations) return feedback;
 
     return (
         <div className="flex flex-col gap-12 animate-in fade-in-50 duration-500">
+            {feedback}
             {/* Header*/}
             <div className="text-center space-y-2 mb-4">
                 <div className="inline-flex items-center justify-center p-3 bg-primary/5 rounded-full mb-4">

@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
     "/api/cron/transcode": ["./node_modules/ffmpeg-static/ffmpeg*"],
   },
   experimental: {
+    // Reuse route shells on return visits; content queries refresh independently.
+    staleTimes: { dynamic: 30, static: 300 },
     cpus: 2,
     optimizePackageImports: [
       "lucide-react",

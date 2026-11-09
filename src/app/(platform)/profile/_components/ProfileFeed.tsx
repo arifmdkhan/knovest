@@ -53,7 +53,7 @@ export function ProfileFeed({ authorId }: { authorId: string }) {
     return <FeedSkeleton />;
   }
 
-  if (status === "error") {
+  if (status === "error" && !data) {
     return <div className="text-center py-10 text-muted-foreground">Failed to load posts</div>;
   }
 

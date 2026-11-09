@@ -1,6 +1,6 @@
 # Knovest release runbook
 
-Companion: [current remediation status](REMEDIATION-STATUS-2026-10-18.md). This document does not authorize deployment, provider changes, token revocation or destructive maintenance.
+Deployment requirements for this codebase. This document does not authorize deployment, provider changes, token revocation or destructive maintenance.
 
 ## Supported release configuration
 
@@ -26,7 +26,7 @@ pnpm build
 
 The GitHub workflow adds a fresh PostgreSQL 17 service, migration deployment/drift checks, concurrency regression, and production HTTP smoke. Verify the workflow actually runs and passes on the target branch; its presence is not evidence of a successful remote run.
 
-Before migrations, identify the target database and record a recoverable backup/restore point. Review SQL and lock/size impact. The October 18 additive migration has already been applied to the workspace's configured Neon database with explicit approval. For another approved environment:
+Before migrations, identify the target database and record a recoverable backup/restore point. Review SQL and lock/size impact. For an approved environment:
 
 ```powershell
 pnpm db:migrate
@@ -51,7 +51,7 @@ It copies/verifies, conditionally commits the media row, then deletes the public
 
 ## Stream authorization gate
 
-**The configured provider currently permits outsider joins. Do not enable the production flag.** Required work includes:
+**Do not enable the production flag until provider authorization has passed the checks below.** Required work includes:
 
 1. Move call creation, metadata/ACL updates, and join authorization behind server-side session and entitlement checks. Derive creator identity from the session. Reject paid creation while payments are off. Bound group/user lists and scheduling input.
 2. Make provider roles deny ordinary/anonymous outsider joins, unauthorized membership changes, and client updates to trusted verification metadata. Authorize the specific call through scoped tokens/capabilities rather than relying on hidden UI. Validate messaging/subscription group membership and cancellation/revocation at the provider too.
@@ -80,6 +80,6 @@ Complete Stream account/message removal, subscription membership outbox/reconcil
 
 ## Budget and rollback decision
 
-Approve the real provider tiers, credits, alerts and spending ceiling from account evidence. Use the [scenario model](BUDGET-2026-10-17.md), not inferred revenue or assumed free plans. Re-run mobile performance on the final deployment and representative user geography. Current local median LCP is 4.41s and misses the proposed 2.5s gate.
+Approve provider tiers, credits, alerts and spending limits using actual account and usage evidence. Do not assume free plans or future revenue cover operating costs. Test mobile performance on the final deployment and representative user geography, and record results against the agreed performance budget.
 
 Record the release owner, enabled feature set, remaining accepted risks, restore point, deployment identifier and rollback procedure. No automatic payment activation or live-service expansion is authorized by a passing build.

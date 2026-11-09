@@ -37,7 +37,7 @@ export function SavedPostsTab() {
 
     if (status === "pending") return <FeedSkeleton />;
 
-    if (status === "error") return <div className="text-center py-10 text-destructive">Error loading bookmarks</div>;
+    if (status === "error" && !data) return <div className="text-center py-10 text-destructive">Error loading bookmarks</div>;
 
     const isEmpty = !data?.pages[0]?.posts.length;
 
