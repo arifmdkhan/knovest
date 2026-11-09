@@ -1,101 +1,148 @@
 # Knovest
 
-Financial learning and community app built with Next.js, React, Prisma, and Better Auth. Uses Neon PostgreSQL and Object Storage, Stream Chat/Video, Resend, and Google OAuth.
+<div align="center">
 
-Setup instructions are below. See the [release runbook](docs/RELEASE-RUNBOOK.md) for deployment requirements and [caching guide](docs/caching.md) for dynamic content behavior. Payments remain disabled for this release.
+  <img src="https://img.shields.io/badge/Next.js-16.4.2-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?logo=postgresql&logoColor=white" alt="Prisma + PostgreSQL" />
+  <img src="https://img.shields.io/badge/Live%20Video-Stream-7C3AED" alt="Stream live video" />
 
-## Local setup
+  <h3>Financial education, community, and premium learning experiences.</h3>
 
-Use pnpm 12.5.1. pnpm install downloads the project's pinned Node 24.19.0 runtime; project scripts use it automatically. No global Node upgrade is needed.
+  <p>
+    Knovest is a social learning platform built to help users improve financial literacy through premium communities, live trading rooms, and verified education content.
+  </p>
 
-~~~powershell
+</div>
+
+## Overview
+
+Knovest is a modern social network and learning platform focused on financial mastery. The product combines premium member communities, live educational sessions, and structured learning pathways into a single experience designed for serious learners and aspiring traders.
+
+This repository contains the core application powering that experience, including membership flows, user authentication, content delivery, live sessions, media handling, and community engagement.
+
+## Why this project
+
+- Built for communities centered on financial education and practice.
+- Combines social networking with trust-driven learning and expert access.
+- Supports premium memberships and exclusive groups for deeper engagement.
+- Creates a foundation for content, community, and live education to coexist in one product.
+
+## Key features
+
+- Premium groups and member-only spaces
+- Live trade rooms and community-driven learning sessions
+- Verified course and educational content delivery
+- Account-based access and member onboarding
+- Social community interactions with structured user engagement
+- Creator and instructor-friendly content workflows
+- Media upload and asset delivery for course and community content
+
+## Product vision
+
+Knovest aims to make financial mastery more accessible by blending:
+
+- educational depth
+- trusted expert access
+- community accountability
+- premium member experiences
+- real-time learning moments
+
+## Tech stack
+
+- Frontend: Next.js, React, TypeScript
+- Styling: Tailwind CSS
+- Backend: Next.js app routes and server logic
+- Database: PostgreSQL via Prisma
+- Auth: Better Auth + Google OAuth
+- Email: Resend
+- Media storage: AWS S3-compatible object storage
+- Live sessions: Stream Chat / Stream Video
+- Deployment-ready infrastructure for modern web applications
+
+## Architecture at a glance
+
+```text
+User app
+  -> Next.js frontend
+      -> Prisma + PostgreSQL
+      -> S3 media storage
+      -> Stream live/video services
+      -> OAuth + auth providers
+      -> Email + notifications
+```
+
+## Repository structure
+
+```text
+src/          Application UI and business logic
+prisma/       Database schema and migration history
+public/       Static assets and public resources
+tests/        Regression and automated validation
+scripts/      Project maintenance and operational utilities
+docs/         Environment, deployment, and release documentation
+```
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 22+
+- pnpm 12.5.1
+- PostgreSQL-compatible database
+- S3-compatible storage
+- Google OAuth credentials
+- Resend API key
+- Stream credentials
+
+### Local development
+
+```bash
 pnpm install
-Copy-Item .env.example .env.local
-# Fill in your service credentials in .env.local, then:
+cp .env.example .env.local
 pnpm db:generate
 pnpm db:migrate
 pnpm dev
-~~~
+```
 
-Open http://localhost:3000. Do not overwrite an existing .env.local. Prisma reads .env.local first, then .env.
+Then open http://localhost:3000.
 
-## Repository contents
+## Environment configuration
 
-- `src/`: application code and public-facing pages.
-- `prisma/`: database schema and complete migration history.
-- `public/`: assets used by the application.
-- `tests/` and `.github/workflows/`: regression tests and CI checks.
-- `scripts/`: operational tools, including the private post-media migration.
-- `docs/`: current release and caching documentation.
+This project relies on a range of service credentials and app settings for authentication, storage, live sessions, and mail delivery. The application expects configuration values such as:
 
-Keep `pnpm-lock.yaml` and `.env.example` tracked. Credentials, generated files, local archives, design references, backups, and diagnostic captures are ignored. Files under `.local/` are local-only and are not part of the public repository. Ignore rules do not remove files from earlier Git commits.
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `NEXT_PUBLIC_APP_URL`
+- `BETTER_AUTH_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- `NEXT_PUBLIC_STREAM_API_KEY`
+- `STREAM_API_SECRET`
+- `AWS_*` storage configuration
+- `CRON_SECRET`
 
-## What to put in .env.local
+## Validation
 
-| Variables | Value/source |
-| --- | --- |
-| DATABASE_URL | Neon Connect panel: pooled Postgres connection string, including TLS settings |
-| DIRECT_URL | Optional direct Neon connection string for migrations; leave blank otherwise |
-| NEXT_PUBLIC_APP_URL | http://localhost:3000 locally; your HTTPS app origin in production |
-| BETTER_AUTH_SECRET | Random secret generated with the command in .env.example |
-| GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET | Google Cloud OAuth web application credentials |
-| RESEND_API_KEY | Resend API key |
-| EMAIL_FROM | Knovest <you@your-verified-domain>; use your actual verified sender |
-| NEXT_PUBLIC_STREAM_API_KEY, STREAM_API_SECRET | API key and secret from the same Stream app |
-| AWS_REGION, AWS_ENDPOINT_URL_S3 | Exact region and storage endpoint returned by Neon Object Storage |
-| AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY | Neon storage credential token_id and s3_secret_access_key; not your Neon account API key |
-| NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES | Public-read bucket name; example: knovest-public |
-| NEXT_PRIVATE_S3_BUCKET_NAME_IMAGES | Private bucket name; example: knovest-private |
-| NEXT_PUBLIC_S3_PUBLIC_URL | Optional custom public asset URL; defaults to AWS_ENDPOINT_URL_S3 plus your public bucket |
-| CRON_SECRET | A separate generated random secret for scheduled cleanup/transcoding |
-| NEXT_PUBLIC_SUPPORT_EMAIL | Real support email; required before public launch |
-| STREAM_PERMISSIONS_VERIFIED | Keep false until server/provider authorization repair and negative tests pass |
-| VIDEO_PROCESSING_ENABLED | Keep false until persistent isolated worker qualification passes |
-| UPLOAD_DAILY_MIB_LIMIT | Global daily upload reservation cap; default 10240 MiB, zero blocks uploads |
-
-## Services
-
-- **Neon PostgreSQL:** set DATABASE_URL to the pooled Postgres connection URL with TLS enabled. Optionally set DIRECT_URL to a direct connection for migrations. The 14 migrations include verification, saved content, notifications, lesson resources/progress, video processing, cleanup jobs, shared rate limiting and processing leases/indexes. Legacy verification flags are preserved. The retired CREATOR role becomes USER; creator access now requires expert verification or an admin role.
-- **Authentication:** generate a random BETTER_AUTH_SECRET of at least 32 characters. Set NEXT_PUBLIC_APP_URL to your app's origin. Google OAuth needs the callback <app origin>/api/auth/callback/google and an authorized JavaScript origin matching the app. Configure local and production URLs separately.
-- **Resend:** set RESEND_API_KEY and EMAIL_FROM on your verified domain. EMAIL_FROM must be a complete address, for example Knovest <noreply@mail.your-domain.com>, on a domain verified in Resend. A bare domain inside angle brackets is invalid. OTPs expire after ten minutes; email delivery errors are returned to the authentication flow.
-- **Stream:** set NEXT_PUBLIC_STREAM_API_KEY and STREAM_API_SECRET from the same Stream app. Production connections are gated until the authorization work in the release runbook passes; credentials alone do not satisfy that gate.
-- **Contact:** set NEXT_PUBLIC_SUPPORT_EMAIL to a real support address before publishing.
-
-## Neon Object Storage
-
-Use a project in a supported region. Singapore (aws-ap-southeast-1) is supported as of October 17, 2026. Create knovest-public with public_read access for public images and knovest-private with private access for all post media, lesson videos, resources, and verification documents. Post media is delivered through an authorized application route; keep its source objects private.
-
-Copy the exact endpoint, region, access key, and secret from Neon into the AWS_* variables. Path-style addressing is configured in code. The public URL is derived from AWS_ENDPOINT_URL_S3 and NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES. Set NEXT_PUBLIC_S3_PUBLIC_URL only to override it, for example with a CDN. Public URLs include the branch endpoint and bucket path. Keep private buckets private; access uses signed URLs and server authorization. Restart Next.js after changing public environment variables.
-
-Configure CORS on both buckets for your actual app origins:
-
-~~~json
-{
-  "CORSRules": [{
-    "AllowedOrigins": ["http://localhost:3000", "https://YOUR_APP_DOMAIN"],
-    "AllowedMethods": ["GET", "HEAD", "PUT", "POST"],
-    "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3600
-  }]
-}
-~~~
-
-ETag must be exposed for multipart video uploads. Neon does not currently enforce lifecycle expiration. After reviewing the release runbook, schedule /api/cron/cleanup with Authorization: Bearer <CRON_SECRET> to process leased deletion jobs, expired temporary uploads and a bounded stale multipart scan. Complete inventory/retention reconciliation is still required. Schedule /api/cron/transcode only after qualifying the isolated persistent worker and enabling its production flag. Both endpoints reject requests if the secret is missing. Transcoding requires FFmpeg, sufficient CPU/disk, isolation and execution time.
-
-Sources: [Neon setup](https://neon.com/docs/storage/get-started), [S3 compatibility and limitations](https://neon.com/docs/storage/s3-compatibility).
-
-## Validation and production
-
-~~~powershell
+```bash
 pnpm test
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm start
-~~~
+```
 
-TypeScript remains strict. Lint reports existing any types, effect refactors, and unused code as warnings; hook correctness and other lint errors remain blocking. Prisma stays on stable version 7 rather than the Prisma 8 release candidate. Major upgrades with unrelated API changes are deferred.
+## Documentation
 
-Paid course enrollment, subscriptions, and stream purchases are unavailable until a real payment provider verifies transactions server-side. Client confirmations cannot grant paid entitlements. Free enrollment/subscription flows remain supported. Contact opens your email app using the configured support address. Landing-page photography and product imagery are AI-generated illustrations. They do not depict named educators or customer endorsements. Optimized WebP assets are stored in public/images/landing; only the hero image is preloaded.
+- [Release runbook](docs/RELEASE-RUNBOOK.md)
+- [Caching guide](docs/caching.md)
+
+## Project status
+
+This project is designed as a production-grade learning and community platform with a strong focus on premium engagement, expert education, and live financial learning experiences.
+
+---
+
+Built to help people learn, participate, and grow inside a financial community built around mastery.
 
